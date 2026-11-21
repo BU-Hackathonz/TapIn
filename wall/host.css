@@ -64,7 +64,7 @@ body:not(.idle) #room.grabbing { cursor: grabbing; }
 #fume { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; image-rendering: pixelated; image-rendering: crisp-edges; }
 
 /* The field of numbers, in front of the smoke and behind the room plan. Drawn by host.js. */
-#digits { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+#digits { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; filter: drop-shadow(0 0 2px color-mix(in srgb, var(--sand) 40%, transparent)); }
 
 /* A faint CRT scanline and vignette over the whole screen. */
 body::before {

@@ -265,28 +265,32 @@
     drawDigits(t);
   }
 
-  // The field of numbers: a grid of small digits that sits in front of the smoke. Where a wave passes they turn pink and
-  // change quickly; elsewhere they are quiet and mostly still. People, tables and the mouse push them out of the way.
+  // The symbol field, after the Tailord site: a screen full of tiny glyphs (+ x o . - 0 1 ...) that jitter and swap, in sand, drifting
+  // between dense and thin like dunes. Where a wave passes they turn pink and change quickly. People, tables and the mouse
+  // push them out of the way. It sits in front of the smoke and behind the room plan.
   const dg = $("digits"), dctx = dg.getContext("2d");
-  let DCELL = 22, DCOLS = 0, DROWS = 0;
+  const GLYPHS = "+x+o.-01*:=+x/o";
+  let DCELL = 13, DCOLS = 0, DROWS = 0;
   function sizeDigits() {
     dg.width = innerWidth; dg.height = innerHeight;
-    DCELL = Math.max(18, Math.round(innerHeight / 46)); DCOLS = Math.ceil(innerWidth / DCELL); DROWS = Math.ceil(innerHeight / DCELL);
+    DCELL = Math.max(11, Math.round(innerHeight / 80)); DCOLS = Math.ceil(innerWidth / DCELL); DROWS = Math.ceil(innerHeight / DCELL);
   }
   addEventListener("resize", sizeDigits); sizeDigits();
   function drawDigits(t) {
+    const tt = t / 1000;
     dctx.clearRect(0, 0, dg.width, dg.height);
-    dctx.font = `400 ${Math.round(DCELL * 0.62)}px ${MONO}`; dctx.textAlign = "center"; dctx.textBaseline = "middle";
+    dctx.font = `400 ${Math.round(DCELL * 0.8)}px ${MONO}`; dctx.textAlign = "center"; dctx.textBaseline = "middle";
     for (let r = 0; r < DROWS; r++) {
       for (let c = 0; c < DCOLS; c++) {
         const fx = Math.min(FW - 1, Math.floor(((c + 0.5) * DCELL / innerWidth) * FW)), fy = Math.min(FH - 1, Math.floor(((r + 0.5) * DCELL / innerHeight) * FH)), pi = fy * FW + fx;
         const hot = Math.max(0, Math.min(1, (lvBuf[pi] - 0.28) * 2.4)), pk = pushK[pi];
-        const a = (0.1 + hot * 0.6) * Math.max(0, 1 - pk * 0.95);
-        if (a < 0.02) continue;
-        const tick = Math.floor((t / 1000) * (0.3 + 3.5 * hot) + hash(c, r) * 10);
-        const d = Math.floor(hash(c * 3 + tick, r * 5 + tick * 7) * 10);
-        dctx.globalAlpha = a; dctx.fillStyle = hot > 0.3 ? C.pink : C.muted;
-        dctx.fillText(String(d), (c + 0.5) * DCELL + pushX[pi] * DCELL * 1.3, (r + 0.5) * DCELL + pushY[pi] * DCELL * 1.3);
+        const mass = fbm(c * 0.045 + tt * 0.02, r * 0.06 - tt * 0.015);                  // slow dunes of density
+        const a = (0.07 + Math.pow(mass, 1.6) * 0.75 + hot * 0.35) * Math.max(0, 1 - pk * 0.95);
+        if (a < 0.03) continue;
+        const tick = Math.floor(tt * (0.3 + 3 * hot) + hash(c, r) * 10);
+        const gi = Math.floor(hash(c * 3 + tick, r * 5 + tick * 7) * GLYPHS.length);
+        dctx.globalAlpha = Math.min(0.95, a); dctx.fillStyle = hot > 0.35 ? C.pink : C.sand;
+        dctx.fillText(GLYPHS[gi], (c + 0.5) * DCELL + pushX[pi] * DCELL * 1.6 + (hash(c + 9, r) - 0.5) * 1.5, (r + 0.5) * DCELL + pushY[pi] * DCELL * 1.6 + (hash(c, r + 9) - 0.5) * 1.5);
       }
     }
     dctx.globalAlpha = 1;
@@ -370,7 +374,11 @@
     // and tugs the rest of their table a third of the way along.
     const dtm = Math.min(100, t - (draw.lt || t)); draw.lt = t;
     for (const [k, o] of off) {
-      if (o.rel != null && t - o.rel > 3000) { const f = Math.exp(-dtm / 900); o.x *= f; o.y *= f; if (Math.hypot(o.x, o.y) < 0.5) off.delete(k); }
+      if (o.rel == null) continue;                                    // still held
+      const dt = dtm / 1000, vx = o.vx || 0, vy = o.vy || 0;          // let go: spring home quickly, with a little overshoot
+      o.vx = vx + (-90 * o.x - 11 * vx) * dt; o.vy = vy + (-90 * o.y - 11 * vy) * dt;
+      o.x += o.vx * dt; o.y += o.vy * dt;
+      if (Math.hypot(o.x, o.y) < 0.6 && Math.hypot(o.vx, o.vy) < 8) off.delete(k);
     }
     const pull = new Map();
     for (const p of pos) {
@@ -390,7 +398,7 @@
         p.x = tb.x + rx * c - ry * s; p.y = tb.y + rx * s + ry * c;
       }
       const o = off.get("p" + p.id);
-      if (o) { p.x += o.x; p.y += o.y; }
+      if (o) { const sh = gid != null ? 0.7 : 1; p.x += o.x * sh; p.y += o.y * sh; }       // with the table's 30% tug the person lands exactly on the pointer
     }
     drawn.people = pos.map((p) => ({ id: p.id, x: p.x, y: p.y, r: p.r }));
     drawn.tables = [...tables].map(([id, tb]) => ({ id, x: tb.x, y: tb.y, R: tb.R }));
@@ -407,25 +415,30 @@
 
     // ---- links, drawn quietly under everything else
     ctx.lineCap = "round";
-    for (const [, tb] of tables) {                                   // inside a table: a necklace round the seats
-      const ms = pos.filter((p) => p.gid === tb.id).sort((a, b) => a.ang - b.ang);
-      if (ms.length < 2) continue;
-      ctx.globalAlpha = 0.8; ctx.strokeStyle = C.deep; ctx.lineWidth = 1.4 * K;
-      const dist = (p) => Math.hypot(p.x - tb.x, p.y - tb.y), rs = ms.reduce((s, p) => s + dist(p), 0) / ms.length;
-      const round = ms.length > 2 && ms.every((p) => Math.abs(dist(p) - rs) < 0.12 * rs + 6 * K);   // seats on one ring: draw the ring itself, not a polygon
-      ctx.beginPath();
-      if (round) ctx.arc(tb.x, tb.y, rs, 0, Math.PI * 2);
-      else { ms.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y))); if (ms.length > 2) ctx.closePath(); }
-      ctx.stroke();
-      const edges = ms.length > 2 ? ms.length : 1;                       // a small light travels along each link of the table
-      for (let i = 0; i < edges; i++) {
-        const a = ms[i], b = ms[(i + 1) % ms.length], f = (t / 3400 + i * 0.37 + tb.id * 0.19) % 1, sz = 2.6 * K;
-        ctx.globalAlpha = 0.75; ctx.fillStyle = C.fg;
-        if (round) {
-          const aa = Math.atan2(a.y - tb.y, a.x - tb.x), dd = (Math.atan2(b.y - tb.y, b.x - tb.x) - aa + Math.PI * 2) % (Math.PI * 2), an = aa + dd * f;
-          ctx.fillRect(tb.x + Math.cos(an) * rs - sz / 2, tb.y + Math.sin(an) * rs - sz / 2, sz, sz);
-        } else ctx.fillRect(a.x + (b.x - a.x) * f - sz / 2, a.y + (b.y - a.y) * f - sz / 2, sz, sz);
+    for (const [, tb] of tables) {                                   // inside a table: a simple shape that depends on how many sit there
+      const ms = pos.filter((p) => p.gid === tb.id).sort((a, b) => a.ang - b.ang), n = ms.length;
+      if (n < 2) continue;
+      const edges = [];
+      const add = (i, j) => { if (i !== j && !edges.some(([a, b]) => (a === i && b === j) || (a === j && b === i))) edges.push([i, j]); };
+      let hub = false;
+      if (n === 2) add(0, 1);                                         // a line
+      else if (n === 3) { add(0, 1); add(1, 2); add(2, 0); }          // a triangle
+      else if (n === 4) { add(0, 2); add(1, 3); }                     // an X
+      else {
+        const kind = tb.id % 3;
+        if (kind === 2) hub = true;                                   // spokes to the middle, like a +
+        else for (let i = 0; i < n; i++) add(i, (i + (kind === 0 ? Math.floor(n / 2) : 2)) % n);   // a star through the middle, or points joined two apart
       }
+      const segs = hub ? ms.map((p) => [{ x: tb.x, y: tb.y }, p]) : edges.map(([i, j]) => [ms[i], ms[j]]);
+      ctx.globalAlpha = 0.8; ctx.strokeStyle = C.deep; ctx.lineWidth = 1.4 * K;
+      ctx.beginPath();
+      for (const [a, b] of segs) { ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); }
+      ctx.stroke();
+      segs.forEach(([a, b], i) => {                                   // a small light travels along each line
+        const f = (t / 3400 + i * 0.37 + tb.id * 0.19) % 1, sz = 2.6 * K;
+        ctx.globalAlpha = 0.75; ctx.fillStyle = C.fg;
+        ctx.fillRect(a.x + (b.x - a.x) * f - sz / 2, a.y + (b.y - a.y) * f - sz / 2, sz, sz);
+      });
     }
     const between = new Map(), bridge = new Map();
     for (const l of S.links) {
@@ -616,7 +629,7 @@
     if (!k) return;
     canvas.setPointerCapture(e.pointerId);
     const o = off.get(k) || { x: 0, y: 0, rel: null };
-    o.rel = null; off.set(k, o);
+    o.rel = null; o.vx = o.vy = 0; off.set(k, o);
     drag = { k, o, x: e.clientX, y: e.clientY };
     canvas.classList.add("grabbing");
   });
