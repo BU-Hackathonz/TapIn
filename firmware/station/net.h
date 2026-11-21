@@ -12,6 +12,19 @@ static int wifiFails = 0;             // consecutive failed Wi-Fi checks
 static int httpFails = 0;             // consecutive failed requests made while Wi-Fi was up
 static bool wifiWasUp = false;        // for the WIFI up / WIFI down lines
 static unsigned long lastWifiCheck = 0;
+static volatile int lastDisconnectReason = 0;  // set by the Wi-Fi event task, printed on the next retry line
+
+// Common ESP32 reasons: 201 = network not found (wrong SSID, 5 GHz only, router Wi-Fi off),
+// 15 / 202 / 204 = handshake or auth failed (wrong password). 8 and 36 (our own leave) are never stored.
+static const char* reasonName(int r) {
+  switch (r) {
+    case 201: return "no_ap_found";
+    case 15: case 202: case 204: return "auth_failed";
+    case 2: case 200: return "beacon_or_auth_timeout";
+    case 0: return "none_yet";
+    default: return "other";
+  }
+}
 
 static void connectWifi() {
   WiFi.begin(WIFI_SSID, WIFI_PASS);   // returns at once; the connection finishes in the background
@@ -22,6 +35,10 @@ inline void netBegin() {
   WiFi.mode(WIFI_STA);
   WiFi.setSleep(false);               // lower latency for taps
   WiFi.setAutoReconnect(true);        // the core rejoins by itself after most drops
+  WiFi.onEvent([](WiFiEvent_t, WiFiEventInfo_t info) {
+    int r = info.wifi_sta_disconnected.reason;
+    if (r != 8 && r != 36) lastDisconnectReason = r;  // 8 / 36 = our own disconnect before a retry; keep the real cause
+  }, ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
   Serial.printf("WIFI connecting ssid=%s\n", WIFI_SSID);
   connectWifi();
   lastWifiCheck = millis();
@@ -51,6 +68,11 @@ inline void keepWifiAlive(unsigned long now) {
   // and start over every 5th failed check (about 10 s). Never reconnect on every check: the station is
   // "not connected" until DHCP finishes, and a reconnect then would drop a join that was about to work.
   if (wifiFails % 5 == 0) {
+    // Say why, so a wrong SSID (no_ssid) is told apart from a wrong password (connect_failed) at a glance.
+    const char* why = st == WL_NO_SSID_AVAIL ? "no_ssid" : st == WL_CONNECT_FAILED ? "connect_failed"
+                    : st == WL_DISCONNECTED ? "disconnected" : st == WL_IDLE_STATUS ? "idle" : "other";
+    int r = lastDisconnectReason;
+    Serial.printf("WIFI retry status=%s (%d) reason=%s (%d)\n", why, (int)st, reasonName(r), r);
     WiFi.disconnect();
     connectWifi();
   } else if (st == WL_CONNECT_FAILED) {

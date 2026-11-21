@@ -84,7 +84,7 @@ A badge is read once per tap. The same badge again within 3 s is ignored, and ev
 The Wi-Fi password is not in git. Each laptop or station needs its own local copy.
 
 1. Copy `firmware/station/secrets.example.h` to `firmware/station/secrets.h`.
-2. Edit `secrets.h` with the TapIn router's SSID and password.
+2. Edit `secrets.h` with the router's 2.4 GHz SSID and password. The team's GL.iNet router broadcasts **`cmap`** on 2.4 GHz (and `cmap5g` on 5 GHz), not "TapIn" as the Playbook says. Use `cmap`.
 3. Leave it alone in git. `secrets.h` is git-ignored, and so is `build/`.
 
 `config.h` includes `secrets.h`, so the sketch will not compile without it.
@@ -142,8 +142,9 @@ Open the port at 115200 baud, or use `firmware/serial_monitor.py`, which parses 
 ```
 BOOT station=1
 READER version=0x92
-WIFI connecting ssid=TapIn
+WIFI connecting ssid=cmap
 STATE idle count=0
+WIFI retry status=disconnected (6) reason=auth_failed (15)   (every ~10 s while it cannot join)
 WIFI up ip=192.168.8.45
 TAP uid=04A1B2C3D4E5F6
 STATE collecting count=1
@@ -196,9 +197,9 @@ All of these must be true before the stations are boxed:
 - Hold the badge flat against the reader for a second. Some badges need a moment.
 
 **Amber (offline) forever.**
-- Check `secrets.h`: SSID and password must match the TapIn router exactly. Recompile after editing.
+- Check `secrets.h`: SSID (`cmap`) and password must match the router exactly. Recompile after editing.
 - The router must be 2.4 GHz. The ESP32 cannot join a 5 GHz-only network.
-- No `WIFI up` line: SSID or password. `WIFI up` but still amber: the server. Check `secrets.h` has no leftover `SERVER_URL` from mock testing, the server IP in `config.h` is `192.168.8.100`, and the server laptop still has that reserved IP.
+- No `WIFI up` line: read the `WIFI retry ... reason=` line. `no_ap_found (201)` means no network has that SSID on 2.4 GHz (a wrong name, the router's Wi-Fi is off, or it is 5 GHz only). `auth_failed (15/202/204)` means the SSID was found but the password is wrong (the router admin password is not the Wi-Fi password). `WIFI up` but still amber: the server. Check `secrets.h` has no leftover `SERVER_URL` from mock testing, the server IP in `config.h` is `192.168.8.100`, and the server laptop still has that reserved IP.
 - Check the firewall on the server laptop allows port 8000. Test from a phone on TapIn: open `http://192.168.8.100:8000` in a browser.
 
 **LEDs flicker or show the wrong colors.**
