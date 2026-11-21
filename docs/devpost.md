@@ -40,21 +40,21 @@ Tap In turns walking into a room into a way to find your people. Tap your badge 
 
 ## How we built it
 
-ESP32 stations with RC522 readers send each badge tap to a Python FastAPI server. The server groups taps that land on the same station within 6 seconds into one scan, decides what it means (check-in, new group, join, help or repeat), stores it in Tiger Data, and pushes it over a WebSocket to the wall display (d3 and Tone.js) and to the phone site. From tap to wall takes [CHECK: measured time].
+ESP32 stations with RC522 readers send each badge tap to a Python FastAPI server. The server groups taps that land on the same station within 6 seconds into one scan, decides what it means (check-in, new group, join, help or repeat), stores it in Tiger Data, and pushes it over a WebSocket to the wall display (d3 and Tone.js) and to the phone site. A tap reaches the server in about a quarter of a second (median 260 ms over 12 real taps on the venue network), and when a scan closes the wall gets the event in under a millisecond.
 
 We split the work by layer and agreed on the JSON shapes first, so four people could build in parallel. Every teammate's coding agent posted to one pinned GitHub issue, so one person's agent could hand work to another's.
 
 ## The stations
 
-[CHECK: a sentence on the enclosures and a photo caption.] Each station is an ESP32, an RC522 reader and 5 LEDs, about $15 of parts. The LEDs light one by one as each badge joins a scan, so a group arriving lights up together.
+[CHECK: a sentence on the enclosures and a photo caption.] Each station is an ESP32 and an RC522 reader on a breadboard, about $15 of parts, in a box with the reader taped under the lid. The stations are deliberately dumb: they send the badge ID and show whatever the server says, so all the logic lives in one place. We planned five LEDs per station and cut them for time; the board's own blue LED shows each state as its own rhythm instead (solid while a scan collects, a fast flicker for a join), and the wall carries the big moments with light and sound. The firmware never blocks: every HTTP call times out after 800 ms, Wi-Fi rejoins by itself, and both stations ran a 30-minute soak with no reboots and no time offline.
 
 ## Built on Tiger Data
 
-Taps are time-series, so every raw tap and every resolved scan goes into a hypertable (`taps`, `scan_events`). The live stats chart reads a continuous aggregate (`scans_per_10min`) instead of scanning raw rows, so it stays fast and live. [CHECK: confirm the continuous aggregate and chart worked at judging; add a screenshot.] `connections` is a regular table on purpose: a unique index on a hypertable has to include the time column, and we need exactly one row per pair of people.
+Taps are time-series, so every raw tap and every resolved scan goes into a hypertable (`taps`, `scan_events`). The live stats chart reads a continuous aggregate (`scans_per_10min`) instead of scanning raw rows, so it stays fast and live: it runs in real-time mode, so the current ten minutes show before they're materialized. A second continuous aggregate, `scans_per_hour`, is built on top of the first (a hierarchical continuous aggregate) and feeds the busiest-station-by-hour view for the space's staff. [CHECK: confirm the chart worked at judging; add a screenshot.] `connections` is a regular table on purpose: a unique index on a hypertable has to include the time column, and we need exactly one row per pair of people.
 
 ## Gemini icebreakers
 
-When someone checks in, the wall shows a template line for their top table right away. In the background, Gemini writes one icebreaker under 20 words from the person's skills and the table's project. If it doesn't answer within 2 seconds, the template line stays, so a slow network never breaks a tap. A real one from last night: "[CHECK: paste a real icebreaker Gemini wrote]".
+When someone checks in, the wall shows a template line for their top table right away. In the background, Gemini writes one icebreaker under 20 words from the person's skills and the table's project. If it doesn't answer within 2 seconds, the template line stays, so a slow network never breaks a tap. A real one from tonight, 0.9 s after a check-in: "Avery, your firmware and pitch skills fit Connection Map's design needs well." [CHECK: swap in a judge's or a recruit's if a better one comes up.]
 
 ## Domain
 
@@ -73,7 +73,10 @@ These numbers count real people only: our fake test badges and the judge badges 
 
 ## Challenges we ran into
 
-[CHECK: from the team chat's "what broke and how we fixed it" lines.] Taps arrive milliseconds apart, sometimes at two stations at once, so grouping them into scans without corrupting one another was the hardest part of the server.
+[CHECK: from the team chat's "what broke and how we fixed it" lines.] Taps arrive milliseconds apart, sometimes at two stations at once, so grouping them into scans without corrupting one another was the hardest part of the server. Hardware ones from Avery's side:
+- The stations joined no network at first. The firmware now logs why a join fails, which showed "network not found" (the router broadcast a different name than our plan said), then "auth failed" (we had the admin password, not the Wi-Fi one).
+- For a moment between "collecting" and the result, the server reported "idle" while it wrote the scan to the database, so stations blinked "nothing happened" right before "you're in". It now keeps reporting "collecting" until the result is set.
+- Gemini returned 404 for every icebreaker: the model in our plan is no longer offered to new API keys. We measured the available models against our 2-second budget and switched to one that answers in under a second.
 
 ## Accomplishments that we're proud of
 
@@ -81,7 +84,7 @@ These numbers count real people only: our fake test badges and the judge badges 
 
 ## What didn't work
 
-[CHECK: be honest; judges read candor as confidence. Never describe a cut feature as working.]
+[CHECK: be honest; judges read candor as confidence. Never describe a cut feature as working.] The stations' LED ring was cut for time, so a station's only feedback is a small blue LED; a group joining no longer lights up the box. Each request from a station takes about 200 ms even though the network answers in 3 ms; we ruled out Wi-Fi signal, connection setup and the server, and ran out of time to chase it into the ESP32's network stack.
 
 ## What we learned
 
