@@ -1,6 +1,6 @@
 // 3D room view on a plain 2D canvas (perspective projection, no WebGL), so it runs on phones too.
 // Tables are regions on a sphere, people orbit inside their table, new arrivals sit in the core.
-// Drag to rotate, pinch or scroll to zoom, double-tap or right-click to reset, tap a person for their card,
+// Drag to rotate (a flick keeps it turning, slowed by friction), pinch or scroll to zoom, double-tap or right-click to reset, tap a person for their card,
 // tap a table chip to isolate it. Idle for a few seconds and it rotates on its own.
 // Zoom in and dots turn into profile pictures (mockups: initials on a colour from the name, no real photos).
 const View3D = (() => {
@@ -13,7 +13,7 @@ const View3D = (() => {
   const centers = new Map();   // group id -> {x,y,z,r}
   const pulses = [];
   let picked = null, pickedUntil = 0, chipKey = "";
-  let zoomGoal = 1, focusId = null;
+  let zoomGoal = 1, focusId = null, spinX = 0, spinY = 0, pointers = 0;
   const cam = { x: 0, y: 0, z: 0 };   // point the camera orbits; eases to a tapped person
 
   // Mockup profile picture: initials on a gradient whose hue comes from the name. Cached per person.
@@ -126,6 +126,7 @@ const View3D = (() => {
     if (!active || document.hidden || t - lastFrame < 1000 / PRESET.fps - 2) return;
     const dt = Math.min(64, t - lastFrame);
     lastFrame = t;
+    coast(dt, t);
     if (t - lastTouch > 5000) rotY += 0.00018 * dt;   // idle spin
     for (const q of pos.values()) {
       q.x += (q.tx - q.x) * 0.08; q.y += (q.ty - q.y) * 0.08; q.z += (q.tz - q.z) * 0.08;
@@ -277,37 +278,69 @@ const View3D = (() => {
 
   // ------------------------------------------------------------ input
 
-  function reset() { rotY = 0.4; rotX = -0.3; zoomGoal = 1; focusId = null; isolate = null; picked = null; markChips(); }
+  function reset() {
+    rotY = 0.4; rotX = -0.3; zoomGoal = 1; focusId = null; isolate = null; picked = null; spinX = spinY = 0; markChips();
+  }
   const setZoom = (z) => { zoomGoal = zoom = Math.max(0.5, Math.min(4.5, z)); };
+
+  // Swipe momentum: the drag's release speed keeps the room turning, friction bleeds it off.
+  // Speed decays by e every FRICTION ms, so a fast flick coasts noticeably longer than a slow one.
+  const FRICTION = 550, MAX_SPIN = 0.02, STOP = 4e-5;   // rad/ms; STOP is about 2 degrees a second
+  function coast(dt, now) {
+    if (pointers > 0) return;
+    if (Math.abs(spinX) < STOP && Math.abs(spinY) < STOP) { spinX = spinY = 0; return; }
+    rotY += spinY * dt;
+    const nx = rotX + spinX * dt;
+    rotX = Math.max(-1.3, Math.min(1.3, nx));
+    if (rotX !== nx) spinX = 0;              // hit the top or bottom: stop tilting, keep turning
+    const k = Math.exp(-dt / FRICTION);
+    spinX *= k; spinY *= k;
+    lastTouch = now;                         // no idle auto-spin until the coast has died down
+  }
 
   function bindInput() {
     const pts = new Map();
-    let moved = 0, pinch = 0, lastTap = 0;
+    let moved = 0, pinch = 0, lastTap = 0, lastMove = 0, pinched = false;
     canvas.addEventListener("pointerdown", (e) => {
       canvas.setPointerCapture(e.pointerId);
       pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
-      moved = 0; lastTouch = performance.now();
+      pointers = pts.size;
+      spinX = spinY = 0;                     // touching the room catches it
+      moved = 0; lastTouch = lastMove = performance.now();
+      if (pts.size === 1) pinched = false;
     });
     canvas.addEventListener("pointermove", (e) => {
       const prev = pts.get(e.pointerId);
       if (!prev) return;
-      const cur = { x: e.clientX, y: e.clientY };
+      const cur = { x: e.clientX, y: e.clientY }, now = performance.now();
       pts.set(e.pointerId, cur);
-      lastTouch = performance.now();
+      lastTouch = now;
       if (pts.size === 1) {
-        rotY += (cur.x - prev.x) * 0.006;
-        rotX = Math.max(-1.3, Math.min(1.3, rotX + (cur.y - prev.y) * 0.006));
+        const dy = (cur.x - prev.x) * 0.006, dx = (cur.y - prev.y) * 0.006, dt = Math.max(8, now - lastMove);
+        rotY += dy;
+        rotX = Math.max(-1.3, Math.min(1.3, rotX + dx));
+        // Smoothed velocity over the last few moves, so one jittery event doesn't decide the flick.
+        spinY = spinY * 0.5 + (dy / dt) * 0.5;
+        spinX = spinX * 0.5 + (dx / dt) * 0.5;
+        lastMove = now;
         moved += Math.abs(cur.x - prev.x) + Math.abs(cur.y - prev.y);
       } else if (pts.size === 2) {
         const [a, b] = [...pts.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
         if (pinch) setZoom(zoom * (d / pinch));
-        pinch = d; moved = 99;
+        pinch = d; moved = 99; pinched = true;
       }
     });
     const up = (e) => {
       const was = pts.get(e.pointerId);
       pts.delete(e.pointerId);
+      pointers = pts.size;
       if (pts.size < 2) pinch = 0;
+      if (pts.size === 0) {
+        // Finger rested before lifting, or this was a pinch: no throw.
+        if (pinched || performance.now() - lastMove > 70) spinX = spinY = 0;
+        spinX = Math.max(-MAX_SPIN, Math.min(MAX_SPIN, spinX));
+        spinY = Math.max(-MAX_SPIN, Math.min(MAX_SPIN, spinY));
+      }
       if (!was || moved > 6 || e.button === 2) return;
       const now = performance.now();
       if (now - lastTap < 300) { reset(); hideCard(); lastTap = 0; return; }
