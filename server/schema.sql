@@ -44,5 +44,16 @@ SELECT add_continuous_aggregate_policy('scans_per_10min',
   start_offset => INTERVAL '3 hours', end_offset => INTERVAL '1 minute',
   schedule_interval => INTERVAL '1 minute', if_not_exists => true);
 
+-- Avery: the same scans per hour, built ON TOP of scans_per_10min (a hierarchical continuous aggregate), read by
+-- /api/analytics for the Spark view: busiest station by hour and the mix of scan kinds. Real-time like the base.
+CREATE MATERIALIZED VIEW IF NOT EXISTS scans_per_hour
+WITH (timescaledb.continuous, timescaledb.materialized_only = false) AS
+SELECT time_bucket(INTERVAL '1 hour', bucket) AS hour, station_id, kind, sum(n)::bigint AS n
+FROM scans_per_10min GROUP BY hour, station_id, kind WITH NO DATA;
+
+SELECT add_continuous_aggregate_policy('scans_per_hour',
+  start_offset => INTERVAL '3 hours', end_offset => INTERVAL '10 minutes',
+  schedule_interval => INTERVAL '5 minutes', if_not_exists => true);
+
 -- Optional contact (Instagram or LinkedIn) from sign-up. Stored only; no API returns it during the event.
 ALTER TABLE people ADD COLUMN IF NOT EXISTS contact TEXT;
