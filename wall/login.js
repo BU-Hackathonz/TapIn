@@ -238,14 +238,24 @@
   // ?layout=1..5 picks the page layout (split, split mirrored, banner, card on art, logo first).
   {
     const q = new URLSearchParams(location.search);
-    const art = TapArt.scenes[q.get("art")] || TapArt.scenes.kiosk, logo = TapArt.logos[q.get("logo")] || TapArt.logos.wifi;
+    const art = TapArt.scenes[q.get("art")], logo = TapArt.logos[q.get("logo")] || TapArt.logos.wifi;
     const layout = ["1", "2", "3", "4", "5"].includes(q.get("layout")) ? q.get("layout") : "1";
     document.body.className = document.body.className.replace(/layout-\d/, `layout-${layout}`);
-    // No panel and no crop: the whole scene, without its own background, sits on the page and fades out at
-    // every edge, so shapes that run off the drawing dissolve into the page instead of being cut.
-    $("hero").innerHTML = art({ bare: true });     // drawn by art.js from fixed shapes, no user text
-    const svg = $("hero").querySelector("svg");
-    if (svg) { svg.setAttribute("preserveAspectRatio", "xMidYMid meet"); svg.classList.add("art-blend"); }
+    // The front-page picture is the original illustration, unchanged. No panel around it: the page is its cream,
+    // and only the outermost edge fades so shapes that run off the picture melt into the page instead of stopping
+    // at a hard line. ?art=<scene> swaps in one of the drawn mockup scenes instead.
+    if (art) {
+      $("hero").innerHTML = art({ bare: true });     // drawn by art.js from fixed shapes, no user text
+      const svg = $("hero").querySelector("svg");
+      if (svg) { svg.setAttribute("preserveAspectRatio", "xMidYMid meet"); svg.classList.add("art-blend"); }
+    } else {
+      const img = new Image();
+      img.src = "img/kiosk.webp";
+      img.alt = "Someone taps a badge at a station; a dotted trail leads to two people at a table, one waving";
+      img.width = 1024; img.height = 765;
+      img.className = "art art-blend art-photo";
+      $("hero").replaceChildren(img);
+    }
     $("brand").innerHTML = logo();
     $("brand-art").innerHTML = logo();
   }
