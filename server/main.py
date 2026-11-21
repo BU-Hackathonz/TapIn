@@ -1,4 +1,4 @@
-"""Tap In server skeleton: tap endpoint, station state, WebSocket, static mounts."""
+"""Tap In server: tap endpoint, station state, WebSocket, static mounts."""
 import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -8,14 +8,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import db
+from . import db, scans
+from .hub import hub
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
 log = logging.getLogger("tapin")
 
 ROOT = Path(__file__).resolve().parent.parent
-STATION_COLORS = {1: "#C85C84", 2: "#5CC8A0"}  # Entrance raspberry, Table 2 green
-DEFAULT_COLOR = "#5CC8A0"
 
 
 @asynccontextmanager
@@ -34,31 +33,14 @@ class Tap(BaseModel):
     uid: str
 
 
-def station_state(station_id: int, state: str = "idle", count: int = 0) -> dict:
-    return {"state": state, "count": count, "color": STATION_COLORS.get(station_id, DEFAULT_COLOR)}
-
-
 @app.post("/api/tap")
 async def tap(body: Tap):
-    uid = body.uid.strip().upper()
-    log.info("tap station=%s uid=%s outcome=logged", body.station_id, uid)
-    await db.log_tap(body.station_id, uid, "logged")
-    return station_state(body.station_id)
+    return await scans.on_tap(body.station_id, body.uid.strip().upper())
 
 
 @app.get("/api/station/{station_id}")
 async def station(station_id: int):
-    return station_state(station_id)
-
-
-class Hub:
-    """Holds open WebSockets. Broadcasting is added with the event hub step."""
-
-    def __init__(self) -> None:
-        self.clients: set[WebSocket] = set()
-
-
-hub = Hub()
+    return scans.current_state(station_id)
 
 
 @app.websocket("/ws")
