@@ -9,7 +9,7 @@
 (() => {
   "use strict";
   const qs = new URLSearchParams(location.search);
-  if (qs.get("palette")) document.documentElement.dataset.palette = qs.get("palette");
+  document.documentElement.dataset.palette = qs.get("palette") || "sand";
   if (qs.get("logo")) document.documentElement.dataset.logo = qs.get("logo");
   const HOST = qs.get("server") || location.host;
   const HTTP = `${location.protocol}//${HOST}`;
@@ -217,8 +217,13 @@
       for (let x = 0; x < FW; x++) {
         const nx = (x / FW) * 3.4, ny = (y / FH) * 2.1;
         const w = fbm(nx + tt * 0.045, ny - tt * 0.038);
-        let lv = fbm(nx * 1.1 + w * 1.7 - tt * 0.03, ny * 1.1 + w * 1.3 + tt * 0.028);
-        lv *= 0.32 + 0.6 * ((y / FH) ** 1.4 * 0.4 + (1 - x / FW) * 0.6);             // thicker toward the lower left, thin up and right
+        const sm = fbm(nx * 1.1 + w * 1.7 - tt * 0.03, ny * 1.1 + w * 1.3 + tt * 0.028);   // the smoke itself
+        // Two slow swells roll through the smoke and fade, one rising from the lower left every 9 s, a gentler one drifting
+        // back from the upper right every 14 s. Between swells only a faint haze is left.
+        const u1 = (x / FW) * 0.8 + (1 - y / FH) * 0.4 + (w - 0.5) * 0.45, c1 = -0.35 + ((tt / 9) % 1) * 2.0;
+        const u2 = (1 - x / FW) * 0.7 + (y / FH) * 0.4 + (w - 0.5) * 0.45, c2 = -0.35 + (((tt + 5) / 14) % 1) * 2.0;
+        const r1 = Math.exp(-(((u1 - c1) / 0.26) ** 2)), r2 = 0.6 * Math.exp(-(((u2 - c2) / 0.22) ** 2));
+        let lv = sm * 0.5 + (r1 + r2) * (0.3 + 0.75 * sm);
         if (mk > 0) { const dd = Math.hypot(x - mx, (y - my) * 1.2); if (dd < 30) lv += (1 - dd / 30) ** 2 * 0.55 * mk; }
         const q = Math.floor(lv * 3.6 + BAYER[(y & 3) * 4 + (x & 3)]);                  // 0..4 steps, ordered dither
         const i = (y * FW + x) * 4;
@@ -303,6 +308,16 @@
       return;
     }
     const tables = layout.tables();
+    // Tables drift a little and turn a little: the seats, the mentor and the ring move together, never far.
+    const drift = (gid) => ({ dx: (Math.sin(t / 2300 + gid * 1.7) * 7 + Math.sin(t / 3700 + gid * 0.6) * 4) * K, dy: (Math.cos(t / 2700 + gid * 1.1) * 7 + Math.cos(t / 4100 + gid) * 3) * K, rot: Math.sin(t / 6500 + gid * 2.3) * 0.14 });
+    for (const [gid, tb] of tables) { const d = drift(gid); tb.ox = tb.x; tb.oy = tb.y; tb.x += d.dx; tb.y += d.dy; tb.rot = d.rot; }
+    for (const p of pos) {
+      const gid = p.gid != null ? p.gid : p.seatTable;
+      const tb = gid != null ? tables.get(gid) : null;
+      if (!tb) continue;
+      const rx = p.x - tb.ox, ry = p.y - tb.oy, c = Math.cos(tb.rot), s = Math.sin(tb.rot);
+      p.x = tb.x + rx * c - ry * s; p.y = tb.y + rx * s + ry * c;
+    }
     const byId = new Map(pos.map((p) => [p.id, p]));
     const m = cur && t < cur.until ? cur : null;
     const hiGroup = m && m.group != null ? m.group : null;
@@ -378,7 +393,13 @@
       ctx.lineDashOffset = -(t / (hi ? 30 : 140)) * (gid % 2 ? 1 : -1);   // neighbouring rings turn opposite ways
       ctx.strokeStyle = hi ? hiColor : quiet ? C.dim : C.forest;
       ctx.globalAlpha = hi ? 0.75 + 0.25 * Math.sin(t / 380) : quiet ? 0.55 : 0.95;
-      ctx.beginPath(); ctx.arc(tb.x, tb.y, ringR, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath();                                                // not a circle: an outline that slowly breathes out of round
+      for (let k = 0; k <= 72; k++) {
+        const a = (k / 72) * Math.PI * 2, rr = ringR * (1 + 0.1 * Math.sin(2 * a + t / 2600 + gid * 1.9) + 0.07 * Math.sin(3 * a - t / 3300 + gid * 0.8));
+        const px = tb.x + Math.cos(a) * rr, py = tb.y + Math.sin(a) * rr;
+        k ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+      }
+      ctx.closePath(); ctx.stroke();
       ctx.restore();
 
       const needs = S.needs.filter((n) => n.group_id === gid && n.handled_by == null).map((n) => n.need);
@@ -405,7 +426,7 @@
       ctx.globalAlpha = 0.2 + 0.8 * age;
       // A little life: each person drifts a couple of pixels and breathes; people still gliding leave a fading trail; a new
       // arrival sends out one ripple.
-      const nx = p.x + Math.sin(t / 900 + p.id * 1.3) * 2.2 * K, ny = p.y + Math.cos(t / 1100 + p.id * 0.9) * 2.2 * K;
+      const nx = p.x + Math.sin(t / 900 + p.id * 1.3) * 3.2 * K, ny = p.y + Math.cos(t / 1100 + p.id * 0.9) * 3.2 * K;
       const r = p.r * (newest ? 1.9 : 1) * (1 + 0.07 * Math.sin(t / 650 + p.id));
       const col = newest ? C.pink : quiet ? C.dim : C.green;
       const tr = trails.get(p.id);

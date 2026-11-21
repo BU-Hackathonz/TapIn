@@ -17,8 +17,19 @@
   --side-w: clamp(360px, 25vw, 560px);
   --strip-h: clamp(64px, 8vh, 110px);
 }
-/* Warm dark sand: a mocha ground, soft-sand text, sage green, watermelon pink. */
+/* Sand (the default): a real sand ground for the room plan, with the right column and the bottom strip kept in the cool dark. */
 :root[data-palette="sand"] {
+  --bg: #d9cba8; --side: #222120; --line: #b9aa85; --fg: #26241c; --muted: #6a624c; --dim: #948a6b;
+  --pink: #e0367f; --green: #2f6d4e; --forest: #9f9c70; --sand: #3a372b; --fume: 0.75; --scan: 0.05; --vig: 0.12;
+}
+:root[data-palette="sand"] #side, :root[data-palette="sand"] #moment, :root[data-palette="sand"] #brand {
+  --bg: #292826; --side: #222120; --line: #3a3835; --fg: #ece6da; --muted: #9f9b92; --dim: #66645e;
+  --pink: #ff6fae; --green: #9fd1a6; --forest: #4f6150; --sand: #e6dcc6;
+}
+:root[data-palette="sand"] #moment { background: #292826; color: var(--fg); }
+:root[data-palette="sand"] #side { background: #222120; color: var(--fg); }
+/* Warm dark sand: a mocha ground, soft-sand text, sage green, watermelon pink. */
+:root[data-palette="warm"] {
   --bg: #2a251d; --side: #231f18; --line: #3d372c; --fg: #f0e6d2; --muted: #a89e88; --dim: #6e6654;
   --pink: #ff6fae; --green: #a9d3a0; --forest: #566a4a; --sand: #efe0c0; --fume: 0.5;
 }
@@ -63,14 +74,12 @@ body::before {
 #brand { position: fixed; z-index: 3; display: flex; align-items: baseline; gap: 0.7em; pointer-events: none; }
 .wm {
   position: relative; display: inline-block; padding: 0.46em 0.1em 0.08em; margin: -0.46em -0.1em -0.08em; font: italic 400 calc(var(--u) * 2.9)/1 var(--serif); letter-spacing: -0.01em; color: transparent;
-  background: linear-gradient(105deg, var(--sand) 0 38%, #fffaf0 50%, var(--sand) 62% 100%); background-size: 260% 100%;
+  background: var(--sand);
   -webkit-background-clip: text; background-clip: text;
   -webkit-mask-image: repeating-linear-gradient(to bottom, #000 0 2px, rgba(0, 0, 0, 0.5) 2px 3px);
   mask-image: repeating-linear-gradient(to bottom, #000 0 2px, rgba(0, 0, 0, 0.5) 2px 3px);
   filter: drop-shadow(-1.2px 0 0 color-mix(in srgb, var(--pink) 60%, transparent)) drop-shadow(1.2px 0 0 color-mix(in srgb, var(--green) 60%, transparent));
-  animation: sheen 8s linear infinite;
 }
-@keyframes sheen { from { background-position: 130% 0; } to { background-position: -130% 0; } }
 .ii { position: relative; display: inline-block; }
 .wifi { position: absolute; left: 50%; bottom: 0.66em; width: 0.62em; height: 0.52em; transform: translateX(-52%) skewX(-8deg); overflow: visible; color: var(--sand); fill: none; stroke: currentColor; stroke-width: 2.3; stroke-linecap: round; }
 .wifi circle { fill: currentColor; stroke: none; }
