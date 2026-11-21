@@ -17,7 +17,9 @@ from .hub import hub
 
 log = logging.getLogger("tapin.gemini")
 
-MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+# gemini-2.5-flash returns 404 for new keys ("no longer available to new users"). 3.5-flash-lite answers in
+# about 0.6-1.1 s, inside the 2 s budget; 3.8-flash was 503 (high demand) and 3.7-flash timed out on 2026-11-21.
+MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.5-flash-lite")
 TIMEOUT_SECONDS = 2.0
 URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 
