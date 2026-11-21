@@ -40,7 +40,7 @@ const RoomLayout = (() => {
     return out;
   }
 
-  const nodeRadius = (points = 0, scale = 1) => (4.5 + 3 * Math.min(1, Math.sqrt(Math.max(0, points) / 60))) * scale;
+  const nodeRadius = (points = 0, scale = 1) => (3.6 + 2.6 * Math.min(1, Math.sqrt(Math.max(0, points) / 60))) * scale;
 
   function create(options = {}) {
     const o = { ...DEFAULTS, ...options, margin: { ...DEFAULTS.margin, ...(options.margin || {}) } };
