@@ -35,8 +35,8 @@ A join only counts when the whole group scans in at the same station, so the har
 
 ```mermaid
 flowchart LR
-    S1["Station 1: Entrance<br/>ESP32 + RC522 + 5 LEDs"] -- "POST /api/tap<br/>poll /api/station every 500 ms" --> SRV
-    S2["Station 2: Table 2<br/>ESP32 + RC522 + 5 LEDs"] -- "POST /api/tap<br/>poll /api/station every 500 ms" --> SRV
+    S1["Station 1: Entrance<br/>ESP32 + RC522"] -- "POST /api/tap<br/>poll /api/station every 500 ms" --> SRV
+    S2["Station 2: Table 2<br/>ESP32 + RC522"] -- "POST /api/tap<br/>poll /api/station every 500 ms" --> SRV
     SRV["FastAPI server<br/>scan windows, groups, points, matching"] <--> DB[("Tiger Data<br/>TimescaleDB")]
     SRV -. "icebreaker, 2 s timeout" .-> GEM["Gemini API"]
     SRV -- "WebSocket events" --> WALL["Wall display<br/>/wall, d3 + Tone.js"]
