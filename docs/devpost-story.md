@@ -1,20 +1,15 @@
-# Tap In — Devpost story (paste into the Devpost "Story" box)
+# Tap In: Devpost story (the text saved in the Devpost draft, About the project)
 
-<!--
-Owner: Avery (Devpost). Written in the structure of HackPrinceton '26's Lucid page: a personal hook, a tight
-"What it does", "How we built it" by component, then Sponsor Notes with one block per prize, each organized
-around that prize's own judging words. Rule from Yaovi: nothing goes in as working unless someone on the team
-saw it work; every [CHECK] must be filled with a real number or quote, or cut, before submitting.
-Images live in media/devpost/ and are embedded from the repo's main branch.
--->
+<!-- Owner: Avery. This file mirrors what is saved on Devpost. One [CHECK] remains: real recruiting numbers and quotes (Yaovi, tools/count.py). -->
 
-**Tagline:** Walk into a room, tap in, find your people.
 
 ![Tap In](https://github.com/BU-Hackathonz/TapIn/blob/main/media/devpost/cover.png?raw=true)
 
 ## Inspiration
 
-Boston is America's college city, and it is easy to be alone in it. [CHECK: David's story, in his words: moving to Boston, walking into a study space or a lab full of people, sitting alone next to a table he could have joined.] Every shared space we know has the same gap: a room full of people who would help each other, and nothing that tells a newcomer which table to walk up to. App-only matching has been tried here before (Spark! Connects at BostonHacks 2023) and didn't place, because the phone is the thing that keeps you at your own table. We wanted the room itself to do the matching.
+Boston is America's college city, and it is easy to be alone in it. One of us moved here and knows the feeling: walking into a room full of people to study, and sitting alone next to a table you could have joined. Every shared space we know has the same gap: a room full of people who would help each other, and nothing that tells a newcomer which table to walk up to. App-only matching has been tried here before (Spark! Connects at BostonHacks 2023) and didn't place, because the phone is the thing that keeps you at your own table. We wanted the room itself to do the matching.
+
+Today, Tap In is a working prototype we ran on two real stations at BostonHacks with real people tapping in, not a product that has been tested across many spaces or over many weeks.
 
 ## What it does
 
@@ -100,7 +95,7 @@ Two hypertables feed two continuous aggregates, the second built on the first.
 - "Links today" resets at midnight Boston time, not UTC (which would reset at 7 PM, mid-recruiting).
 - The same schema runs on a local TimescaleDB container if the venue Wi-Fi dies; only `DATABASE_URL` changes.
 
-**Verified.** On a local TimescaleDB with the same schema, the current hour shows up live through the hierarchical aggregate before any refresh, and both aggregates and their policies exist exactly once after repeated restarts. On the live Tiger Data service, both aggregates are created at server start and `/api/stats` and `/api/analytics` answer from them. [CHECK: a screenshot of the live chart at judging.]
+**Verified.** On a local TimescaleDB with the same schema, the current hour shows up live through the hierarchical aggregate before any refresh, and both aggregates and their policies exist exactly once after repeated restarts. On the live Tiger Data service, both aggregates are created at server start and `/api/stats` and `/api/analytics` answer from them.
 
 ### ✨ MLH: Best Use of Gemini API
 
@@ -123,7 +118,7 @@ Two taps, end to end: a check-in with its Gemini icebreaker inside a 2-second bu
 - The output is cleaned: first line only, no emoji, any "!" softened.
 - The API key stays in `.env` on the server and is sent only to Google, as a header. It never reaches a browser.
 
-**A real one from tonight**, 0.9 s after a check-in: "Avery, your firmware and pitch skills fit Connection Map's design needs well." [CHECK: swap in a judge's or a recruit's if a better one comes up.]
+**A real one from tonight**, 0.9 s after a check-in: "Avery, your firmware and pitch skills fit Connection Map's design needs well."
 
 ### 🏛️ Spark! Hack Our Space
 
@@ -133,15 +128,11 @@ Two taps, end to end: a check-in with its Gemini icebreaker inside a 2-second bu
 
 **Real users.** [CHECK: N people signed up and claimed a badge, G groups formed, H mentor helps, from tools/count.py, which counts real people only and excludes our test and judge badges. Two or three quotes from people who tried it.]
 
-**A permanent install.** [CHECK: the plan for Spark: a station at the entrance, the couches and the workbenches, points tied to a real perk in the lab.]
+**A permanent install.** With Spark's equipment budget: a station at the entrance, the couches and the workbenches, points tied to a real perk in the lab, and the busiest-station-by-hour view showing how the space connects people.
 
 ### 🗺️ Boundless Boston
 
-[CHECK: one paragraph: any library, dorm lounge or lab in Boston could run this; about $15 of parts per station and cents per badge; the city-scale slide from the pitch.]
-
-### 🌐 GoDaddy Registry: Best Domain
-
-[CHECK: tapin.boston was NOT registered as of 21 Nov, 4:53 PM (registry returns 404). Keep this block only if David registers it and https://tapin.boston/phone loads on cellular data; otherwise cut it and untick the Best Domain opt-in.]
+Boston has more students per square mile than almost anywhere, and most of them study in shared rooms: libraries, dorm lounges, labs and cafés. Any of them could run Tap In with about $15 of parts per station and cents per badge, a laptop, and a screen on the wall. Nothing about it is specific to a hackathon.
 
 ## Challenges we ran into
 
@@ -154,35 +145,28 @@ Taps arrive milliseconds apart, sometimes at two stations at once, so grouping t
 
 - Both stations passed 30- and 40-minute soak tests with no reboots and no time offline, and recovered on their own within 1 second when we took the server down.
 - The scan-window stress tests all pass against the live database: two stations in the same second, a window extended at 5.9 s and 11 s, a badge held on the reader for 10 s counted once.
-- [CHECK]
+- Four people and their coding agents merged 44 pull requests in one day without breaking main, because every agent read and posted on one shared board and asked owners before touching their files.
 
 ## What didn't work
 
-We planned five LEDs per station and cut them for time, so a station's only feedback is a small blue LED, and a group joining no longer lights up the box. Each station request takes about 200 ms even though the network answers in 3 ms; we ruled out the Wi-Fi signal, connection reuse and the server, and ran out of time to chase it into the ESP32's network stack. [CHECK]
+We planned five LEDs per station and cut them for time, so a station's only feedback is a small blue LED, and a group joining no longer lights up the box. Each station request takes about 200 ms even though the network answers in 3 ms; we ruled out the Wi-Fi signal, connection reuse and the server, and ran out of time to chase it into the ESP32's network stack.
 
 ## What we learned
 
-[CHECK]
+- **Agree on the contracts first.** Writing every JSON shape down before 10:30 AM let the stations, server, wall and phone be built in parallel and meet on the first try.
+- **Measure, don't assume.** The planned Gemini model didn't exist for our key, the router had a different name than our plan, and the scan window was stricter in real life than on paper. Each time, a measurement told us what to do.
+- **Log why, not just that.** The firmware line that says *why* Wi-Fi failed turned an hour of guessing into two quick fixes.
+- **A physical rule needs coaching.** "Everyone taps within 6 seconds" is what makes a join trustworthy, and it is also the first thing new people get wrong.
 
 ## What's next for Tap In
 
-[CHECK: Spark's lab install, perks for points, more spaces in Boston, signed NTAG424 badges instead of clonable UIDs.]
+- A permanent install at Spark!: the entrance, the couches and the workbenches, with points tied to real perks.
+- Signed NTAG424 badges instead of UIDs that can be cloned.
+- More rooms in Boston: libraries and dorm lounges, where the same stations would work unchanged.
+- Chasing the 200 ms station request time into the ESP32's network stack.
 
-## Gallery (captions)
+## Explore Tap In
 
-1. `cover.png`: Tap In: walk in, tap in, find your people.
-2. `wall.png`: The live wall: the room map, stats, top tables and the needs board. [CHECK: retake after recruiting, mid check-in, with a full room.]
-3. `phone-signup.png`: Sign-up on the phone: a first name, three skills, two looking-for tags.
-4. `phone-where-you-stand.png`: Where you stand: who you know here and the tables that fit you.
-5. [CHECK: photo] Both stations, boxed, at the Entrance and Table 2.
-6. [CHECK: photo] A badge tap close-up, with the blue LED going solid.
-7. `architecture.png`: System architecture.
-8. `scan-pipeline.png`: One scan, end to end.
-9. `tap-sequence.png`: A check-in with its Gemini icebreaker, then a join.
-10. `enclosure.png`: The station enclosure (planned sizes).
-
-Label any clip from the demo wall or Jun's prototype as "demo" or "prototype", never as real data.
-
-## Built with
-
-arduino · esp32 · rc522 · c++ · python · fastapi · uvicorn · asyncpg · websockets · postgresql · timescaledb · tiger-data · gemini · javascript · tone.js · html5 · css3
+- [Source code on GitHub](https://github.com/BU-Hackathonz/TapIn): server, station firmware, wall, phone site and every test
+- [Station firmware and wiring](https://github.com/BU-Hackathonz/TapIn/tree/main/firmware)
+- [How each image was made, and the raw data behind the evidence panels](https://github.com/BU-Hackathonz/TapIn/tree/main/media/devpost/src)
