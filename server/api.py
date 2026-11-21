@@ -20,6 +20,7 @@ class Signup(BaseModel):
     skills: list[Skill] = Field(default_factory=list, max_length=3)
     looking_for: list[Skill] = Field(default_factory=list, max_length=2)
     working_on: str = Field(default="", max_length=80)
+    contact: str = Field(default="", max_length=80)  # optional Instagram or LinkedIn; shown only to connections
 
 
 def pool():
@@ -62,8 +63,9 @@ async def signup(body: Signup):
         # One claim at a time: another sign-up is waiting for its badge.
         raise HTTPException(409, detail={"error": "claim_busy", "retry_in": 5})
     person_id = await p.fetchval(
-        "INSERT INTO people (name, role, skills, looking_for, working_on) VALUES ($1,$2,$3,$4,$5) RETURNING id",
+        "INSERT INTO people (name, role, skills, looking_for, working_on, contact) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id",
         body.name.strip(), body.role, list(body.skills), list(body.looking_for), body.working_on.strip(),
+        body.contact.strip() or None,
     )
     claim = claims.start(person_id)
     return {"person_id": person_id, "claim_code": claim.code, "expires_in": int(claims.CLAIM_SECONDS)}
@@ -94,6 +96,13 @@ async def me(person_id: int):
         gid = await conn.fetchval(
             "SELECT group_id FROM group_members WHERE person_id=$1 ORDER BY joined_at DESC LIMIT 1", person_id
         )
+        own_contact = await conn.fetchval("SELECT contact FROM people WHERE id=$1", person_id)
+        # Everyone you're linked with (here or not), newest first. Contacts never leave this endpoint.
+        connections = await conn.fetch(
+            """SELECT p.id, p.name, p.contact FROM connections c
+               JOIN people p ON p.id = CASE WHEN c.person_a = $1 THEN c.person_b ELSE c.person_a END
+               WHERE (c.person_a = $1 OR c.person_b = $1) AND p.uid IS NOT NULL
+               ORDER BY c.last_seen DESC, p.id""", person_id)
     mine = None
     if gid:
         mine = {**_brief(s, gid, person_id), "points": s.groups[gid]["points"],
@@ -102,6 +111,7 @@ async def me(person_id: int):
         "person": {
             "id": person_id, "name": p["name"], "role": p["role"], "skills": list(p["skills"] or []),
             "looking_for": list(p["looking_for"] or []), "working_on": p["working_on"], "focus": p["focus"],
+            "contact": own_contact,
         },
         "here": person_id in s.here,
         "group": mine,
@@ -116,6 +126,7 @@ async def me(person_id: int):
             for x in matching.suggested_people(s, person_id)
         ],
         "points": p["points"],
+        "connections": [{"id": r["id"], "name": r["name"], "contact": r["contact"]} for r in connections],
     }
 
 
