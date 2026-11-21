@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1060 560" width="1060" height="560" role="img" aria-labelledby="t d">
+  <title id="t">Tap In architecture</title>
+  <desc id="d">A badge tap is read by a station, which posts it to the server. The server decides what the tap means, writes it to Tiger Data, and pushes the result to the wall over a WebSocket. Phones use the same server over HTTP. The server asks Gemini for an icebreaker line, with a two second limit.</desc>
+  <style>
+    :root { --bg: #fafaf9; --node: #ffffff; --row: #f3f1ee; --line: #bdb8b2; --fg: #1c1b1a; --muted: #625e59; --rasp: #b0446e; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #121212; --node: #1f1f1f; --row: #181818; --line: #3d3d3d; --fg: #ececec; --muted: #a3a09c; --rasp: #d9648f; }
+    }
+    .bg { fill: var(--bg); }
+    text { fill: var(--fg); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    .t { font-size: 13px; font-weight: 600; }
+    .rt { font-size: 12px; font-weight: 600; }
+    .s { font-family: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-size: 11px; fill: var(--muted); }
+    .lab { font-family: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-size: 10.5px; font-weight: 500; }
+    .node { fill: var(--node); stroke: var(--line); stroke-width: 1.4; }
+    .row { fill: var(--row); stroke: var(--line); stroke-width: 1; }
+    .zone { fill: none; stroke: var(--line); stroke-width: 1.4; stroke-dasharray: 6 5; }
+    .flow { fill: none; stroke: var(--rasp); stroke-width: 2.2; }
+    .link { fill: none; stroke: var(--muted); stroke-width: 1.5; }
+    .mk { fill: var(--muted); }
+    .mkr { fill: var(--rasp); }
+  </style>
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="mk"/></marker>
+    <marker id="ahr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="mkr"/></marker>
+  </defs>
+  <rect class="bg" x="0" y="0" width="1060" height="560"/>
+
+  <!-- local network -->
+  <rect x="8" y="14" width="1044" height="396" rx="14" class="zone"/>
+  <text x="24" y="38" class="s">local Wi-Fi router · internet uplink</text>
+
+  <!-- badge -->
+  <rect x="28" y="166" width="100" height="78" rx="8" class="node"/>
+  <text x="78" y="196" text-anchor="middle" class="t">NFC badge</text>
+  <text x="78" y="216" text-anchor="middle" class="s">sends its UID</text>
+  <path d="M128 205 L160 205 L160 125 L190 125" class="flow" marker-end="url(#ahr)"/>
+  <path d="M160 205 L160 287 L190 287" class="flow" marker-end="url(#ahr)"/>
+  <text x="134" y="197" class="lab">tap</text>
+
+  <!-- stations -->
+  <rect x="190" y="66" width="190" height="118" rx="8" class="node"/>
+  <text x="204" y="92" class="t">Station 1 · Entrance</text>
+  <text x="204" y="112" class="s">ESP32 + RC522 reader</text>
+  <text x="204" y="132" class="s">built-in LED shows state</text>
+  <rect x="190" y="228" width="190" height="118" rx="8" class="node"/>
+  <text x="204" y="254" class="t">Station 2 · Table 2</text>
+  <text x="204" y="274" class="s">ESP32 + RC522 reader</text>
+  <text x="204" y="294" class="s">built-in LED shows state</text>
+
+  <!-- stations <-> server -->
+  <path d="M380 100 L490 100" class="flow" marker-end="url(#ahr)"/>
+  <text x="435" y="92" text-anchor="middle" class="lab">POST /api/tap</text>
+  <path d="M490 146 L380 146" class="link" marker-end="url(#ah)"/>
+  <text x="435" y="162" text-anchor="middle" class="lab">poll · 500 ms</text>
+  <path d="M380 262 L490 262" class="flow" marker-end="url(#ahr)"/>
+  <text x="435" y="254" text-anchor="middle" class="lab">POST /api/tap</text>
+  <path d="M490 308 L380 308" class="link" marker-end="url(#ah)"/>
+  <text x="435" y="324" text-anchor="middle" class="lab">poll · 500 ms</text>
+
+  <!-- server -->
+  <rect x="490" y="40" width="290" height="330" rx="10" class="node"/>
+  <text x="506" y="66" class="t">Server · FastAPI</text>
+  <text x="506" y="84" class="s">one event loop, one process</text>
+  <rect x="506" y="100" width="258" height="44" rx="6" class="row"/>
+  <text x="518" y="119" class="rt">Scan windows</text><text x="518" y="134" class="s">6 s per station, resets per tap</text>
+  <rect x="506" y="154" width="258" height="44" rx="6" class="row"/>
+  <text x="518" y="173" class="rt">Groups · points · matching</text><text x="518" y="188" class="s">join, new group, help, repeat</text>
+  <rect x="506" y="208" width="258" height="44" rx="6" class="row"/>
+  <text x="518" y="227" class="rt">Sign-up · claim</text><text x="518" y="242" class="s">claim also = first check-in</text>
+  <rect x="506" y="262" width="258" height="44" rx="6" class="row"/>
+  <text x="518" y="281" class="rt">Stats · analytics</text><text x="518" y="296" class="s">10-minute and hourly rollups</text>
+  <rect x="506" y="316" width="258" height="44" rx="6" class="row"/>
+  <text x="518" y="335" class="rt">Event hub</text><text x="518" y="350" class="s">pushes changes to each wall</text>
+
+  <!-- wall -->
+  <rect x="900" y="40" width="140" height="96" rx="8" class="node"/>
+  <text x="912" y="66" class="t">Wall display</text>
+  <text x="912" y="86" class="s">browser · /wall/</text>
+  <path d="M780 88 L900 88" class="flow" marker-end="url(#ahr)"/>
+  <text x="840" y="76" text-anchor="middle" class="lab">WebSocket /ws</text>
+  <text x="840" y="106" text-anchor="middle" class="lab">+ GET /api/graph</text>
+
+  <!-- phones -->
+  <rect x="900" y="184" width="140" height="96" rx="8" class="node"/>
+  <text x="912" y="210" class="t">Phones</text>
+  <text x="912" y="230" class="s">/phone/ pages</text>
+  <path d="M780 232 L900 232" class="link" marker-start="url(#ah)" marker-end="url(#ah)"/>
+  <text x="840" y="220" text-anchor="middle" class="lab">/phone + API</text>
+  <text x="840" y="250" text-anchor="middle" class="lab">sign-up · claim</text>
+
+  <!-- database -->
+  <rect x="490" y="460" width="290" height="70" rx="8" class="node"/>
+  <text x="506" y="486" class="t">Tiger Data · cloud</text>
+  <text x="506" y="506" class="s">Postgres + TimescaleDB · hypertables</text>
+  <path d="M635 370 L635 460" class="link" marker-start="url(#ah)" marker-end="url(#ah)"/>
+  <text x="648" y="432" class="lab">SQL over the internet</text>
+
+  <!-- gemini -->
+  <rect x="840" y="460" width="200" height="70" rx="8" class="node"/>
+  <text x="854" y="486" class="t">Gemini API · cloud</text>
+  <text x="854" y="506" class="s">2 s limit, else template</text>
+  <path d="M780 350 L970 350 L970 460" class="link" marker-end="url(#ah)"/>
+  <text x="796" y="342" class="lab">icebreaker request</text>
+</svg>
