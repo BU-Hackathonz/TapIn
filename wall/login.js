@@ -31,6 +31,7 @@
 
   // Signed in before on this device: offer to go straight back in.
   function showBack() {
+    document.body.classList.add("at-start");
     for (const s of document.querySelectorAll(".step")) s.hidden = s.dataset.step !== "back";
     $("dots").hidden = true;
     $("nav").hidden = true;
@@ -46,6 +47,7 @@
 
   function show(n) {
     step = Math.max(0, Math.min(LAST, n));
+    document.body.classList.toggle("at-start", step === 0);
     for (const s of document.querySelectorAll(".step")) s.hidden = Number(s.dataset.step) !== step || s.dataset.step === "back";
     $("dots").replaceChildren(...Array.from({ length: LAST }, (_, i) => el("li", i < step ? "done" : i === step - 1 ? "on" : "")));
     $("dots").hidden = step === 0;
@@ -233,11 +235,18 @@
 
   // Front page art: the name is the logo. ?art=trio|tap|circle|table and ?logo=classic|twotone|dot|stacked|colours
   // preview the other mockups (see mockups/brand.html).
+  // ?layout=1..5 picks the page layout (split, split mirrored, banner, card on art, logo first).
   {
     const q = new URLSearchParams(location.search);
-    const art = TapArt.scenes[q.get("art")] || TapArt.scenes.trio, logo = TapArt.logos[q.get("logo")] || TapArt.logos.twotone;
+    const art = TapArt.scenes[q.get("art")] || TapArt.scenes.kiosk, logo = TapArt.logos[q.get("logo")] || TapArt.logos.wifi;
+    const layout = ["1", "2", "3", "4", "5"].includes(q.get("layout")) ? q.get("layout") : "1";
+    document.body.className = document.body.className.replace(/layout-\d/, `layout-${layout}`);
     $("hero").innerHTML = art();     // drawn by art.js from fixed shapes, no user text
+    // the split layouts show the whole scene on its cream panel; the others crop it to fill
+    const svg = $("hero").querySelector("svg");
+    if (svg) svg.setAttribute("preserveAspectRatio", `xMidYMid ${layout === "1" || layout === "2" ? "meet" : "slice"}`);
     $("brand").innerHTML = logo();
+    $("brand-art").innerHTML = logo();
   }
   $("name").value = me.name;
   $("bio").value = me.bio || "";

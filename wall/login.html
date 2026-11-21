@@ -11,8 +11,14 @@
 <link rel="stylesheet" href="brand.css">
 <link rel="stylesheet" href="room.css">
 </head>
-<body>
+<body class="layout-1 at-start">
+<div class="stage">
+<aside class="art-panel" aria-hidden="false">
+  <div class="art-fill" id="hero"></div>
+  <div class="art-brand" id="brand-art"></div>
+</aside>
 <main class="card">
+  <div class="brand-top" id="brand"></div>
   <div class="top">
     <a class="back" href="index.html">← Room</a>
     <ol class="dots" id="dots" aria-label="Progress"></ol>
@@ -34,8 +40,6 @@
 
   <!-- 0: sign in -->
   <section class="step" data-step="0">
-    <div class="brand-logo" id="brand"></div>
-    <div class="hero" id="hero"></div>
     <h1>Find your people</h1>
     <p class="lead">Sign in, tell us what you're good at, and the room shows you which table needs you.</p>
     <button type="button" class="oauth" data-next>
@@ -129,6 +133,7 @@
     <button type="button" class="primary" id="next">Next</button>
   </div>
 </main>
+</div>
 
 <script src="art.js"></script>
 <script src="themes.js"></script>

@@ -10,3 +10,7 @@
 .lg-stacked { font-weight: 800; font-size: 30px; line-height: 0.95; letter-spacing: -0.02em; }
 .lg-stacked svg { display: block; width: 62px; height: 10px; margin-top: 4px; }
 .lg-colours { font-weight: 800; font-size: 32px; letter-spacing: -0.02em; }
+.art-wide { border-radius: 0; height: 100%; }
+.lg-wifi { font-weight: 800; font-size: 34px; letter-spacing: -0.03em; }
+.lg-wifi .lg-i { position: relative; display: inline-block; }
+.lg-wifi .lg-i svg { position: absolute; left: 50%; bottom: 0.66em; width: 0.62em; height: 0.52em; transform: translateX(-50%); fill: none; stroke-width: 2.8; stroke-linecap: round; overflow: visible; }
