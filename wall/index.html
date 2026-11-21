@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tap In · Wall</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="wall.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand">TAP IN</div>
+  <div class="tagline">Tap your badge. The wall shows which table needs you.</div>
+  <div class="counters">
+    <div><b id="c-here">0</b><span>here now</span></div>
+    <div><b id="c-groups">0</b><span>tables</span></div>
+    <div><b id="c-links">0</b><span>links today</span></div>
+  </div>
+  <div id="conn" class="conn" title="Live connection">connecting</div>
+</header>
+
+<main class="layout">
+  <section class="room" aria-label="Room view">
+    <svg id="room"></svg>
+    <div class="legend">
+      <span><i class="dot here"></i>here now</span>
+      <span><i class="dot mentor"></i>mentor</span>
+      <span><i class="dot focus"></i>focus</span>
+      <span><i class="dot away"></i>away</span>
+      <span><i class="ring hd"></i>heads-down table</span>
+    </div>
+    <div id="arrivals" class="arrivals" aria-live="polite"></div>
+  </section>
+
+  <aside class="side">
+    <section class="panel">
+      <h2>Needs</h2>
+      <ol id="needs" class="needs"></ol>
+    </section>
+    <section class="panel">
+      <h2>Leaderboard</h2>
+      <div class="boards">
+        <ol id="lb-groups" class="lb"></ol>
+        <ol id="lb-people" class="lb"></ol>
+      </div>
+    </section>
+    <section class="panel" id="stats-panel">
+      <h2>Scans <small>last 2 h, per 10 min</small></h2>
+      <svg id="stats" class="stats"></svg>
+    </section>
+    <section class="panel grow">
+      <h2>Activity</h2>
+      <ol id="log" class="log"></ol>
+    </section>
+  </aside>
+</main>
+
+<div id="start" class="start">
+  <button type="button" id="start-btn">Start</button>
+  <p>Click once to turn on sound.</p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tone@14.8.49/build/Tone.js"></script>
+<script src="sound.js"></script>
+<script src="wall.js"></script>
+</body>
+</html>
