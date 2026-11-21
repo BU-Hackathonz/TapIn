@@ -1,4 +1,4 @@
-// Tap In station LEDs: 5 NeoPixels, every frame computed from millis(). Never calls delay().
+// Tap In station LEDs: 5 NeoPixels plus the board's built-in LED as a fallback, every frame computed from millis(). Never calls delay().
 #pragma once
 #include <Adafruit_NeoPixel.h>
 #include "config.h"
@@ -34,7 +34,36 @@ static void fillAll(uint32_t c) {
   for (int i = 0; i < NUM_LEDS; i++) strip.setPixelColor(i, c);
 }
 
+// The board's built-in LED: one color, so each state gets its own rhythm. Written only when it changes.
+static int onboardLast = -1;
+static void onboardLed(bool on) {
+  if (PIN_ONBOARD_LED < 0 || (int)on == onboardLast) return;
+  onboardLast = on;
+  digitalWrite(PIN_ONBOARD_LED, on ? HIGH : LOW);
+}
+
+// t = ms since the state started. Rhythms are picked to be told apart without color.
+static bool onboardPattern(StationState s, unsigned long t) {
+  switch (s) {
+    case ST_IDLE:       return t % 3000 < 60;                 // short heartbeat blip every 3 s: alive
+    case ST_COLLECTING: return true;                          // solid: badge read, window open
+    case ST_CHECKED_IN: return blinkOn(t, 333);               // 3 Hz blink
+    case ST_JOINED:     return blinkOn(t, 100);               // 10 Hz flicker: the big moment
+    case ST_REPEAT:     return t < 400;                       // one soft 0.4 s blink
+    case ST_CLAIM:      return blinkOn(t, 1000);              // slow 1 Hz: waiting for a badge
+    case ST_CLAIMED:    return true;                          // solid after the slow claim blink
+    case ST_UNKNOWN: {  unsigned long p = t % 1000;           // double blink, repeating
+                        return p < 100 || (p >= 200 && p < 300); }
+    case ST_OFFLINE:    return t % 2000 < 150;                // brief blink every 2 s: no Wi-Fi / server
+  }
+  return false;
+}
+
 void ledsBegin() {
+  if (PIN_ONBOARD_LED >= 0) {
+    pinMode(PIN_ONBOARD_LED, OUTPUT);
+    onboardLed(false);
+  }
   strip.begin();
   strip.setBrightness(LED_BRIGHTNESS);
   strip.clear();
@@ -60,6 +89,7 @@ void renderLeds(unsigned long now) {
   ledLastShow = now;
 
   unsigned long t = now - ledStart;
+  onboardLed(onboardPattern(ledState, t));
 
   switch (ledState) {
     case ST_IDLE: {
