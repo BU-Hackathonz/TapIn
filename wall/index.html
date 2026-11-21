@@ -27,6 +27,17 @@
   </section>
 </div>
 <div class="count"><b id="here">0</b><span>here now</span><span class="demo-tag">DEMO</span></div>
+<details id="room-insights" class="room-insights" open>
+  <summary>Room activity</summary>
+  <div class="insights-body">
+    <dl id="room-stats"></dl>
+    <section><h2>Scans per 10 minutes</h2><div id="scan-chart"></div></section>
+    <section><h2>Top tables</h2><ol id="top-tables"></ol></section>
+    <section><h2>Needs help</h2><ul id="open-needs"></ul></section>
+    <section><h2>Recent activity</h2><ul id="room-activity"></ul></section>
+  </div>
+</details>
+<div id="wall-icebreaker" class="wall-icebreaker" role="status" hidden></div>
 <div id="toasts" class="toasts" aria-live="polite"></div>
 
 <div id="start" class="start">
@@ -40,6 +51,7 @@
 <script src="view3d.js"></script>
 <script src="demo.js"></script>
 <script src="corner.js"></script>
+<script src="panels.js"></script>
 <script src="wall.js"></script>
 </body>
 </html>

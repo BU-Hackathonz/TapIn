@@ -237,3 +237,40 @@ body[data-theme="blueprint"] .start button { background: var(--accent); color: #
 }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* Live room metrics share the selected map theme. */
+.room-insights {
+  position: fixed; z-index: 3; right: 0; top: 0; bottom: 0;
+  width: clamp(250px, 21vw, 380px); overflow: auto;
+  background: var(--panel); color: var(--text); border-left: var(--border);
+  padding: 16px 20px;
+}
+.room-insights summary { cursor: pointer; font-weight: 600; }
+.room-insights:not([open]) { width: auto; bottom: auto; }
+.room-insights h2 { font-size: .95em; }
+.room-insights section { border-top: var(--border); margin-top: 14px; padding-top: 12px; }
+.room-insights ul, .room-insights ol { list-style: none; padding: 0; }
+.room-insights li { padding-top: 4px; color: var(--text-soft); font-size: .86em; overflow-wrap: anywhere; }
+#room-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+#room-stats dt { color: var(--text-soft); font-size: .76em; }
+#room-stats dd { font-weight: 600; }
+#scan-chart { display: flex; height: 52px; align-items: end; gap: 4px; padding-top: 8px; }
+#scan-chart span { flex: 1; background: var(--mint); }
+#scan-chart p { font-size: .82em; color: var(--text-soft); }
+.wall-icebreaker {
+  position: fixed; z-index: 3; left: 20px; bottom: 20px; max-width: min(55vw, 850px);
+  padding: 10px 16px; color: var(--text); background: var(--overlay);
+  border: var(--border); border-radius: var(--radius);
+}
+.wall-icebreaker[hidden] { display: none; }
+@media (min-width: 801px) {
+  body:has(.room-insights[open]) #map3d { width: calc(100% - clamp(250px, 21vw, 380px)); }
+  body:has(.room-insights[open]) .count,
+  body:has(.room-insights[open]) .profile { right: calc(clamp(250px, 21vw, 380px) + 24px); }
+  body:has(.room-insights:not([open])) .count { top: 68px; }
+}
+@media (max-width: 800px) {
+  .room-insights { top: auto; right: 12px; bottom: 12px; max-height: 62vh; max-width: calc(100vw - 24px); }
+  .room-insights:not([open]) { bottom: 12px; }
+  .wall-icebreaker { bottom: 66px; max-width: calc(100vw - 40px); }
+}
