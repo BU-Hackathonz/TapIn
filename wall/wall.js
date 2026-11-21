@@ -260,10 +260,6 @@
   Hub.mount(() => S);
   View3D.init(() => ({ visible, shownGroups, S, radius, needLine, me: Corner.signedIn() ? Corner.me() : null, known: Corner.known() }));
   View3D.onMe(() => Corner.show("you"));
-  // First visit signed in and not in a room: ask Join a room or Host an event in a window.
-  if (signedIn && !qs.has("kiosk") && Room.current.status !== "in") {
-    setTimeout(() => Room.chooser({ here: () => [...S.people.values()].filter((p) => p.here).length, name: Corner.me().name }), 600);
-  }
   Room.onChange(() => Corner.refresh());
   View3D.setActive(true);
 

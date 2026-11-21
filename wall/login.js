@@ -238,6 +238,8 @@
     const head = el("div", "pv-head");
     head.append(pic, text);
     card.replaceChildren(head, ...[chips, apps].filter((x) => x.children.length));   // skipped steps leave no gap
+    // Last thing before the room: join one (badge tap) or host your own. Either one leads into the room.
+    Room.chooser({ into: $("room-slot"), title: "Join a room or host an event", onDone: () => { location.href = "index.html"; } });
   }
 
   // ---------------------------------------------------------- wire up
@@ -246,8 +248,7 @@
   // One tap, no questions: a guest profile with a drawn face, straight into the room.
   $("guest").addEventListener("click", () => {
     me.name = me.name || "Guest";
-    finish();
-    location.href = "index.html";
+    show(LAST);   // straight to All set, which ends with Join a room / Host an event
   });
   $("email-form").addEventListener("submit", (e) => { e.preventDefault(); next(); });
   $("next").addEventListener("click", next);

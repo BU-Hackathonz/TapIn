@@ -1,8 +1,9 @@
 // The room you're in (prototype), kept in localStorage("wall.room").
-// Room.chooser() opens a window with two options, Join a room and Host an event:
+// Room.chooser() shows two options, Join a room and Host an event, either inside a card you pass in (the sign-in
+// page's All set step) or as a window over the page (Settings on the wall):
 //   Join a room: a hand taps a badge on a station (tap the picture to "scan"), then "You can join <event>" and Join room.
 //   Host an event: a short form (name, place, start time), then you're hosting with a 4-letter code.
-// The wall opens it the first time you arrive signed in and not in a room; Settings can open it again.
+// opts.into: element to draw in (no window); opts.onDone(room): called once you've joined or are hosting.
 const Room = (() => {
   const EVENT = { name: "BostonHacks 2026", place: "GSU Metcalf Ballroom" };
   const TAP_ART = `<svg class="tap-art" viewBox="0 0 220 120" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
@@ -42,16 +43,21 @@ const Room = (() => {
 
   // ---------------------------------------------------------- the window
   function chooser(opts = {}) {
-    if (document.querySelector(".room-modal")) return;
-    const shade = el("div", "room-modal"), win = el("div", "room-window");
-    win.setAttribute("role", "dialog");
-    win.setAttribute("aria-modal", "true");
-    win.setAttribute("aria-label", "Join a room or host an event");
-    const close = () => { shade.remove(); removeEventListener("keydown", onKey); };
+    const inline = !!opts.into;
+    if (!inline && document.querySelector(".room-modal")) return;
+    const shade = el("div", "room-modal"), win = inline ? opts.into : el("div", "room-window");
+    const close = () => { if (!inline) { shade.remove(); removeEventListener("keydown", onKey); } };
     const onKey = (e) => { if (e.key === "Escape") close(); };
-    addEventListener("keydown", onKey);
-    shade.addEventListener("click", (e) => { if (e.target === shade) close(); });
+    const done = (r) => { close(); enter(r); opts.onDone?.(r); };
+    if (!inline) {
+      win.setAttribute("role", "dialog");
+      win.setAttribute("aria-modal", "true");
+      win.setAttribute("aria-label", "Join a room or host an event");
+      addEventListener("keydown", onKey);
+      shade.addEventListener("click", (e) => { if (e.target === shade) close(); });
+    }
     const x = () => {
+      if (inline) return document.createDocumentFragment();   // no close button inside a card
       const b = el("button", "room-x", "×");
       b.type = "button";
       b.setAttribute("aria-label", "Close");
@@ -76,17 +82,18 @@ const Room = (() => {
       return b;
     };
 
+    const cls = (c) => { win.className = `${inline ? "room-inline" : "room-window"}${c ? ` ${c}` : ""}`; };
     const chooseStep = () => {
-      win.className = "room-window choose";
+      cls("choose");
       const name = opts.name ? `, ${opts.name}` : "";
-      win.replaceChildren(x(), el("h2", "room-title big", `Welcome${name}`), el("span", "room-sub", "What would you like to do?"),
+      win.replaceChildren(x(), el("h2", "room-title big", opts.title || `Welcome${name}`), el("span", "room-sub", "What would you like to do?"),
         option(JOIN_ICON, "Join a room", "Tap your badge at a station", tapStep),
         option(HOST_ICON, "Host an event", "Start a room others can join", makeStep),
         room.status === "in" ? el("span", "room-sub small", `You're in ${room.name} now`) : el("span"));
       win.querySelector(".room-option")?.focus();
     };
     const tapStep = () => {
-      win.className = "room-window";
+      cls("");
       const art = el("button", "tap-btn");
       art.type = "button";
       art.setAttribute("aria-label", "Tap your badge at a station (demo: tap here)");
@@ -101,14 +108,14 @@ const Room = (() => {
       art.innerHTML = DONE_ART;   // static illustration markup
       const join = el("button", "room-join", "Join room");
       join.type = "button";
-      join.addEventListener("click", () => { close(); enter({ status: "in", ...EVENT }); });
+      join.addEventListener("click", () => done({ status: "in", ...EVENT }));
       const here = opts.here ? opts.here() : 0;
       win.replaceChildren(x(), art, el("span", "room-kicker", "You can join"), el("b", "room-name", EVENT.name),
                           el("span", "room-sub", here ? `${EVENT.place} · ${here} here now` : EVENT.place), join, back(chooseStep));
       join.focus();
     };
     const makeStep = () => {
-      win.className = "room-window";
+      cls("");
       const form = el("form", "room-form");
       const field = (label, name, ph, type = "text") => {
         const l = el("label", "", label), i = el("input");
@@ -123,16 +130,14 @@ const Room = (() => {
       form.addEventListener("submit", (e) => {
         e.preventDefault();
         const f = form.elements;
-        close();
-        enter({ status: "in", name: f.name.value.trim() || "My event", place: f.place.value.trim(), time: f.time.value, host: true,
-                code: Math.random().toString(36).slice(2, 6).toUpperCase() });
+        done({ status: "in", name: f.name.value.trim() || "My event", place: f.place.value.trim(), time: f.time.value, host: true,
+               code: Math.random().toString(36).slice(2, 6).toUpperCase() });
       });
       win.replaceChildren(x(), form);
       form.elements.name.focus();
     };
 
-    shade.append(win);
-    document.body.append(shade);
+    if (!inline) { shade.append(win); document.body.append(shade); }
     chooseStep();
   }
 

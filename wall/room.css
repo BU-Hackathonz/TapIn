@@ -83,3 +83,10 @@ body[data-theme="minimal"] .room-option-icon { background: #f2f2f2; }
 .room-option.big { padding: 16px; }
 .room-option.big .room-option-icon { width: 52px; height: 52px; border-radius: 14px; }
 .room-option.big b { font-size: 17px; }
+
+/* the same steps drawn inside the sign-in card */
+.room-inline { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 16px; padding: 18px 16px; text-align: center;
+  border: var(--border, 1px solid var(--line)); border-radius: 20px; animation: pop 0.25s ease-out; }
+.room-inline.choose { align-items: stretch; text-align: left; gap: 10px; }
+.room-inline .room-title.big { font-size: 20px; }
+.room-inline .tap-art { width: 230px; height: 126px; }

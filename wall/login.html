@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap">
 <link rel="stylesheet" href="login.css">
+<link rel="stylesheet" href="room.css">
 </head>
 <body>
 <main class="card">
@@ -119,7 +120,7 @@
   <section class="step" data-step="5" hidden>
     <h1>All set</h1>
     <div class="preview" id="preview"></div>
-    <a class="primary wide" href="index.html" id="enter">Enter the room</a>
+    <div id="room-slot"></div>
   </section>
 
   <div class="nav" id="nav">
@@ -130,6 +131,7 @@
 
 <script src="themes.js"></script>
 <script src="view3d.js"></script>
+<script src="room.js"></script>
 <script src="login.js"></script>
 </body>
 </html>
