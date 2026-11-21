@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tap In intros</title>
+<style>
+  :root { --bg: #121212; --panel: #1A1A1A; --line: #2E2E2E; --text: #EDEDED; --dim: #9A9A9A;
+          --you: #B0446E; --mint: #7FE0BD;
+          --sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+          --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 var(--sans); padding: 24px 16px 48px; }
+  h1 { font: 600 13px var(--mono); letter-spacing: .3em; margin: 0 0 4px; }
+  p.lead { color: var(--dim); margin: 0 0 20px; max-width: 70ch; }
+  .row { display: flex; gap: 28px; flex-wrap: wrap; align-items: flex-start; }
+  .col { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  .label { font: 500 12px var(--mono); color: var(--dim); letter-spacing: .08em; }
+  .phone { width: 360px; max-width: 100%; height: 720px; border: 1px solid var(--line); position: relative; overflow: hidden; background: var(--bg); }
+  .wall  { width: min(880px, calc(100vw - 32px)); aspect-ratio: 16 / 9; border: 1px solid var(--line); position: relative; overflow: hidden; background: var(--bg); }
+  .controls { display: flex; gap: 8px; flex-wrap: wrap; }
+  button.c { min-height: 44px; padding: 0 16px; border: 1px solid var(--line); border-radius: 0; background: var(--panel); color: var(--text); font: 500 14px var(--sans); cursor: pointer; }
+  button.c:hover { border-color: var(--mint); }
+  .opts { display: flex; gap: 18px; flex-wrap: wrap; margin: 0 0 22px; font-size: 14px; color: var(--dim); }
+  .opts label { display: flex; gap: 8px; align-items: center; min-height: 32px; cursor: pointer; }
+  input[type=text] { background: var(--panel); border: 1px solid var(--line); color: var(--text); font: 13px var(--mono); padding: 6px 8px; width: 300px; max-width: 100%; border-radius: 0; }
+  .log { font: 12px var(--mono); color: var(--dim); min-height: 1.4em; }
+  /* stand-ins for the pages underneath */
+  .form { padding: 48px 24px; display: flex; flex-direction: column; gap: 14px; }
+  .form h2 { font: 600 22px var(--sans); margin: 0 0 6px; }
+  .form .f { border: 1px solid var(--line); height: 48px; padding: 0 12px; display: flex; align-items: center; color: var(--dim); }
+  .form .go { background: var(--mint); color: var(--bg); height: 52px; display: flex; align-items: center; justify-content: center; font-weight: 600; }
+  .start { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 60; background: var(--bg); }
+  canvas.live { position: absolute; inset: 0; width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+  <h1>TAP IN · INTROS</h1>
+  <p class="lead">Both intros against stand-in pages. Tap or press any key during an intro to skip it. The sign-in one normally plays once per session; the Replay buttons reset that here.</p>
+
+  <div class="opts">
+    <label><input type="checkbox" id="sound" checked> Sound</label>
+    <label><input type="checkbox" id="quiet"> Wall quiet mode</label>
+    <label><input type="checkbox" id="reduced"> Reduced motion</label>
+    <label>Room from <input type="text" id="graph" placeholder="none: a small generic room" spellcheck="false"></label>
+  </div>
+
+  <div class="row">
+    <div class="col">
+      <div class="label">1 · PHONE · SIGN-IN LANDING</div>
+      <div class="phone" id="phone">
+        <div class="form"><h2>Make your badge</h2><div class="f">Name</div><div class="f">What are you building?</div><div class="f">Skills</div><div class="go">Save</div></div>
+      </div>
+      <div class="controls"><button class="c" id="playSignIn">Replay sign-in</button></div>
+      <div class="log" id="logSignIn"></div>
+    </div>
+    <div class="col">
+      <div class="label">2 · WALL · MAP OPENING</div>
+      <div class="wall" id="wall"><canvas class="live" id="live"></canvas></div>
+      <div class="controls"><button class="c" id="playMap">Replay map opening</button></div>
+      <div class="log" id="logMap"></div>
+    </div>
+  </div>
+
+<script src="intro.js"></script>
+<script>
+  const $ = (id) => document.getElementById(id);
+  const opts = () => ({
+    sound: $("sound").checked,
+    quiet: $("quiet").checked,
+    reducedMotion: $("reduced").checked ? true : undefined,
+    graphUrl: $("graph").value.trim() || null,
+  });
+
+  // A still "live map" for the wall stand-in, so the fade has something to land on.
+  function drawLive() {
+    const c = $("live"), r = c.getBoundingClientRect(), d = Math.min(2, devicePixelRatio || 1);
+    c.width = r.width * d; c.height = r.height * d;
+    const g = c.getContext("2d"); g.scale(d, d);
+    g.fillStyle = "#121212"; g.fillRect(0, 0, r.width, r.height);
+    g.font = "500 11px 'IBM Plex Mono', ui-monospace, monospace"; g.fillStyle = "#9A9A9A";
+    g.fillText("LIVE MAP (stand-in)", 14, 22);
+    [[.3,.4,4],[.55,.35,3],[.72,.6,3],[.42,.65,2]].forEach(([fx, fy, n], i) => {
+      const x = r.width * fx, y = r.height * fy;
+      g.strokeStyle = "#7FE0BD"; g.globalAlpha = .6; g.beginPath(); g.arc(x, y, 30, 0, 7); g.stroke();
+      for (let k = 0; k < n; k++) { const a = k / n * 6.283; g.globalAlpha = 1; g.fillStyle = "#7FE0BD";
+        g.beginPath(); g.arc(x + Math.cos(a) * 44, y + Math.sin(a) * 44, 4, 0, 7); g.fill(); }
+    });
+    g.globalAlpha = 1;
+  }
+  drawLive();
+
+  async function playSignIn() {
+    TapInIntro._reset();
+    const t = performance.now();
+    $("logSignIn").textContent = "waiting for the Tap in button…";
+    const how = await TapInIntro.signIn($("phone"), opts());
+    $("logSignIn").textContent = how + " · " + Math.round(performance.now() - t) + " ms after load";
+  }
+
+  // The wall plays its intro right after its own Start click, which is also what unlocks audio.
+  function playMap() {
+    TapInIntro._reset();
+    const s = document.createElement("div");
+    s.className = "start";
+    s.innerHTML = '<button class="c" style="min-width:160px">Start</button>';
+    $("wall").appendChild(s);
+    s.querySelector("button").addEventListener("click", async (e) => {
+      e.stopPropagation();
+      s.remove();
+      const t = performance.now();
+      $("logMap").textContent = "playing…";
+      const how = await TapInIntro.map($("wall"), opts());
+      $("logMap").textContent = how + " · " + Math.round(performance.now() - t) + " ms";
+    }, { once: true });
+  }
+
+  $("playSignIn").addEventListener("click", (e) => { e.stopPropagation(); playSignIn(); });
+  $("playMap").addEventListener("click", (e) => { e.stopPropagation(); playMap(); });
+  playSignIn();
+  playMap();
+</script>
+</body>
+</html>
