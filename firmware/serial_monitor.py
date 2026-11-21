@@ -36,6 +36,7 @@ PATTERNS = [
     ("offline", re.compile(r"OFFLINE\s*$")),
     ("online", re.compile(r"ONLINE\s*$")),
     ("reader_reinit", re.compile(r"READER reinit")),
+    ("link", re.compile(r"LINK rssi=(-?\d+) polls=(\d+) fails=(\d+) avg_ms=(\d+) max_ms=(\d+)")),
 ]
 # ESP32 crash output (not from the sketch). Any of these means the station is about to reboot.
 CRASH = re.compile(r"Guru Meditation Error|Brownout detector|abort\(\) was called|Task watchdog got triggered")
@@ -93,6 +94,11 @@ class PortStats:
         self.slow_taps = 0
         self.disconnects = 0
         self.last_state = None
+        self.rssi = []                 # dBm, one per LINK line (every 30 s)
+        self.polls = 0
+        self.poll_fails = 0
+        self.poll_ms_sum = 0           # sum of per-report averages x polls, for an overall average
+        self.poll_ms_max = 0
 
     def handle(self, kind, m):
         now = time.monotonic()
@@ -129,6 +135,13 @@ class PortStats:
                 emit(self.port, f"!!! SLOW TAP POST FAIL {ms:.0f} ms (> {SLOW_MS} ms)")
         elif kind == "state":
             self.last_state = m.group(1)
+        elif kind == "link":
+            rssi, polls, fails, avg, mx = (int(g) for g in m.groups())
+            self.rssi.append(rssi)
+            self.polls += polls
+            self.poll_fails += fails
+            self.poll_ms_sum += avg * polls
+            self.poll_ms_max = max(self.poll_ms_max, mx)
         elif kind == "offline":
             if self.offline_since is None:
                 self.offline_events += 1
@@ -196,7 +209,7 @@ def reader(port, stats, baud, stop):
 
 def print_summary(all_stats):
     cols = ("port", "reboots", "crashes", "offline", "off_s", "wifi_dn", "rdr_reinit", "taps", "post_ok",
-            "post_fail", "p50", "p95", "max", "slow", "drops", "result")
+            "post_fail", "p50", "p95", "max", "slow", "drops", "rssi", "poll_avg", "poll_max", "result")
     rows = []
     for s in all_stats:
         ok_ms = sorted(s.post_ok_ms)
@@ -205,7 +218,10 @@ def print_summary(all_stats):
             s.port, str(s.reboots), str(s.crashes), str(s.offline_events), f"{s.offline_seconds():.0f}",
             str(s.wifi_down), str(s.reader_reinits), str(s.taps), str(len(ok_ms)), str(s.post_fail),
             fmt(percentile(ok_ms, 50)), fmt(percentile(ok_ms, 95)), fmt(percentile(ok_ms, 100)),
-            str(s.slow_taps), str(s.disconnects), "PASS" if s.passed() else "FAIL",
+            str(s.slow_taps), str(s.disconnects),
+            f"{min(s.rssi)}..{max(s.rssi)}" if s.rssi else "-",
+            f"{s.poll_ms_sum / s.polls:.0f}" if s.polls else "-", str(s.poll_ms_max) if s.polls else "-",
+            "PASS" if s.passed() else "FAIL",
         ))
     widths = [max(len(c), *(len(r[i]) for r in rows)) for i, c in enumerate(cols)] if rows else []
     print("\n=== SUMMARY ===")

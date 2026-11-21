@@ -1,6 +1,7 @@
 // Tap In station: Wi-Fi keep-alive and HTTP calls to the server.
 // Nothing here blocks for long: Wi-Fi connects in the background and every request has an 800 ms timeout.
-// Serial lines from here: "WIFI connecting ssid=..", "WIFI up ip=..", "WIFI down". station.ino logs the rest.
+// Serial lines from here: "WIFI connecting ssid=..", "WIFI up ip=.. rssi=..", "WIFI down", "WIFI retry ..",
+// "LINK rssi=.. polls=.. fails=.. avg_ms=.. max_ms=.." every 30 s. station.ino logs the rest.
 #pragma once
 #include "config.h"
 #include <WiFi.h>
@@ -13,6 +14,11 @@ static int httpFails = 0;             // consecutive failed requests made while 
 static bool wifiWasUp = false;        // for the WIFI up / WIFI down lines
 static unsigned long lastWifiCheck = 0;
 static volatile int lastDisconnectReason = 0;  // set by the Wi-Fi event task, printed on the next retry line
+// Link health, printed every LINK_REPORT_MS while connected: signal strength plus poll latency, to tell a weak
+// signal apart from a slow server. One line every 30 s keeps the serial log readable.
+static const unsigned long LINK_REPORT_MS = 30000;
+static unsigned long lastLinkReport = 0;
+static unsigned long pollCount = 0, pollFails = 0, pollMsSum = 0, pollMsMax = 0;
 
 // Common ESP32 reasons: 201 = network not found (wrong SSID, 5 GHz only, router Wi-Fi off),
 // 15 / 202 / 204 = handshake or auth failed (wrong password). 8 and 36 (our own leave) are never stored.
@@ -54,7 +60,14 @@ inline void keepWifiAlive(unsigned long now) {
     wifiFails = 0;
     if (!wifiWasUp) {
       wifiWasUp = true;
-      Serial.printf("WIFI up ip=%s\n", WiFi.localIP().toString().c_str());
+      Serial.printf("WIFI up ip=%s rssi=%d\n", WiFi.localIP().toString().c_str(), (int)WiFi.RSSI());
+      lastLinkReport = now;
+    }
+    if (now - lastLinkReport >= LINK_REPORT_MS) {
+      lastLinkReport = now;
+      Serial.printf("LINK rssi=%d polls=%lu fails=%lu avg_ms=%lu max_ms=%lu\n", (int)WiFi.RSSI(), pollCount,
+                    pollFails, pollCount ? pollMsSum / pollCount : 0UL, pollMsMax);
+      pollCount = pollFails = pollMsSum = pollMsMax = 0;
     }
     return;
   }
@@ -100,6 +113,9 @@ static bool parseReplyBody(const String& payload, StationReply& out) {
 static bool netRequest(const char* path, const char* body, StationReply& out) {
   if (WiFi.status() != WL_CONNECTED) return false;
 
+  // A fresh HTTPClient (and TCP connection) per request. Tried on 2026-11-21: keep-alive with one long-lived
+  // client, and the h11 server engine. Neither moved the ~200 ms per request (ping is 3 ms, server 4 ms), so
+  // the delay is inside the ESP32 stack, not the connect. Kept the simple, soak-tested version.
   HTTPClient http;
   http.setConnectTimeout(HTTP_TIMEOUT_MS);
   http.setTimeout(HTTP_TIMEOUT_MS);
@@ -129,5 +145,14 @@ inline bool postTap(int stationId, const char* uid, StationReply& out) {
 inline bool pollState(int stationId, StationReply& out) {
   char path[32];
   snprintf(path, sizeof(path), "/api/station/%d", stationId);
-  return netRequest(path, nullptr, out);
+  unsigned long t0 = millis();
+  bool ok = netRequest(path, nullptr, out);
+  if (WiFi.status() == WL_CONNECTED) {      // count only real requests, not ones skipped while Wi-Fi is down
+    unsigned long ms = millis() - t0;
+    pollCount++;
+    if (!ok) pollFails++;
+    pollMsSum += ms;
+    if (ms > pollMsMax) pollMsMax = ms;
+  }
+  return ok;
 }
