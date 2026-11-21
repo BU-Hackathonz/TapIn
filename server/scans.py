@@ -33,6 +33,7 @@ windows: dict = {}      # station_id -> open Window
 last_seen: dict = {}    # (station_id, uid) -> monotonic time of the last tap
 results: dict = {}      # station_id -> (state, expires_at)
 resolving: dict = {}    # station_id -> badge count of a closed window still being written to the DB
+_background: set = set()  # claim check-in tasks, kept referenced until they finish
 resolve_lock = asyncio.Lock()  # scan database writes happen one at a time
 
 
@@ -113,6 +114,12 @@ async def finish_claim(station_id: int, uid: str, claim: claims.Claim) -> dict:
     log.info("tap station=%s uid=%s outcome=claimed person=%s", station_id, uid, row["id"])
     await db.log_tap(station_id, uid, "claimed")
     await hub.broadcast("person_created", {"person_id": row["id"], "name": row["name"], "role": row["role"]})
+    # The claim tap also counts as their first check-in (here now, the first check-in point, suggestions on the
+    # wall), like a solo tap: most people walk away after "Got it". It runs in the background so the station's
+    # reply is not held up by the database, and the station keeps showing "claimed", not "checked_in".
+    task = asyncio.create_task(resolve_scan(station_id, [row["id"]], show_result=False))
+    _background.add(task)
+    task.add_done_callback(_background.discard)
     return set_result(station_id, "claimed")
 
 
@@ -127,7 +134,8 @@ async def close_after(station_id: int, delay: float) -> None:
             resolving.pop(station_id, None)
 
 
-async def resolve_scan(station_id: int, person_ids: list) -> None:
+async def resolve_scan(station_id: int, person_ids: list, show_result: bool = True) -> None:
+    """Write one scan and broadcast its events. show_result=False leaves the station's light alone (claim check-in)."""
     try:
         async with resolve_lock:
             async with db.pool.acquire() as conn:
@@ -135,9 +143,11 @@ async def resolve_scan(station_id: int, person_ids: list) -> None:
                     kind, state, events = await groups.resolve(conn, station_id, person_ids)
     except Exception:
         log.exception("scan failed station=%s people=%s", station_id, person_ids)
-        set_result(station_id, "idle")
+        if show_result:
+            set_result(station_id, "idle")
         return
-    set_result(station_id, state)
+    if show_result:
+        set_result(station_id, state)
     log.info("scan station=%s people=%s kind=%s state=%s", station_id, person_ids, kind, state)
     for type_, data in events:
         await hub.broadcast(type_, data)
