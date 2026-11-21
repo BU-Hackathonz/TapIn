@@ -4,6 +4,7 @@ resolve() runs inside one transaction and returns (kind, station_state, events).
 """
 from itertools import combinations
 
+from . import matching
 from . import points as P
 
 HERE = f"{P.HERE_HOURS} hours"
@@ -109,9 +110,13 @@ async def resolve(conn, station_id: int, person_ids: list[int]):
         await conn.execute("UPDATE people SET last_checkin = now() WHERE id=$1", pid)
         if first_today:
             award["people"][pid] = P.FIRST_CHECKIN
+        ms = await matching.load(conn)
         events.append(("checked_in", {
             "person_id": pid, "station_id": station_id,
-            "known_here": await known_here(conn, pid), "suggested_groups": [],
+            "known_here": await known_here(conn, pid),
+            "suggested_groups": [
+                {"group_id": x["group_id"], "reason": x["reason"]} for x in matching.suggested_groups(ms, pid)
+            ],
         }))
         kind, state = "checkin", "checked_in"
     else:
