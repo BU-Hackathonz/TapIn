@@ -145,7 +145,7 @@ label.field input { margin-top: 6px; font-weight: 400; }
 .top:has(> .back[hidden]):has(> .dots[hidden]) { display: none; }   /* first screen: no empty row above the logo */
 
 /* ---------------------------------------------------------- layouts (?layout=1..5)
-   The page is the illustration's cream; the art has no box of its own and fades into the page at every edge. */
+   The page is the illustration's cream; the art has no box of its own and every shape shows whole, nothing cut at an edge. */
 body[class*="layout-"] { background: #fbf6ec; }
 body[class*="layout-"] input[type="text"], body[class*="layout-"] input[type="email"] { background: #ffffff; }
 .stage { min-height: 100vh; display: grid; }
@@ -153,10 +153,6 @@ body[class*="layout-"] input[type="text"], body[class*="layout-"] input[type="em
 .art-fill { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
 .art-fill .art.art-blend {
   width: 100%; height: auto; max-height: 100%; border-radius: 0;
-  -webkit-mask-image: linear-gradient(to right, transparent, #000 9%, #000 91%, transparent), linear-gradient(to bottom, transparent, #000 9%, #000 91%, transparent);
-  -webkit-mask-composite: source-in;
-  mask-image: linear-gradient(to right, transparent, #000 9%, #000 91%, transparent), linear-gradient(to bottom, transparent, #000 9%, #000 91%, transparent);
-  mask-composite: intersect;
 }
 .art-brand { display: none; }
 .brand-top { display: flex; justify-content: center; margin-bottom: 18px; }

@@ -107,8 +107,8 @@ const TapArt = (() => {
   // The front-page scene: someone taps a badge at a kiosk, a dotted trail of green dots runs to two people at a
   // table (one waves), over colour blocks with scribble textures. Wider than the others (520 x 400).
   const K = { sun: "#f2b33d", mint: "#27b376", grass: "#6a9a55", sky: "#7aa3ec", coral: "#e5583c", cream: "#fbf6ec", denim: "#2f6fe0" };
-  // bare: no background rectangle, so the art sits straight on the page and its edges can fade into it.
-  scenes.kiosk = (o = {}) => `<svg viewBox="0 0 520 400" role="img" aria-label="Someone taps a badge at a station; a dotted trail leads to two people at a table, one waving" class="art art-wide" preserveAspectRatio="xMidYMid slice">
+  // bare: no background rectangle and a wider frame, so the shapes that run off the edge show whole on the page.
+  scenes.kiosk = (o = {}) => `<svg viewBox="${o.bare ? "-14 -80 548 494" : "0 0 520 400"}" role="img" aria-label="Someone taps a badge at a station; a dotted trail leads to two people at a table, one waving" class="art art-wide" preserveAspectRatio="xMidYMid slice">
 <defs>
   <pattern id="k-p-wave" width="40" height="22" patternUnits="userSpaceOnUse"><path d="M0 11q5-8 10 0t10 0 10 0 10 0" fill="none" stroke="#3f6fd8" stroke-width="2" opacity=".7"/></pattern>
   <pattern id="k-p-scrib" width="46" height="46" patternUnits="userSpaceOnUse"><path d="M4 30c6-18 10 14 16-4s8 16 14-2 6 10 10 4" fill="none" stroke="#ffffff" stroke-width="1.6" opacity=".55"/></pattern>
