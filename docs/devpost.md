@@ -99,6 +99,8 @@ These numbers count real people only: our fake test badges and the judge badges 
 
 ## What's next for Tap In
 
+**Richer profiles and table chat (prototype only).** Jun built a clickable prototype of where Tap In could go: a 5-step onboarding with a photo, school, major and year, optional social links, and a simple chat for each table. It runs entirely in the browser with sample data and is not connected to the live system; none of these features were part of tonight's build. Before real use it would need an opt-in privacy model, since tonight's system asks only for a first name. [CHECK: link to the prototype only if the team agrees, and only after any real person's handle is removed from it]
+
 A permanent install in the Spark! lab: a station at the entrance, the couches and the workbenches, points tied to real perks in the lab, and data on how the space connects people. Then any library or dorm lounge in Boston.
 
 ## Built with
