@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap">
 <link rel="stylesheet" href="login.css">
+<link rel="stylesheet" href="room.css">
 </head>
 <body>
 <main class="card">
@@ -117,13 +118,10 @@
 
   <!-- 5: done -->
   <section class="step" data-step="5" hidden>
-    <h1>You're in</h1>
+    <h1>All set</h1>
     <div class="preview" id="preview"></div>
-    <div class="badge">
-      <div class="pulse" aria-hidden="true"></div>
-      <div><b>Tap a blank badge at a station</b><span id="countdown">within 30 s to link it to you</span></div>
-    </div>
-    <a class="primary wide" href="index.html" id="enter">Enter the room</a>
+    <div id="room-slot"></div>
+    <a class="primary wide" href="index.html" id="enter">Skip for now</a>
   </section>
 
   <div class="nav" id="nav">
@@ -134,6 +132,7 @@
 
 <script src="themes.js"></script>
 <script src="view3d.js"></script>
+<script src="room.js"></script>
 <script src="login.js"></script>
 </body>
 </html>

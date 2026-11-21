@@ -140,3 +140,6 @@ label.field input { margin-top: 6px; font-weight: 400; }
   color: var(--muted); font: 600 14px var(--font); text-decoration: underline; cursor: pointer;
 }
 .skip:hover, .skip:focus-visible { color: var(--text); outline: none; }
+
+#room-slot .room-card { margin-top: 14px; }
+#enter.ghost { width: 100%; margin-top: 14px; display: grid; place-items: center; text-decoration: none; }

@@ -209,7 +209,6 @@
 
   // ---------------------------------------------------------- done
 
-  let timer = null;
   function finish() {
     const profile = { name: me.name, role: me.role, bio: me.bio || undefined, school: me.school, major: me.major,
                       year: me.year, skills: me.skills, looking_for: me.looking_for, face: me.face, photo: me.photo,
@@ -221,7 +220,10 @@
     pic.alt = "";
     const text = el("div");
     text.append(el("b", "", me.name));
-    text.append(el("span", "", [me.school, me.major, me.year ? `'${String(me.year).slice(2)}` : ""].filter(Boolean).join(" · ") || me.role));
+    // the year only makes sense next to a school or major; on its own ("'27") it reads like a typo
+    const study = [me.school, me.major].filter(Boolean);
+    if (study.length && me.year) study.push(`'${String(me.year).slice(2)}`);
+    text.append(el("span", "", study.join(" · ") || (me.role === "student" ? "Student" : me.role === "mentor" ? "Mentor" : "Staff")));
     const chips = el("div", "chips small");
     for (const s of me.skills) chips.append(el("span", "chip on", s));
     for (const s of me.looking_for) chips.append(el("span", "chip want", `wants ${s}`));
@@ -235,15 +237,17 @@
     }
     const head = el("div", "pv-head");
     head.append(pic, text);
-    card.replaceChildren(head, chips, apps);
-    // mock badge claim: the real one is POST /api/signup then a tap within 30 s
-    let left = 30;
-    clearInterval(timer);
-    timer = setInterval(() => {
-      left -= 1;
-      $("countdown").textContent = left > 0 ? `within ${left} s to link it to you` : "Linked (mock). See you in the room!";
-      if (left <= 0) clearInterval(timer);
-    }, 1000);
+    card.replaceChildren(head, ...[chips, apps].filter((x) => x.children.length));   // skipped steps leave no gap
+    // What's next: join the room (tap window) or host an event. The button below follows along.
+    const enter = $("enter");
+    const label = (room) => {
+      const inRoom = room && room.status === "in";
+      enter.textContent = inRoom ? `Enter ${room.name}` : "Skip for now";
+      enter.classList.toggle("ghost", !inRoom);
+      enter.classList.toggle("primary", inRoom);
+    };
+    $("room-slot").replaceChildren(Room.card({ kicker: "What's next", onChange: label }));
+    label(Room.current);
   }
 
   // ---------------------------------------------------------- wire up
@@ -253,7 +257,6 @@
   $("guest").addEventListener("click", () => {
     me.name = me.name || "Guest";
     finish();
-    clearInterval(timer);
     location.href = "index.html";
   });
   $("email-form").addEventListener("submit", (e) => { e.preventDefault(); next(); });
