@@ -58,6 +58,26 @@ The user journey, from first touch to a seat at a table.
 
 We agreed on the JSON shapes first, so the four layers could be built without waiting on each other. Every teammate's coding agent read and posted on one pinned GitHub issue, so one person's agent could hand work to another's, ask the owner before touching their files, and flag a contract change to everyone at once.
 
+## Real data, including results that challenged us
+
+Everything below was measured on our two real stations and the live server on 21 November, and the captions say what the numbers do and don't show.
+
+![Tap to reply, 31 real taps](https://github.com/BU-Hackathonz/TapIn/blob/main/media/devpost/evidence-tap-latency.png?raw=true)
+
+31 real badge taps: median 259 ms from tap to reply. A quarter of them missed our own 300 ms target; all beat the 1-second checkpoint.
+
+![40-minute soak](https://github.com/BU-Hackathonz/TapIn/blob/main/media/devpost/evidence-soak.png?raw=true)
+
+A 40-minute soak with no failed polls, reboots or time offline, and a problem we haven't solved: about 200 ms per request on a network with 3 ms ping.
+
+![Two real group scans](https://github.com/BU-Hackathonz/TapIn/blob/main/media/devpost/evidence-scan-runs.png?raw=true)
+
+Two real group scans. In the first the second fob arrived 0.57 s after the window closed, so it became two check-ins: the rule working, and a lesson for how we coach people at the table.
+
+![Server down for 19 s](https://github.com/BU-Hackathonz/TapIn/blob/main/media/devpost/evidence-recovery.png?raw=true)
+
+We took the server down for 19 s: both stations showed offline and came back on their own. The router-unplug test still needs a person at the table.
+
 ## Sponsor Notes
 
 ### 🐯 MLH: Best Use of Tiger Data
@@ -93,6 +113,8 @@ Two taps, end to end: a check-in with its Gemini icebreaker inside a 2-second bu
 **Where it runs.** When someone checks in, the wall shows their top suggested table right away with a template line ("{name} ({skill}): {table} needs {need}"). In the background, the server asks Gemini for one icebreaker under 20 words, from the person's name and skills and the table's project and needs, with no emojis and no exclamation marks.
 
 **The 2-second budget.** If Gemini answers within 2 seconds, the server sends an `icebreaker` event and the wall swaps the line. If it is late, errors, or there's no key, nothing is sent and the template line simply stays, so Gemini can only ever make the wall better, never slower.
+
+![Choosing the Gemini model by measuring it](https://github.com/BU-Hackathonz/TapIn/blob/main/media/devpost/evidence-gemini-models.png?raw=true)
 
 **Choosing the model by measuring it.** Our plan named gemini-2.5-flash, which returns 404 for new API keys. We timed the available models with the real prompt, three calls each: gemini-3.5-flash-lite answered in 0.6 to 1.1 s; gemini-3.8-flash was overloaded (503) and gemini-3.7-flash timed out. We picked the pinned 3.5-flash-lite over the faster-looking `-latest` alias, which could change under us mid-event.
 
