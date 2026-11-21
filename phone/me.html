@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Where you stand · Tap In</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono&family=IBM+Plex+Sans:wght@400;600&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main id="app">
+  <div class="brand">TAP IN</div>
+  <p class="muted">Loading...</p>
+</main>
+<script src="common.js"></script>
+<script>
+  const id = new URLSearchParams(location.search).get("id") || store.get("tapin_person");
+  if (!id) location.replace("index.html");
+  const app = document.getElementById("app");
+  let busy = false;      // skip a refresh while a switch is being saved
+  let lastKey = "";      // only rebuild the page when something changed
+
+  const list = (items, empty) => items.length ? el("ul", { class: "list" }, items) : el("p", { class: "empty" }, empty);
+
+  async function post(path, body) {
+    busy = true;
+    try {
+      const { status } = await api("POST", path, body);
+      if (status !== 200) alert("Couldn't save that. Try again.");
+    } catch (_) {
+      alert("Couldn't reach Tap In. Try again.");
+    } finally {
+      busy = false;
+      lastKey = "";
+      refresh();
+    }
+  }
+
+  function groupsSection(me) {
+    return [
+      el("h2", {}, "Tables that fit you"),
+      list(me.suggested_groups.map((s, i) => el("li", { class: i === 0 ? "top" : "" },
+        // "Table 2 needs firmware" reads as a sentence; other reasons get a separator
+        el("div", { class: "title" }, s.group.name, s.reason.startsWith("needs") ? " " : " · ", el("span", { class: "why" }, s.reason)),
+        s.group.working_on ? el("div", {}, "Building ", s.group.working_on) : null,
+        el("div", { class: "sub" }, `You know ${s.group.known_count} of its ${s.group.size} ${s.group.size === 1 ? "person" : "people"}`),
+      )), me.here ? "No open tables fit you right now. Check back soon." : "Check in at a station to see tables that fit you."),
+      el("h2", {}, "People to meet"),
+      list(me.suggested_people.map(s => el("li", {},
+        el("div", { class: "title" }, s.person.name, " · ", el("span", { class: "why" }, s.reason)),
+        s.person.skills.length ? el("div", { class: "sub" }, s.person.skills.join(", ")) : null,
+      )), "Nobody new to suggest yet."),
+    ];
+  }
+
+  function needsSection(needs) {
+    const open = needs.filter(n => n.handled_by == null);
+    const done = needs.filter(n => n.handled_by != null);
+    return [
+      el("h2", {}, "Tables waiting for help"),
+      list([
+        ...open.map((n, i) => el("li", { class: i === 0 ? "top" : "" },
+          el("div", { class: "title" }, n.table, " ", el("span", { class: "why" }, "needs " + n.need)),
+          el("div", { class: "sub mono" }, "waiting " + ago(n.since)))),
+        ...done.map(n => el("li", { class: "handled" },
+          el("div", { class: "title" }, `${n.table} needs ${n.need}`),
+          el("div", { class: "sub" }, "handled"))),
+      ], "No table is asking for help right now."),
+      el("p", { class: "note" }, "Scan in with a table at its station to mark its need handled."),
+    ];
+  }
+
+  function groupSection(g) {
+    if (!g) return [];
+    let looking = g.looking_for.slice();
+    const lookingBox = chipGroup("group_looking", SKILLS, looking, 2, v => {
+      looking = v;
+      post(`/groups/${g.id}/mode`, { mode: g.mode, looking_for: looking });
+    });
+    const modeBtn = (mode, label) => el("button", {
+      type: "button", "aria-pressed": String(g.mode === mode),
+      onclick: () => g.mode !== mode && post(`/groups/${g.id}/mode`, { mode, looking_for: looking }),
+    }, label);
+    return [
+      el("h2", {}, "Your table"),
+      el("p", {}, el("strong", {}, g.name), el("span", { class: "points" }, `${g.points} pts`)),
+      g.working_on ? el("p", { class: "muted" }, "Building ", g.working_on) : null,
+      el("p", { class: "muted" }, g.members.map(m => m.name).join(", ")),
+      el("div", { class: "seg", role: "group", "aria-label": "Table mode" }, modeBtn("open", "Open"), modeBtn("heads_down", "Heads-down")),
+      el("p", { class: "note" }, g.mode === "open" ? "Open: we show your table to people who fit." : "Heads-down: nobody gets your table as a suggestion."),
+      el("fieldset", {}, el("legend", {}, "Your table is looking for ", el("small", {}, "(up to 2)")), lookingBox),
+    ];
+  }
+
+  function render(me, needs) {
+    const p = me.person;
+    const helper = p.role !== "student";
+    const focus = el("input", { type: "checkbox", class: "switch", id: "focus", role: "switch", checked: p.focus,
+      onchange: e => post(`/me/${p.id}/focus`, { focus: e.target.checked }) });
+    app.replaceChildren(
+      el("div", { class: "brand" }, "TAP IN"),
+      el("h1", {}, p.name, el("span", { class: "points" }, `${me.points} pts`)),
+      el("p", {}, el("span", { class: "status" + (me.here ? " here" : "") }, me.here ? "Here now" : "Not checked in"),
+        me.here ? null : el("span", { class: "muted" }, " Tap your badge alone at the Entrance.")),
+      el("div", { class: "switch-row" },
+        el("label", { for: "focus" }, "Focus mode", el("small", {}, "Nobody gets you as a suggestion.")), focus),
+      el("h2", {}, "People you know who are here"),
+      list(me.known_here.map(k => el("li", {}, el("span", { class: "title" }, k.name))), "Nobody you've met is here yet."),
+      ...(helper ? needsSection(needs) : groupsSection(me)),
+      ...groupSection(me.group),
+      el("footer", {}, "Not you? ", el("a", { href: "index.html", onclick: () => store.del("tapin_person") }, "Make a new profile")),
+    );
+  }
+
+  async function refresh() {
+    if (busy || document.hidden) return;
+    try {
+      const r = await api("GET", "/me/" + encodeURIComponent(id));
+      if (r.status === 404) {
+        store.del("tapin_person");
+        app.replaceChildren(el("div", { class: "brand" }, "TAP IN"), el("p", { class: "big" }, "We don't know that profile"),
+          el("a", { class: "button", href: "index.html" }, "Make a profile"));
+        return;
+      }
+      if (r.status !== 200) throw new Error();
+      const needs = r.data.person.role !== "student" ? (await api("GET", "/needs")).data || [] : [];
+      const key = JSON.stringify([r.data, needs]);
+      if (key !== lastKey && !busy) { lastKey = key; render(r.data, needs); }
+    } catch (_) {
+      if (!lastKey) app.replaceChildren(el("div", { class: "brand" }, "TAP IN"),
+        el("p", { class: "error" }, "Couldn't reach Tap In. Retrying..."));
+    }
+  }
+
+  store.set("tapin_person", id);
+  refresh();
+  setInterval(refresh, 5000);
+  document.addEventListener("visibilitychange", refresh);
+</script>
+</body>
+</html>

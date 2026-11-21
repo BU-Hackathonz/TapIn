@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tap your badge · Tap In</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono&family=IBM+Plex+Sans:wght@400;600&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main aria-live="polite">
+  <div class="brand">TAP IN</div>
+
+  <section id="waiting">
+    <p class="big">Tap your badge on any station now</p>
+    <p class="muted">Use a blank badge from the table. The stations are pulsing white.</p>
+    <div class="count" id="count" aria-label="seconds left">30</div>
+  </section>
+
+  <section id="done" hidden>
+    <p class="big ok" id="got">Got it</p>
+    <p class="muted">Taking you to your page...</p>
+  </section>
+
+  <section id="expired" hidden>
+    <p class="big">Time ran out</p>
+    <p class="muted">No badge was tapped in time. That's fine, just try again.</p>
+    <button id="retry">Try again</button>
+    <a class="button secondary" href="index.html">Edit my profile</a>
+    <p class="error" id="error" role="alert"></p>
+  </section>
+</main>
+<script src="common.js"></script>
+<script>
+  const form = store.get("tapin_form", sessionStorage);
+  let claim = store.get("tapin_claim", sessionStorage);
+  if (!form || !claim) location.replace("index.html");
+
+  const show = id => ["waiting", "done", "expired"].forEach(s => document.getElementById(s).hidden = s !== id);
+  let timer = null;
+
+  function start() {
+    show("waiting");
+    const deadline = Date.now() + (claim.expires_in || 30) * 1000;
+    clearInterval(timer);
+    timer = setInterval(async () => {
+      const left = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      document.getElementById("count").textContent = left;
+      let status = null;
+      try { status = (await api("GET", "/claim/" + encodeURIComponent(claim.claim_code))).data?.status; } catch (_) {}
+      if (status === "claimed") {
+        clearInterval(timer);
+        store.set("tapin_person", claim.person_id);
+        store.del("tapin_claim", sessionStorage);
+        document.getElementById("got").textContent = `Got it, ${form.name}`;
+        show("done");
+        setTimeout(() => location.replace("me.html?id=" + encodeURIComponent(claim.person_id)), 1500);
+      } else if (status === "expired" || left === 0 && status !== "waiting") {
+        clearInterval(timer);
+        show("expired");
+        document.getElementById("retry").focus();
+      }
+    }, 1000);
+  }
+
+  document.getElementById("retry").addEventListener("click", async (e) => {
+    const err = document.getElementById("error");
+    e.target.disabled = true;
+    err.textContent = "";
+    try {
+      const { status, data } = await api("POST", "/signup", form);
+      if (status !== 200) { err.textContent = signupError(status, data); return; }
+      claim = data;
+      store.set("tapin_claim", claim, sessionStorage);
+      start();
+    } catch (_) {
+      err.textContent = signupError(0);
+    } finally {
+      e.target.disabled = false;
+    }
+  });
+
+  if (form && claim) start();
+</script>
+</body>
+</html>
