@@ -53,12 +53,18 @@ Per station. No buzzer.
 
 ## Built-in LED (what we ship)
 
-One blue LED, so each state is a different rhythm. It runs alongside the strip, so with a strip wired
-both show the state.
+The stations are ESP32 + RC522 only. The feedback is the ESP32 board's own small LED, a surface-mount LED
+next to the red power LED near the USB port, usually labelled `IO2`, `D2` or `LED`. It has one color, so
+each state is a different rhythm. It runs alongside the strip, so with a strip wired both show the state.
+
+**Finding it:** every boot starts with **3 clear blinks** (about 1 s). If you see the red power LED but never
+those 3 blinks, the board has no LED on GPIO 2. The station still works; the serial log and the wall are
+then the only feedback.
 
 | State | Blue LED |
 | :- | :- |
-| idle | Short blip every 3 s (it is alive) |
+| boot | 3 clear blinks, once |
+| idle | 0.15 s blip every 3 s (it is alive) |
 | collecting | Solid on |
 | checked_in | 3 Hz blink |
 | joined | 10 Hz flicker |
