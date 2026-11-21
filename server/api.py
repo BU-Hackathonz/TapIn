@@ -4,7 +4,7 @@ from typing import Literal
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from . import claims, db, groups
+from . import claims, db, groups, matching
 from . import points as P
 
 router = APIRouter(prefix="/api")
@@ -71,3 +71,75 @@ async def signup(body: Signup):
 @router.get("/claim/{claim_code}")
 async def claim_status(claim_code: str):
     return {"status": claims.status(claim_code.strip().upper())}
+
+
+def _brief(s, gid: int, pid: int) -> dict:
+    g = s.groups[gid]
+    mem = s.members.get(gid, [])
+    return {
+        "id": gid, "name": g["name"], "station_id": g["station_id"], "mode": g["mode"],
+        "working_on": g["working_on"], "looking_for": list(g["looking_for"] or []),
+        "size": len(mem), "known_count": len([m for m in mem if m in s.nbrs[pid]]),
+    }
+
+
+@router.get("/me/{person_id}")
+async def me(person_id: int):
+    async with pool().acquire() as conn:
+        s = await matching.load(conn)
+        if person_id not in s.people:
+            raise HTTPException(404, "unknown person")
+        p = s.people[person_id]
+        gid = await conn.fetchval(
+            "SELECT group_id FROM group_members WHERE person_id=$1 ORDER BY joined_at DESC LIMIT 1", person_id
+        )
+    mine = None
+    if gid:
+        mine = {**_brief(s, gid, person_id), "points": s.groups[gid]["points"],
+                "members": [{"id": m, "name": s.people[m]["name"]} for m in s.members.get(gid, []) if m in s.people]}
+    return {
+        "person": {
+            "id": person_id, "name": p["name"], "role": p["role"], "skills": list(p["skills"] or []),
+            "looking_for": list(p["looking_for"] or []), "working_on": p["working_on"], "focus": p["focus"],
+        },
+        "here": person_id in s.here,
+        "group": mine,
+        "known_here": [{"id": i, "name": s.people[i]["name"]} for i in matching.known_here(s, person_id)],
+        "suggested_groups": [
+            {"group": _brief(s, x["group_id"], person_id), "score": x["score"], "reason": x["reason"]}
+            for x in matching.suggested_groups(s, person_id)
+        ],
+        "suggested_people": [
+            {"person": {"id": x["person_id"], "name": x["name"], "skills": list(s.people[x["person_id"]]["skills"] or [])},
+             "score": x["score"], "reason": x["reason"]}
+            for x in matching.suggested_people(s, person_id)
+        ],
+        "points": p["points"],
+    }
+
+
+class Focus(BaseModel):
+    focus: bool
+
+
+@router.post("/me/{person_id}/focus")
+async def set_focus(person_id: int, body: Focus):
+    row = await pool().fetchrow("UPDATE people SET focus=$2 WHERE id=$1 RETURNING id", person_id, body.focus)
+    if row is None:
+        raise HTTPException(404, "unknown person")
+    return {"ok": True}
+
+
+class Mode(BaseModel):
+    mode: Literal["open", "heads_down"]
+    looking_for: list[Skill] = Field(default_factory=list, max_length=2)
+
+
+@router.post("/groups/{group_id}/mode")
+async def set_mode(group_id: int, body: Mode):
+    row = await pool().fetchrow(
+        "UPDATE groups SET mode=$2, looking_for=$3 WHERE id=$1 RETURNING id", group_id, body.mode, list(body.looking_for)
+    )
+    if row is None:
+        raise HTTPException(404, "unknown group")
+    return {"ok": True}
