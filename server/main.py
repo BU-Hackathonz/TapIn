@@ -1,11 +1,14 @@
 """Tap In server skeleton: tap endpoint, station state, WebSocket, static mounts."""
 import logging
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+
+from . import db
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
 log = logging.getLogger("tapin")
@@ -14,7 +17,15 @@ ROOT = Path(__file__).resolve().parent.parent
 STATION_COLORS = {1: "#C85C84", 2: "#5CC8A0"}  # Entrance raspberry, Table 2 green
 DEFAULT_COLOR = "#5CC8A0"
 
-app = FastAPI(title="Tap In")
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    await db.connect()
+    yield
+    await db.close()
+
+
+app = FastAPI(title="Tap In", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 
@@ -31,6 +42,7 @@ def station_state(station_id: int, state: str = "idle", count: int = 0) -> dict:
 async def tap(body: Tap):
     uid = body.uid.strip().upper()
     log.info("tap station=%s uid=%s outcome=logged", body.station_id, uid)
+    await db.log_tap(body.station_id, uid, "logged")
     return station_state(body.station_id)
 
 
