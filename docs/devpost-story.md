@@ -141,7 +141,7 @@ Two taps, end to end: a check-in with its Gemini icebreaker inside a 2-second bu
 
 ### 🌐 GoDaddy Registry: Best Domain
 
-[CHECK: tapin.boston, and whether it serves the phone site at judging.]
+[CHECK: tapin.boston was NOT registered as of 21 Nov, 4:53 PM (registry returns 404). Keep this block only if David registers it and https://tapin.boston/phone loads on cellular data; otherwise cut it and untick the Best Domain opt-in.]
 
 ## Challenges we ran into
 
