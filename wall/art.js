@@ -107,7 +107,8 @@ const TapArt = (() => {
   // The front-page scene: someone taps a badge at a kiosk, a dotted trail of green dots runs to two people at a
   // table (one waves), over colour blocks with scribble textures. Wider than the others (520 x 400).
   const K = { sun: "#f2b33d", mint: "#27b376", grass: "#6a9a55", sky: "#7aa3ec", coral: "#e5583c", cream: "#fbf6ec", denim: "#2f6fe0" };
-  scenes.kiosk = () => `<svg viewBox="0 0 520 400" role="img" aria-label="Someone taps a badge at a station; a dotted trail leads to two people at a table, one waving" class="art art-wide" preserveAspectRatio="xMidYMid slice">
+  // bare: no background rectangle, so the art sits straight on the page and its edges can fade into it.
+  scenes.kiosk = (o = {}) => `<svg viewBox="0 0 520 400" role="img" aria-label="Someone taps a badge at a station; a dotted trail leads to two people at a table, one waving" class="art art-wide" preserveAspectRatio="xMidYMid slice">
 <defs>
   <pattern id="k-p-wave" width="40" height="22" patternUnits="userSpaceOnUse"><path d="M0 11q5-8 10 0t10 0 10 0 10 0" fill="none" stroke="#3f6fd8" stroke-width="2" opacity=".7"/></pattern>
   <pattern id="k-p-scrib" width="46" height="46" patternUnits="userSpaceOnUse"><path d="M4 30c6-18 10 14 16-4s8 16 14-2 6 10 10 4" fill="none" stroke="#ffffff" stroke-width="1.6" opacity=".55"/></pattern>
@@ -115,7 +116,7 @@ const TapArt = (() => {
   <pattern id="k-p-hatch" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><path d="M0 0v10" stroke="#e5583c" stroke-width="2" opacity=".8"/></pattern>
   <pattern id="k-p-loop" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M6 30c0-14 18-14 18 0s-18 6-10-8 22-4 20 6" fill="none" stroke="#ffffff" stroke-width="1.6" opacity=".5"/></pattern>
 </defs>
-<rect width="520" height="400" fill="${K.cream}"/>
+${o.bare ? "" : `<rect width="520" height="400" fill="${K.cream}"/>`}
 <!-- colour blocks -->
 <rect x="40" y="40" width="160" height="150" fill="${K.sky}"/><rect x="40" y="40" width="160" height="150" fill="url(#k-p-wave)"/>
 <circle cx="300" cy="40" r="66" fill="${K.sky}" opacity=".85"/><circle cx="300" cy="40" r="66" fill="url(#k-p-wave)"/>

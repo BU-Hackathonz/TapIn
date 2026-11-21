@@ -144,62 +144,67 @@ label.field input { margin-top: 6px; font-weight: 400; }
 .dots[hidden] { display: none; }
 .top:has(> .back[hidden]):has(> .dots[hidden]) { display: none; }   /* first screen: no empty row above the logo */
 
-/* ---------------------------------------------------------- layouts (?layout=1..5) */
+/* ---------------------------------------------------------- layouts (?layout=1..5)
+   The page is the illustration's cream; the art has no box of its own and fades into the page at every edge. */
+body[class*="layout-"] { background: #fbf6ec; }
+body[class*="layout-"] input[type="text"], body[class*="layout-"] input[type="email"] { background: #ffffff; }
 .stage { min-height: 100vh; display: grid; }
-.art-panel { position: relative; overflow: hidden; background: #fbf6ec; }
-.art-fill, .art-fill .art { width: 100%; height: 100%; }
-.art-fill .art { display: block; }
+.art-panel { position: relative; display: flex; align-items: center; justify-content: center; }
+.art-fill { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+.art-fill .art.art-blend {
+  width: 100%; height: auto; max-height: 100%; border-radius: 0;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 9%, #000 91%, transparent), linear-gradient(to bottom, transparent, #000 9%, #000 91%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to right, transparent, #000 9%, #000 91%, transparent), linear-gradient(to bottom, transparent, #000 9%, #000 91%, transparent);
+  mask-composite: intersect;
+}
 .art-brand { display: none; }
 .brand-top { display: flex; justify-content: center; margin-bottom: 18px; }
 .card { align-self: center; justify-self: center; margin: 24px 16px; }
+.layout-1 .card, .layout-2 .card, .layout-5 .card { border: 0; box-shadow: none; background: transparent; }
 
 /* 1 · split: form left, art right */
 .layout-1 .stage { grid-template-columns: minmax(420px, 1fr) 1.15fr; }
-.layout-1 .card { border: 0; box-shadow: none; background: transparent; }
-.layout-1 { background: #fff; }
 .layout-1 .art-panel { order: 2; }
 
-/* 2 · split mirrored: art left with the logo on it, form right */
+/* 2 · split mirrored: art left with the logo on it (no box), form right */
 .layout-2 .stage { grid-template-columns: 1.15fr minmax(420px, 1fr); }
-.layout-2 .art-panel { order: -1; }
-.layout-2 .card { border: 0; box-shadow: none; background: transparent; }
-.layout-2 { background: #fff; }
-.layout-2 .art-brand { display: block; position: absolute; left: 28px; bottom: 26px; padding: 12px 18px; border-radius: 16px; background: rgba(255, 255, 255, 0.92); }
-.layout-2 .art-brand .lg { font-size: 40px; }
+.layout-2 .art-panel { order: -1; flex-direction: column; height: 100vh; }
+.layout-2 .art-fill { height: auto; flex: 0 1 auto; min-height: 0; }
+.layout-2 .art-fill .art.art-blend { max-height: calc(100vh - 120px); width: auto; max-width: 100%; }
+.layout-2 .art-brand { display: block; order: 2; margin-top: -8px; }
+.layout-2 .art-brand .lg { font-size: 46px; }
 .layout-2 .brand-top { display: none; }
 
-/* 3 · banner: art on top, logo centred below, form under it */
-.layout-3 .stage { grid-template-rows: 38vh auto; }
+/* 3 · banner: art across the top, logo and form below */
+.layout-3 .stage { grid-template-rows: auto auto; }
+.layout-3 .art-panel { max-height: 46vh; overflow: hidden; }
+.layout-3 .art-fill .art.art-blend { width: min(1100px, 100%); }
 .layout-3 .brand-top .lg { font-size: 44px; }
-.layout-3 .card { margin-top: -40px; position: relative; }
 
-/* 4 · card on art: the art fills the page, a white card in the middle */
+/* 4 · card on art: the art behind, a white card in the middle */
 .layout-4 .stage { grid-template-areas: "all"; }
 .layout-4 .art-panel, .layout-4 .card { grid-area: all; }
 .layout-4 .art-panel { position: fixed; inset: 0; }
+.layout-4 .art-fill .art.art-blend { width: 100%; height: 100%; max-height: none; }
 .layout-4 .card { position: relative; z-index: 1; }
 
 /* 5 · logo first: big name, the art, then the form, one column */
-.layout-5 { background: #fff; }
 .layout-5 .stage { grid-template-columns: minmax(0, 1fr); justify-items: center; align-content: start; padding-top: 28px; }
-.layout-5 .art-panel { width: min(560px, 92vw); display: flex; flex-direction: column; align-items: center; gap: 16px; background: transparent; overflow: visible; }
+.layout-5 .art-panel { width: min(620px, 94vw); flex-direction: column; gap: 6px; }
 .layout-5 .art-brand { display: block; order: -1; }
 .layout-5 .art-brand .lg { font-size: 52px; }
-.layout-5 .art-fill { height: 250px; border-radius: 24px; overflow: hidden; }
-.layout-5 .card { margin-top: 18px; border: 0; box-shadow: none; background: transparent; }
+.layout-5 .card { margin-top: 0; }
 .layout-5 .brand-top { display: none; }
 
-/* phones: one column, a short art strip on the first screen only */
+/* phones: one column, the art on the first screen only, fading into the page */
 @media (max-width: 800px) {
   .stage, .layout-1 .stage, .layout-2 .stage, .layout-3 .stage, .layout-5 .stage { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; align-content: start; }
   .card { align-self: start; }
-  .art-panel { order: -1 !important; height: 240px; width: 100% !important; border-radius: 0 !important; margin: 0 !important; position: relative !important; }
-  .layout-5 .art-panel { height: auto; padding-top: 18px; }
-  .layout-5 .art-fill { height: 200px; border-radius: 0; }
-  .layout-5 .art-brand .lg { font-size: 40px; }
+  .art-panel { order: -1 !important; width: 100% !important; position: relative !important; max-height: none; }
   body:not(.at-start) .art-panel { display: none; }
   .layout-4 .stage { grid-template-areas: none; }
-  .card, .layout-3 .card { margin: 0; border: 0; border-radius: 0; box-shadow: none; min-height: auto; }
-  .layout-2 .art-brand { left: 14px; bottom: 14px; padding: 8px 12px; }
-  .layout-2 .art-brand .lg { font-size: 30px; }
+  .layout-4 .art-fill .art.art-blend { height: auto; }
+  .card, .layout-3 .card, .layout-4 .card { margin: 0; border: 0; border-radius: 0; box-shadow: none; background: transparent; min-height: auto; }
+  .layout-2 .art-brand .lg, .layout-5 .art-brand .lg { font-size: 36px; }
 }

@@ -241,10 +241,11 @@
     const art = TapArt.scenes[q.get("art")] || TapArt.scenes.kiosk, logo = TapArt.logos[q.get("logo")] || TapArt.logos.wifi;
     const layout = ["1", "2", "3", "4", "5"].includes(q.get("layout")) ? q.get("layout") : "1";
     document.body.className = document.body.className.replace(/layout-\d/, `layout-${layout}`);
-    $("hero").innerHTML = art();     // drawn by art.js from fixed shapes, no user text
-    // the split layouts show the whole scene on its cream panel; the others crop it to fill
+    // No panel and no crop: the whole scene, without its own background, sits on the page and fades out at
+    // every edge, so shapes that run off the drawing dissolve into the page instead of being cut.
+    $("hero").innerHTML = art({ bare: true });     // drawn by art.js from fixed shapes, no user text
     const svg = $("hero").querySelector("svg");
-    if (svg) svg.setAttribute("preserveAspectRatio", `xMidYMid ${layout === "1" || layout === "2" ? "meet" : "slice"}`);
+    if (svg) { svg.setAttribute("preserveAspectRatio", "xMidYMid meet"); svg.classList.add("art-blend"); }
     $("brand").innerHTML = logo();
     $("brand-art").innerHTML = logo();
   }
