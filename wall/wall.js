@@ -156,6 +156,7 @@
       freshen(keys);
       glow(d.group_id);
       d.member_ids.forEach((id) => ripple(id, "join"));
+      Hub.note(d.group_id, `${d.member_ids.map((id) => S.people.get(id)?.name).filter(Boolean).join(", ")} started the table`);
       Sound.links(keys.length);
       const group = S.groups.get(d.group_id);
       if (group) Panels.log(`${group.name} formed`);
@@ -171,12 +172,14 @@
       freshen(d.new_links.map(([a, b]) => lk(a, b)));
       glow(d.group_id);
       d.new_member_ids.forEach((id) => ripple(id, "join"));
+      Hub.note(d.group_id, `${d.new_member_ids.map((id) => S.people.get(id)?.name).filter(Boolean).join(", ")} joined the table`);
       Sound.links(d.new_links.length);
       const group = S.groups.get(d.group_id);
       if (group) Panels.log(`${group.name} welcomed ${d.new_member_ids.length === 1 ? "a member" : "new members"}`);
     },
     help(d) {
       ripple(d.mentor_id, "help");
+      Hub.note(d.group_id, `${S.people.get(d.mentor_id)?.name || "A mentor"} came over to help`);
       glow(d.group_id);
       const mentor = S.people.get(d.mentor_id), group = S.groups.get(d.group_id);
       if (mentor && group) Panels.log(`${mentor.name} helped ${group.name}`);
@@ -248,6 +251,7 @@
   });
   Theme.set(Theme.initial());
   Corner.mount(() => S);
+  Hub.mount(() => S);
   View3D.init(() => ({ visible, shownGroups, S, radius, needLine }));
   View3D.setActive(true);
 

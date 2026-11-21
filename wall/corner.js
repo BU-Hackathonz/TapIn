@@ -96,5 +96,5 @@ const Corner = (() => {
     renderTrigger();
   }
 
-  return { mount, refresh: renderTrigger, get joins() { return state.joins; } };
+  return { mount, me, refresh: renderTrigger, get joins() { return state.joins; } };
 })();

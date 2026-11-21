@@ -220,7 +220,7 @@ const View3D = (() => {
     for (const q of pos.values()) {
       q.x += (q.tx - q.x) * 0.08; q.y += (q.ty - q.y) * 0.08; q.z += (q.tz - q.z) * 0.08;
     }
-    const f = focusId !== null && pos.get(focusId);
+    const f = (focusId !== null && pos.get(focusId)) || (focusGroup !== null && centers.get(focusGroup));
     const goal = f || { x: 0, y: 0, z: 0 };
     cam.x += (goal.x - cam.x) * 0.1; cam.y += (goal.y - cam.y) * 0.1; cam.z += (goal.z - cam.z) * 0.1;
     zoom += (zoomGoal - zoom) * 0.12;
@@ -359,8 +359,9 @@ const View3D = (() => {
     }
     ctx.globalAlpha = 1;
     lastProjection = P;
+    lastCenters = C;
   }
-  let lastProjection = new Map();
+  let lastProjection = new Map(), lastCenters = new Map(), focusGroup = null, onGroup = () => {};
 
   function pulse(id, kind = "accent") {
     pulses.push({ id, kind, t0: performance.now() });
@@ -369,7 +370,7 @@ const View3D = (() => {
   // ------------------------------------------------------------ input
 
   function reset() {
-    rotY = 0.4; rotX = -0.3; zoomGoal = 1; focusId = null; picked = null; spinX = spinY = 0;
+    rotY = 0.4; rotX = -0.3; zoomGoal = 1; focusId = null; focusGroup = null; picked = null; spinX = spinY = 0;
   }
   const setZoom = (z) => { zoomGoal = zoom = Math.max(0.5, Math.min(4.5, z)); };
 
@@ -457,15 +458,31 @@ const View3D = (() => {
       const d = Math.hypot(p.x - x, p.y - y), person = S.people.get(id);
       if (d < Math.max(22, radius(person) * p.s + 8) && d < bestD) { best = id; bestD = d; }
     }
-    if (best === null) { hideCard(); return; }
-    // Fly to the person: the camera orbits them and zooms until their picture shows.
-    picked = best; pickedUntil = Infinity;
-    focusId = best; zoomGoal = Math.max(zoom, 3);
-    showProfile(S.people.get(best));
+    if (best !== null) { focusPerson(best); return; }
+    // No person under the finger: a table bubble opens that table's hub. Nearest bubble wins.
+    let table = null, tableD = Infinity;
+    for (const [gid, c] of lastCenters) {
+      const d = Math.hypot(c.x - x, c.y - y);
+      if (d < c.r * c.s && d < tableD) { table = gid; tableD = d; }
+    }
+    if (table !== null) { focusTable(table); return; }
+    hideCard();
+  }
+  // Fly to the person: the camera orbits them and zooms until their picture shows.
+  function focusPerson(id) {
+    const { S } = scene();
+    if (!S.people.has(id)) return;
+    picked = id; pickedUntil = Infinity;
+    focusId = id; focusGroup = null; zoomGoal = Math.max(zoom, 3);
+    showProfile(S.people.get(id));
+  }
+  function focusTable(gid) {
+    picked = null; focusId = null; focusGroup = gid; zoomGoal = Math.max(zoom, 1.9);
+    onGroup(gid);
   }
   function hideCard() {
     document.getElementById("profile").hidden = true;
-    picked = null; focusId = null; zoomGoal = Math.min(zoomGoal, 1);
+    picked = null; focusId = null; focusGroup = null; zoomGoal = Math.min(zoomGoal, 1);
   }
 
   // ------------------------------------------------------------ mock profile
@@ -588,6 +605,7 @@ const View3D = (() => {
   }
   function showProfile(person) {
     document.getElementById("profile-body").replaceChildren(...buildProfile(person));
+    document.getElementById("profile").classList.remove("hub");
     document.getElementById("profile").hidden = false;
   }
 
@@ -595,5 +613,6 @@ const View3D = (() => {
   const opts = { names: true, spin: true };
   const setOption = (k, v) => { opts[k] = v; };
 
-  return { init, setActive, relayout, pulse, avatar, buildProfile, setOption, PHONE };
+  return { init, setActive, relayout, pulse, avatar, buildProfile, setOption, focusPerson,
+           onTable: (fn) => { onGroup = fn; }, PHONE };
 })();

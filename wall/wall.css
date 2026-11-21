@@ -78,6 +78,48 @@ body.demo .demo-tag { display: inline-block; }
 body[data-corner="avatar"] .toasts { top: 28px; }
 body[data-corner="dock"] .toasts { left: 64px; top: 28px; }
 
+/* table hub: same corner card, table header + chat or members */
+.profile.hub { width: 360px; }
+.h-head h2 { font-size: 24px; line-height: 1.15; padding-right: 32px; }
+.h-sub { color: var(--muted); font-size: 14px; margin-top: 2px; }
+.h-needs { margin-top: 8px; }
+.h-faces { display: flex; margin-top: 12px; padding-left: 6px; }
+.h-face { width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--panel); margin-left: -6px; }
+.h-more { margin-left: 6px; align-self: center; font: 13px var(--mono); color: var(--muted); }
+.h-tabs { position: static; margin-top: 12px; }
+.h-chat { display: flex; flex-direction: column; }
+.h-log { max-height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 4px 2px 8px; }
+.h-msg { display: flex; gap: 8px; align-items: flex-end; }
+.h-msg.mine { justify-content: flex-end; }
+.h-av { width: 26px; height: 26px; border-radius: 50%; flex: none; }
+.h-bubble {
+  max-width: 78%; padding: 7px 11px; background: var(--tile); border-radius: 16px 16px 16px 4px; font-size: 14px; line-height: 1.35;
+}
+body[data-theme="minimal"] .h-bubble { background: #f3f3f3; }
+.h-msg.mine .h-bubble { background: var(--text); color: var(--bg); border-radius: 16px 16px 4px 16px; }
+.h-bubble b { display: block; font-size: 12px; color: var(--muted); font-weight: 600; margin-bottom: 1px; }
+.h-bubble time { display: block; font: 10px var(--mono); color: var(--faint); margin-top: 3px; text-align: right; }
+.h-msg.mine .h-bubble time { color: rgba(128, 128, 128, 0.9); }
+.h-sys { align-self: center; font-size: 12px; color: var(--muted); padding: 2px 10px; border-radius: 999px; background: var(--tile); }
+.h-send { display: flex; gap: 6px; margin-top: 6px; }
+.h-send input {
+  flex: 1; min-width: 0; min-height: 40px; padding: 8px 14px; font: 15px var(--font); color: var(--text);
+  background: var(--bg); border: var(--border); border-radius: 999px;
+}
+.h-send input:focus { outline: 2px solid var(--text); outline-offset: 0; }
+.h-send button {
+  min-height: 40px; padding: 0 16px; font: 600 14px var(--font); color: var(--bg); background: var(--text);
+  border: 0; border-radius: 999px; cursor: pointer;
+}
+.h-members { display: grid; gap: 4px; }
+.h-member {
+  display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 4px 8px; cursor: pointer; text-align: left;
+  font: 15px var(--font); color: var(--text); background: transparent; border: 0; border-radius: 12px;
+}
+.h-member:hover, .h-member:focus-visible { background: var(--tile); outline: none; }
+.h-member span { flex: 1; }
+.h-member small { color: var(--muted); font: 12px var(--mono); }
+
 /* you + settings: one tab in the corner */
 .me { position: fixed; z-index: 6; left: 20px; top: 18px; }
 .me-tab {
@@ -234,6 +276,8 @@ body[data-theme="blueprint"] .start button { background: var(--accent); color: #
   .start button { font-size: 22px; padding: 14px 40px; }
   .profile { right: 12px; bottom: 12px; width: min(330px, calc(100vw - 24px)); max-height: 58%; padding: 16px 14px 12px; }
   .p-pic { width: 56px; height: 56px; }
+  .profile.hub { width: min(360px, calc(100vw - 24px)); }
+  .h-log { max-height: 30vh; }
 }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
