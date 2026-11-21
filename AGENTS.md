@@ -2,8 +2,8 @@
 
 ## 0. Source of truth
 
-- Product spec: [Tap In Locked Spec](https://docs.google.com/document/d/1G6gWDq1GoPdcr6RmXWPl_DYF8-ZTZ8stz-y849sDTkM/edit)
-- Build plan, owners, shared contracts, schema: [Tap In Team Playbook](https://docs.google.com/document/d/1iW8qsNdcNTpNLH84AHZI0UmbB-18O3pk6u7CziyqQ-o/edit)
+- Product spec: Tap In Locked Spec (Google Drive, BostonHacks folder; link on request)
+- Build plan, owners, shared contracts, schema: Tap In Team Playbook (Google Drive, BostonHacks folder; link on request)
 
 If the two disagree, the Spec wins on what Tap In is and the Playbook wins on shapes and build steps. Older copies of these docs are out of date.
 
