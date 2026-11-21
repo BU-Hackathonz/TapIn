@@ -4,7 +4,7 @@
 
 <!-- Demo GIF goes here once the 5 PM checkpoint works: docs/tap-to-wall.gif (a badge tap lighting up the wall). -->
 
-Built at BostonHacks 2026 for the **Boundless Boston** track and the **Spark! Hack Our Space** subtrack. Our domain is tapin.boston.
+Built at BostonHacks 2026 for the **Boundless Boston** track and the **Spark! Hack Our Space** subtrack. We plan to serve it at tapin.boston (not registered yet).
 
 ## The problem
 
@@ -214,7 +214,7 @@ tools/board unread      # catch up on the board
 - **AI:** [Google Gemini API](https://ai.google.dev)
 - **Wall display:** [d3](https://d3js.org), [Tone.js](https://tonejs.github.io), [IBM Plex](https://github.com/IBM/plex)
 - **Firmware:** [MFRC522](https://github.com/miguelbalboa/rfid), [Adafruit NeoPixel](https://github.com/adafruit/Adafruit_NeoPixel), [ArduinoJson](https://arduinojson.org), [Arduino core for ESP32](https://github.com/espressif/arduino-esp32)
-- **Domain:** tapin.boston, registered through [GoDaddy Registry](https://www.godaddy.com/registry)
+- **Domain:** tapin.boston, planned through the [GoDaddy Registry](https://www.godaddy.com/registry) offer (not registered yet)
 - **Agent board:** the hackathon agent board template
 
 ## License
