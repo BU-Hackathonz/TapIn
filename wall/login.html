@@ -41,8 +41,21 @@
     <h1>About you</h1>
     <div class="face-row">
       <img id="face" class="face" alt="Your picture">
-      <button type="button" class="ghost" id="shuffle">Shuffle picture</button>
+      <div class="pic-actions">
+        <label class="ghost pick" id="camera-btn">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+          Take photo
+          <input type="file" id="camera" accept="image/*" capture="user">
+        </label>
+        <label class="ghost pick">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M20 16l-5-5-7 8"/></svg>
+          <span id="gallery-label">Choose from gallery</span>
+          <input type="file" id="gallery" accept="image/*">
+        </label>
+        <button type="button" class="link" id="shuffle">Shuffle drawn face</button>
+      </div>
     </div>
+    <p class="err" id="pic-err" hidden>That file couldn't be read as a picture. Try another one.</p>
     <label class="field">First name
       <input type="text" id="name" maxlength="30" autocomplete="given-name" placeholder="First name only">
     </label>

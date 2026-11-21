@@ -19,13 +19,26 @@ const View3D = (() => {
   // Mockup profile picture: initials on a colour from the name, drawn in the active theme's style. Cached.
   const avatars = new Map();
   function avatar(person) {
-    const style = Theme.c.avatar, key = `${style}:${person.id}:${person.name}:${person.face || ""}`;
+    const style = Theme.c.avatar, key = `${style}:${person.id}:${person.name}:${person.face || ""}:${person.photo ? person.photo.length : 0}`;
     if (avatars.has(key)) return avatars.get(key);
     const c = document.createElement("canvas");
     c.width = c.height = 128;
     const g = c.getContext("2d");
     let h = 0;
     for (const ch of person.name) h = (h * 31 + ch.charCodeAt(0)) % 360;
+    if (person.photo) {
+      // Draw the face first so there's something to show, then paint the photo over it once it decodes.
+      drawFace(g, person);
+      const img = new Image();
+      img.onload = () => {
+        g.save(); g.beginPath(); g.arc(64, 64, 64, 0, Math.PI * 2); g.clip();
+        g.drawImage(img, 0, 0, 128, 128); g.restore();
+        if (typeof Corner !== "undefined") Corner.refresh();   // the sign-in page has no Corner
+      };
+      img.src = person.photo;
+      avatars.set(key, c);
+      return c;
+    }
     if (style === "face") {
       drawFace(g, person);
       avatars.set(key, c);

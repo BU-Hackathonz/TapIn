@@ -55,9 +55,43 @@
 
   // ---------------------------------------------------------- about you
 
-  const person = () => ({ id: -1, name: me.name || "You", face: me.face });
-  function refreshFace() { $("face").src = View3D.avatar(person()).toDataURL(); }
-  $("shuffle").addEventListener("click", () => { me.face = `face-${Math.random().toString(36).slice(2)}`; refreshFace(); });
+  const person = () => ({ id: -1, name: me.name || "You", face: me.face, photo: me.photo });
+  function refreshFace() {
+    $("face").src = me.photo || View3D.avatar(person()).toDataURL();
+    $("shuffle").textContent = me.photo ? "Use a drawn face" : "Shuffle drawn face";
+  }
+  $("shuffle").addEventListener("click", () => {
+    if (me.photo) delete me.photo;
+    else me.face = `face-${Math.random().toString(36).slice(2)}`;
+    refreshFace();
+  });
+
+  // Photo from the camera or the gallery: centre-cropped to a square, 256 px JPEG, kept in this browser only.
+  const PIC = 256;
+  function usePhoto(file) {
+    $("pic-err").hidden = true;
+    if (!file || !file.type.startsWith("image/")) { $("pic-err").hidden = !file; return; }
+    const url = URL.createObjectURL(file), img = new Image();
+    img.onload = () => {
+      const side = Math.min(img.naturalWidth, img.naturalHeight);
+      const c = document.createElement("canvas");
+      c.width = c.height = PIC;
+      c.getContext("2d").drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, 0, 0, PIC, PIC);
+      me.photo = c.toDataURL("image/jpeg", 0.85);
+      URL.revokeObjectURL(url);
+      refreshFace();
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); $("pic-err").hidden = false; };
+    img.src = url;
+  }
+  for (const id of ["camera", "gallery"]) {
+    $(id).addEventListener("change", (e) => { usePhoto(e.target.files[0]); e.target.value = ""; });
+  }
+  // Only phones and tablets can open the camera straight from a page; elsewhere one upload button is enough.
+  if (!matchMedia("(pointer: coarse)").matches) {
+    $("camera-btn").hidden = true;
+    $("gallery-label").textContent = "Upload a photo";
+  }
   $("name").addEventListener("input", () => { $("name-err").hidden = true; });
   for (const b of $("role").children) {
     b.addEventListener("click", () => {
@@ -165,12 +199,12 @@
   let timer = null;
   function finish() {
     const profile = { name: me.name, role: me.role, bio: me.bio || undefined, school: me.school, major: me.major,
-                      year: me.year, skills: me.skills, looking_for: me.looking_for, face: me.face, links: me.links,
-                      socials: Object.keys(me.links) };
-    try { localStorage.setItem("wall.me", JSON.stringify(profile)); } catch { /* private mode: still show the preview */ }
+                      year: me.year, skills: me.skills, looking_for: me.looking_for, face: me.face, photo: me.photo,
+                      links: me.links, socials: Object.keys(me.links) };
+    try { localStorage.setItem("wall.me", JSON.stringify(profile)); } catch { /* private mode or full: still show the preview */ }
     const card = $("preview");
     const pic = el("img", "face");
-    pic.src = View3D.avatar(person()).toDataURL();
+    pic.src = me.photo || View3D.avatar(person()).toDataURL();
     pic.alt = "";
     const text = el("div");
     text.append(el("b", "", me.name));
