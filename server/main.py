@@ -1,6 +1,7 @@
 """Tap In server: tap endpoint, station state, WebSocket, static mounts."""
+import asyncio
 import logging
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from pathlib import Path
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
@@ -8,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import api, db, scans
+from . import api, db, scans, stats
 from .hub import hub
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
@@ -20,13 +21,18 @@ ROOT = Path(__file__).resolve().parent.parent
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     await db.connect()
+    stats_task = asyncio.create_task(stats.broadcast_loop())
     yield
+    stats_task.cancel()
+    with suppress(asyncio.CancelledError):
+        await stats_task
     await db.close()
 
 
 app = FastAPI(title="Tap In", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 app.include_router(api.router)
+app.include_router(stats.router)
 
 
 class Tap(BaseModel):
