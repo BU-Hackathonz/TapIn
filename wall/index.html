@@ -9,20 +9,14 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600;700&family=Patrick+Hand&display=swap">
 <link rel="stylesheet" href="wall.css">
 </head>
-<body>
+<body data-theme="minimal">
 <canvas id="map3d" aria-label="3D room view"></canvas>
 <aside id="profile" class="profile" aria-label="Profile" hidden>
   <button type="button" id="profile-close" class="profile-close" aria-label="Close profile">×</button>
   <div id="profile-body"></div>
 </aside>
 
-<div class="corner-tl">
-  <button type="button" id="theme-btn" class="theme-btn" aria-label="Change style" title="Style">
-    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 3.5a8.5 8.5 0 0 0 0 17z" fill="currentColor"/></svg>
-  </button>
-  <span class="demo-tag">DEMO</span>
-  <div id="theme-menu" class="theme-menu" hidden></div>
-</div>
+<div class="corner-tl"><span class="demo-tag">DEMO</span></div>
 <div class="count"><b id="here">0</b><span>here now</span></div>
 <div id="toasts" class="toasts" aria-live="polite"></div>
 

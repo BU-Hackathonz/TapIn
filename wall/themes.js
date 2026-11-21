@@ -1,5 +1,5 @@
 // Visual styles for the wall. CSS picks up body[data-theme]; the 3D canvas reads Theme.c (colours and stroke style).
-// ?theme=night|white|sketch|minimal|blueprint wins, then the last choice on this device, then night.
+// Minimal for now; ?theme=night|white|sketch|minimal|blueprint still switches for a look at the others.
 const Theme = (() => {
   const SANS = '"IBM Plex Sans", sans-serif', MONO = '"IBM Plex Mono", monospace', HAND = '"Patrick Hand", "Comic Sans MS", cursive';
   const THEMES = {
@@ -8,14 +8,14 @@ const Theme = (() => {
       c: { regionFill: "rgba(127,224,189,0.05)", region: "#3a3a3a", link: "#8a8a8a", inner: "#7fe0bd", accent: "#b8466f",
            title: "#f2f2f2", need: "#7fe0bd", dim: "#8a8a8a", name: "#d6d6d6",
            student: "#f2f2f2", mentor: "#f2c46d", away: "#6b6b6b", join: "#7fe0bd", help: "#f2c46d",
-           font: SANS, avatar: "color", rough: false, linkAlpha: 1 },
+           font: SANS, avatar: "face", rough: false, linkAlpha: 1 },
     },
     white: {
       label: "White", swatch: ["#fafafa", "#1f9e7a", "#c2185b"],
       c: { regionFill: "rgba(31,158,122,0.06)", region: "#d4d4d4", link: "#9a9a9a", inner: "#1f9e7a", accent: "#c2185b",
            title: "#151515", need: "#1f8a6b", dim: "#8a8a8a", name: "#3a3a3a",
            student: "#262626", mentor: "#d08a00", away: "#c4c4c4", join: "#1f9e7a", help: "#d08a00",
-           font: SANS, avatar: "color", rough: false, linkAlpha: 1.2 },
+           font: SANS, avatar: "face", rough: false, linkAlpha: 1.2 },
     },
     sketch: {
       label: "Sketch", swatch: ["#f6f1e4", "#2b2b2b", "#d1495b"],
@@ -29,7 +29,7 @@ const Theme = (() => {
       c: { regionFill: "rgba(0,0,0,0)", region: "#e2e2e2", link: "#d0d0d0", inner: "#9a9a9a", accent: "#111111",
            title: "#111111", need: "#6b6b6b", dim: "#a8a8a8", name: "#555",
            student: "#111111", mentor: "#111111", away: "#d6d6d6", join: "#111111", help: "#111111",
-           font: SANS, avatar: "mono", rough: false, linkAlpha: 1 },
+           font: SANS, avatar: "face", rough: false, linkAlpha: 1 },
     },
     blueprint: {
       label: "Blueprint", swatch: ["#123a6b", "#cfe8ff", "#ffd166"],
@@ -40,47 +40,21 @@ const Theme = (() => {
     },
   };
 
-  let current = "night";
+  let current = "minimal";
   const listeners = [];
 
   function set(name) {
-    current = THEMES[name] ? name : "night";
+    current = THEMES[name] ? name : "minimal";
     document.body.dataset.theme = current;
-    try { localStorage.setItem("wall.theme", current); } catch { /* private mode */ }
     for (const fn of listeners) fn(current);
   }
 
-  function initial() {
-    const q = new URLSearchParams(location.search).get("theme");
-    let saved = null;
-    try { saved = localStorage.getItem("wall.theme"); } catch { /* private mode */ }
-    return q || saved || "night";
-  }
-
-  // Small picker: a button in the top-left corner that opens a list of swatches.
-  function mountPicker() {
-    const btn = document.getElementById("theme-btn"), menu = document.getElementById("theme-menu");
-    for (const [id, t] of Object.entries(THEMES)) {
-      const b = document.createElement("button");
-      b.type = "button";
-      b.dataset.theme = id;
-      const sw = document.createElement("span");
-      sw.className = "sw";
-      sw.style.background = `linear-gradient(135deg, ${t.swatch[0]} 0 50%, ${t.swatch[1]} 50% 80%, ${t.swatch[2]} 80%)`;
-      b.append(sw, t.label);
-      b.addEventListener("click", () => { set(id); menu.hidden = true; mark(); });
-      menu.append(b);
-    }
-    const mark = () => { for (const b of menu.children) b.classList.toggle("on", b.dataset.theme === current); };
-    btn.addEventListener("click", (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; mark(); });
-    addEventListener("click", (e) => { if (!menu.contains(e.target)) menu.hidden = true; });
-    mark();
-  }
+  const initial = () => new URLSearchParams(location.search).get("theme") || "minimal";
 
   return {
     get c() { return THEMES[current].c; },
     get name() { return current; },
-    set, initial, mountPicker,
+    set, initial,
     onChange: (fn) => listeners.push(fn),
   };
 })();

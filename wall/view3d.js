@@ -26,6 +26,11 @@ const View3D = (() => {
     const g = c.getContext("2d");
     let h = 0;
     for (const ch of person.name) h = (h * 31 + ch.charCodeAt(0)) % 360;
+    if (style === "face") {
+      drawFace(g, person);
+      avatars.set(key, c);
+      return c;
+    }
     const initials = person.name.split(/\s+/).filter((w) => /[A-Za-z]/.test(w[0])).map((w) => w[0]).join("").slice(0, 2).toUpperCase() || "?";
     const circle = () => { g.beginPath(); g.arc(64, 64, 62, 0, Math.PI * 2); };
     const silhouette = (fill) => {
@@ -60,6 +65,48 @@ const View3D = (() => {
     g.fillText(initials, 64, 68);
     avatars.set(key, c);
     return c;
+  }
+
+  // Mock profile picture: a simple drawn face (skin, hair, shirt, background picked from the name), so no real
+  // person's photo is ever used. Same person, same face.
+  const SKIN = ["#f8dcc8", "#efc4a4", "#dba57f", "#bf8460", "#93603f", "#64412a"];
+  const HAIR = ["#2a1b12", "#4b2e1c", "#7b4a27", "#c79a5b", "#151515", "#9b3a24", "#8a8a8a", "#e0c48a"];
+  function drawFace(g, person) {
+    let s = 7;
+    for (const ch of `${person.id}:${person.name}`) s = Math.imul(s ^ ch.charCodeAt(0), 16777619) >>> 0;
+    const r = (n) => { s = Math.imul(s ^ (s >>> 13), 1274126177) >>> 0; return s % n; };
+    const bgHue = r(360), skin = SKIN[r(SKIN.length)], hair = HAIR[r(HAIR.length)];
+    const shirt = `hsl(${r(360)} 45% ${38 + r(20)}%)`, style = r(5);
+    g.save();
+    g.beginPath(); g.arc(64, 64, 64, 0, Math.PI * 2); g.clip();
+    g.fillStyle = `hsl(${bgHue} 55% 88%)`; g.fillRect(0, 0, 128, 128);
+    // long hair falls behind the shoulders
+    if (style === 1) { g.fillStyle = hair; g.beginPath(); g.ellipse(64, 72, 34, 44, 0, 0, Math.PI * 2); g.fill(); }
+    g.fillStyle = shirt; g.beginPath(); g.ellipse(64, 132, 48, 36, 0, Math.PI, 0); g.fill();
+    g.fillStyle = skin; g.fillRect(56, 80, 16, 16);                                          // neck
+    g.beginPath(); g.ellipse(64, 60, 25, 29, 0, 0, Math.PI * 2); g.fill();                   // head
+    g.beginPath(); g.arc(39, 62, 5, 0, Math.PI * 2); g.arc(89, 62, 5, 0, Math.PI * 2); g.fill();  // ears
+    g.fillStyle = hair;
+    if (style === 0 || style === 1) {          // side part
+      g.beginPath(); g.ellipse(64, 42, 27, 17, 0, Math.PI, 0); g.fill();
+      g.beginPath(); g.ellipse(52, 40, 16, 10, -0.5, 0, Math.PI * 2); g.fill();
+    } else if (style === 2) {                  // bun
+      g.beginPath(); g.arc(64, 22, 11, 0, Math.PI * 2); g.fill();
+      g.beginPath(); g.ellipse(64, 42, 26, 16, 0, Math.PI, 0); g.fill();
+    } else if (style === 3) {                  // curls
+      for (const [x, y] of [[44, 42], [54, 33], [64, 30], [74, 33], [84, 42], [40, 52], [88, 52]]) {
+        g.beginPath(); g.arc(x, y, 9, 0, Math.PI * 2); g.fill();
+      }
+    } else {                                    // short crop
+      g.beginPath(); g.ellipse(64, 40, 25, 13, 0, Math.PI, 0); g.fill();
+    }
+    g.fillStyle = "#2a2a2a";
+    g.beginPath(); g.arc(55, 61, 2.8, 0, Math.PI * 2); g.arc(73, 61, 2.8, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = "#2a2a2a"; g.lineWidth = 2.4; g.lineCap = "round";
+    g.beginPath(); g.arc(64, 70, 7, 0.18 * Math.PI, 0.82 * Math.PI); g.stroke();
+    g.fillStyle = "rgba(230,110,110,0.22)";
+    g.beginPath(); g.arc(49, 71, 4.5, 0, Math.PI * 2); g.arc(79, 71, 4.5, 0, Math.PI * 2); g.fill();
+    g.restore();
   }
 
   // Sketch style: every stroke is drawn twice with a small, stable wobble (seeded per element, so it doesn't boil).

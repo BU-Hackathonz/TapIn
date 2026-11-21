@@ -96,32 +96,18 @@
 
   // ------------------------------------------------------------ side notifications
 
-  // A small card slides in on the side for each arrival, join, new table or mentor visit, then leaves.
-  // An arrival's line can be swapped for the Gemini icebreaker while its card is still up.
-  const TOAST_MS = 4500, TOAST_MAX = 4;
-  function toast(person, parts, kind = "arrive", key = "") {
-    if (!person) return null;
-    const box = $("toasts"), card = document.createElement("div");
-    card.className = `toast ${kind}`;
-    if (key) card.dataset.key = key;
-    const img = document.createElement("img");
-    img.src = View3D.avatar(person).toDataURL();
-    img.alt = "";
-    const text = document.createElement("div"), name = document.createElement("b"), line = document.createElement("span");
-    name.textContent = person.name;
-    line.className = "line";
-    for (const part of parts) {
-      if (typeof part === "string") line.append(part);
-      else { const em = document.createElement("em"); em.textContent = part.em; line.append(em); }
-    }
-    text.append(name, line);
-    card.append(img, text);
-    box.prepend(card);
+  // Just text, no box: "Hana joined" fades in on the left when someone arrives or claims a badge, then fades out.
+  const TOAST_MS = 4000, TOAST_MAX = 5;
+  function toast(name) {
+    if (!name) return;
+    const box = $("toasts"), line = document.createElement("p"), b = document.createElement("b");
+    line.className = "toast";
+    b.textContent = name;
+    line.append(b, " joined");
+    box.prepend(line);
     while (box.children.length > TOAST_MAX) box.lastChild.remove();
-    setTimeout(() => { card.classList.add("out"); setTimeout(() => card.remove(), 450); }, TOAST_MS);
-    return card;
+    setTimeout(() => { line.classList.add("out"); setTimeout(() => line.remove(), 450); }, TOAST_MS);
   }
-  const tableName = (gid) => S.groups.get(gid)?.name || `Table ${gid}`;
 
   // ------------------------------------------------------------ events
 
@@ -137,14 +123,7 @@
       setTimeout(pruneHints, 10100);
       setTimeout(() => ripple(p.id), 60);
       Sound.arrive();
-      const top = sugg[0];
-      if (!top) toast(p, ["checked in"]);
-      else if (top.reason?.startsWith("needs ")) toast(p, [`${tableName(top.group_id)} needs `, { em: top.reason.slice(6) }], "arrive", `${p.id}-${top.group_id}`);
-      else toast(p, [`try ${tableName(top.group_id)} · ${top.reason}`], "arrive", `${p.id}-${top.group_id}`);
-    },
-    icebreaker(d) {
-      const line = document.querySelector(`.toast[data-key="${d.person_id}-${d.group_id}"] .line`);
-      if (line) line.textContent = d.text;
+      toast(p.name);
     },
     async group_formed(d) {
       await syncGraph();
@@ -155,8 +134,6 @@
       glow(d.group_id);
       d.member_ids.forEach((id) => ripple(id, "join"));
       Sound.links(keys.length);
-      const others = d.member_ids.slice(1).map((id) => S.people.get(id)?.name).filter(Boolean);
-      toast(S.people.get(d.member_ids[0]), [`started ${tableName(d.group_id)}${others.length ? ` with ${others.join(", ")}` : ""}`], "join");
     },
     async group_joined(d) {
       if (!S.groups.has(d.group_id)) await syncGraph();
@@ -169,12 +146,10 @@
       glow(d.group_id);
       d.new_member_ids.forEach((id) => ripple(id, "join"));
       Sound.links(d.new_links.length);
-      for (const id of d.new_member_ids) toast(S.people.get(id), ["joined ", { em: tableName(d.group_id) }], "join");
     },
     help(d) {
       ripple(d.mentor_id, "help");
       glow(d.group_id);
-      toast(S.people.get(d.mentor_id), [`is helping ${tableName(d.group_id)}`], "help");
       syncSoon();
     },
     link_strengthened(d) {
@@ -194,7 +169,8 @@
       S.needs = d.needs || [];
       render();
     },
-    person_created() {
+    person_created(d) {
+      toast(d.name);
       syncSoon();
     },
   };
@@ -229,7 +205,6 @@
     try { await Sound.start(); } catch (e) { console.error("sound", e); }
   });
   Theme.set(Theme.initial());
-  Theme.mountPicker();
   View3D.init(() => ({ visible, shownGroups, S, radius, needLine }));
   View3D.setActive(true);
 
