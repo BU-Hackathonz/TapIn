@@ -2,6 +2,13 @@
 // ?server=host:port points the wall at another server (default: same origin). ?silent skips the Start screen.
 (() => {
   const qs = new URLSearchParams(location.search);
+  // Sign in first. The venue projector has nobody to sign in, so it opens the wall with ?kiosk.
+  let signedIn = false;
+  try { signedIn = !!localStorage.getItem("wall.me"); } catch { /* private mode: treat as signed out */ }
+  if (!signedIn && !qs.has("kiosk")) {
+    location.replace(`login.html${location.search}`);
+    return;
+  }
   const host = qs.get("server") || location.host;
   const HTTP = `${location.protocol === "https:" ? "https" : "http"}://${host}`;
   const WS = `${location.protocol === "https:" ? "wss" : "ws"}://${host}/ws`;
@@ -252,7 +259,8 @@
   Theme.set(Theme.initial());
   Corner.mount(() => S);
   Hub.mount(() => S);
-  View3D.init(() => ({ visible, shownGroups, S, radius, needLine }));
+  View3D.init(() => ({ visible, shownGroups, S, radius, needLine, me: Corner.signedIn() ? Corner.me() : null }));
+  View3D.onMe(() => Corner.show("you"));
   View3D.setActive(true);
 
   // ?demo, or no Tap In server behind this page (e.g. hosted on its own): run the built-in demo room.

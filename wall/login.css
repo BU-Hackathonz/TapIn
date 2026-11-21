@@ -128,3 +128,9 @@ label.field input { margin-top: 6px; font-weight: 400; }
   .card { border: 0; border-radius: 0; box-shadow: none; min-height: 100vh; padding: 18px 18px 24px; }
 }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+.welcome { text-align: center; padding: 8px 0 4px; }
+.welcome .face { margin: 0 auto 14px; display: block; }
+.welcome h1 { margin-bottom: 4px; }
+.split { margin-top: 10px; }
+.split .ghost { flex: 1; }

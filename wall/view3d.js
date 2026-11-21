@@ -197,11 +197,15 @@ const View3D = (() => {
       if (!byGroup.has(key)) byGroup.set(key, []);
       byGroup.get(key).push(p);
     }
-    const seen = new Set();
+    const seen = new Set(), me = scene().me;
     for (const [gid, ms] of byGroup) {
-      const c = centers.get(gid) || { x: 0, y: 0, z: 0, r: spread(ms.length) };
+      const lobby = !centers.has(gid);
+      // With you in the middle, people not at a table circle around you instead of sitting on top of you.
+      const c = centers.get(gid) || { x: 0, y: 0, z: 0, r: me ? Math.max(70, spread(ms.length)) : spread(ms.length) };
       ms.forEach((p, i) => {
-        const [ox, oy, oz] = fib(i, ms.length), r = c.r * 0.72;
+        let [ox, oy, oz] = fib(i, ms.length);
+        if (lobby && me && ms.length === 1) [ox, oy, oz] = [1, 0, 0];
+        const r = c.r * (lobby && me ? 1 : 0.72);
         const q = pos.get(p.id) || { x: c.x, y: c.y, z: c.z };
         Object.assign(q, { tx: c.x + ox * r, ty: c.y + oy * r, tz: c.z + oz * r });
         pos.set(p.id, q);
@@ -209,6 +213,22 @@ const View3D = (() => {
       });
     }
     for (const id of [...pos.keys()]) if (!seen.has(id)) pos.delete(id);
+    myTable = me ? bestTable(me) : null;
+  }
+
+  // The open table whose needs overlap your skills most; ties go to the smaller table.
+  function bestTable(me) {
+    const { S, shownGroups } = scene();
+    let best = null, score = 0;
+    for (const g of shownGroups) {
+      if (g.mode !== "open") continue;
+      const needs = S.needs.filter((n) => n.group_id === g.id && !n.handled_by).map((n) => n.need);
+      const hit = needs.filter((n) => (me.skills || []).includes(n)).length;
+      const size = [...S.people.values()].filter((p) => p.group_id === g.id).length;
+      const sc = hit * 10 - size * 0.1;
+      if (hit && sc > score) { best = g.id; score = sc; }
+    }
+    return best;
   }
 
   function project(x, y, z) {
@@ -268,7 +288,7 @@ const View3D = (() => {
       ctx.fill();
       ctx.setLineDash(g?.mode === "heads_down" ? [6, 6] : []);
       ctx.strokeStyle = g?.glow ? T.accent : T.region;
-      ctx.lineWidth = g?.glow ? 3 : 1.5;
+      ctx.lineWidth = g?.glow ? 3 : 1;
       ctx.stroke();
       ctx.setLineDash([]);
     }
@@ -280,7 +300,10 @@ const View3D = (() => {
       const pa = S.people.get(l.a), pb = S.people.get(l.b);
       const inner = pa.group_id && pa.group_id === pb.group_id;
       const mine = focusLinks && (l.a === focusLinks || l.b === focusLinks);
-      ctx.globalAlpha = mine ? 1 : Math.min(1, depthAlpha((a.z + b.z) / 2) * (inner ? 0.55 : 0.2) * T.linkAlpha);
+      const hov = hoverId !== null && (l.a === hoverId || l.b === hoverId);
+      // Less clutter: links between tables only show for the person you selected or point at.
+      if (!inner && !mine && !hov && !S.fresh.has(k)) continue;
+      ctx.globalAlpha = mine || hov ? 1 : Math.min(1, depthAlpha((a.z + b.z) / 2) * 0.35 * T.linkAlpha);
       ctx.strokeStyle = S.fresh.has(k) || mine ? T.accent : inner ? T.inner : T.link;
       ctx.lineWidth = Math.min(1 + (l.strength - 1) * 0.7, 4) * (mine ? 1.6 : 1);
       line(a.x, a.y, b.x, b.y, hash(k));
@@ -294,6 +317,15 @@ const View3D = (() => {
       if (a && c && h.until > Date.now()) line(a.x, a.y, c.x, c.y, h.pid);
     }
     ctx.setLineDash([]);
+
+    // you -> the table that needs your skills
+    const ME = scene().me, meP = ME ? project(0, 0, 0) : null;
+    if (meP && !meP.off && myTable !== null && C.get(myTable)) {
+      const c = C.get(myTable);
+      ctx.setLineDash([4, 6]); ctx.strokeStyle = T.accent; ctx.lineWidth = 1.6; ctx.globalAlpha = 0.75;
+      line(meP.x, meP.y, c.x, c.y, 7);
+      ctx.setLineDash([]);
+    }
 
     // people, far first
     const order = [...P].sort((a, b) => b[1].z - a[1].z);
@@ -337,7 +369,10 @@ const View3D = (() => {
     };
     const k = T.rough ? 1.2 : 1, big = (PHONE ? 15 : 20) * k, small = (PHONE ? 12 : 14) * k;
     for (const [gid, c] of [...C].sort((a, b) => a[1].z - b[1].z)) {
-      const g = S.groups.get(gid), need = scene().needLine(g), top = c.y - c.r * c.s - 10;
+      const g = S.groups.get(gid), top = c.y - c.r * c.s - 10;
+      // one need, plus a count, keeps the labels short
+      const all = scene().needLine(g), parts = all.replace(/^needs /, "").split(", ").filter(Boolean);
+      const need = all.startsWith("needs ") && parts.length > 1 ? `needs ${parts[0]} +${parts.length - 1}` : all;
       ctx.font = `700 ${big}px ${T.font}`;
       const w = Math.max(ctx.measureText(g?.name || "").width, need.length * small * 0.5);
       const lx = Math.max(w / 2 + 8, Math.min(W - w / 2 - 8, c.x));   // keep the label on screen
@@ -350,7 +385,9 @@ const View3D = (() => {
       ctx.fillText(need, lx, top);
     }
     ctx.font = `${small}px ${T.font}`;
-    const near = opts.names ? order.slice(-PRESET.labels).map(([id]) => id).reverse() : [];
+    // Names only once you zoom in (or for whoever you point at), so the overview stays quiet.
+    const near = opts.names && zoom > 1.5 ? order.slice(-PRESET.labels).map(([id]) => id).reverse() : [];
+    if (hoverId !== null && hoverId !== focusLinks) near.unshift(hoverId);
     if (focusLinks) near.unshift(focusLinks);
     for (const id of near) {
       const p = P.get(id), person = S.people.get(id);
@@ -361,6 +398,20 @@ const View3D = (() => {
       ctx.fillStyle = T.name;
       ctx.fillText(person.name, p.x, y);
     }
+
+    // you, always on top in the middle
+    if (meP && !meP.off) {
+      const rr = Math.max(16, 15 * meP.s * 1.3);
+      ctx.globalAlpha = 1;
+      ctx.save(); ctx.beginPath(); ctx.arc(meP.x, meP.y, rr, 0, Math.PI * 2); ctx.clip();
+      ctx.drawImage(avatar(ME), meP.x - rr, meP.y - rr, rr * 2, rr * 2);
+      ctx.restore();
+      ctx.beginPath(); ctx.arc(meP.x, meP.y, rr + 2, 0, Math.PI * 2);
+      ctx.strokeStyle = T.accent; ctx.lineWidth = 3; ctx.stroke();
+      ctx.font = `700 ${small}px ${T.font}`; ctx.fillStyle = T.title;
+      ctx.fillText("You", meP.x, meP.y + rr + 18);
+    }
+    lastMe = meP && !meP.off ? { x: meP.x, y: meP.y, r: Math.max(16, 15 * meP.s * 1.3) } : null;
 
     // arrival pulses
     for (let i = pulses.length - 1; i >= 0; i--) {
@@ -374,7 +425,8 @@ const View3D = (() => {
     lastProjection = P;
     lastCenters = C;
   }
-  let lastProjection = new Map(), lastCenters = new Map(), focusGroup = null, onGroup = () => {};
+  let lastProjection = new Map(), lastCenters = new Map(), focusGroup = null, onGroup = () => {}, onMe = () => {};
+  let lastMe = null, myTable = null, hoverId = null;
 
   function pulse(id, kind = "accent") {
     pulses.push({ id, kind, t0: performance.now() });
@@ -416,7 +468,8 @@ const View3D = (() => {
     });
     canvas.addEventListener("pointermove", (e) => {
       const prev = pts.get(e.pointerId);
-      if (!prev) return;
+      if (!prev) { hover(e); return; }
+      canvas.style.cursor = "move";
       const cur = { x: e.clientX, y: e.clientY }, now = performance.now();
       pts.set(e.pointerId, cur);
       lastTouch = now;
@@ -441,6 +494,7 @@ const View3D = (() => {
       const was = pts.get(e.pointerId);
       pts.delete(e.pointerId);
       pointers = pts.size;
+      if (pts.size === 0) canvas.style.cursor = "default";
       if (pts.size < 2) pinch = 0;
       if (pts.size === 0) {
         // Finger rested before lifting, or this was a pinch: no throw.
@@ -464,7 +518,32 @@ const View3D = (() => {
     canvas.addEventListener("contextmenu", (e) => { e.preventDefault(); reset(); hideCard(); });
   }
 
+  // What's under the pointer: you, a person, a table bubble, or nothing.
+  function hit(x, y) {
+    const { S, radius } = scene();
+    if (lastMe && Math.hypot(lastMe.x - x, lastMe.y - y) < lastMe.r + 6) return { me: true };
+    let best = null, bestD = Infinity;
+    for (const [id, p] of lastProjection) {
+      const d = Math.hypot(p.x - x, p.y - y), person = S.people.get(id);
+      if (d < Math.max(22, radius(person) * p.s + 8) && d < bestD) { best = id; bestD = d; }
+    }
+    if (best !== null) return { person: best };
+    for (const [gid, c] of lastCenters) if (Math.hypot(c.x - x, c.y - y) < c.r * c.s) return { table: gid };
+    return null;
+  }
+  function hover(e) {
+    if (e.pointerType === "touch") return;
+    const r = canvas.getBoundingClientRect(), h = hit(e.clientX - r.left, e.clientY - r.top);
+    hoverId = h && h.person !== undefined ? h.person : null;
+    canvas.style.cursor = h ? "pointer" : "default";
+  }
+
   function pick(x, y) {
+    if (lastMe && Math.hypot(lastMe.x - x, lastMe.y - y) < lastMe.r + 6) {
+      focusId = null; focusGroup = null; picked = null; zoomGoal = Math.max(zoom, 1.6);
+      onMe();
+      return;
+    }
     const { S, radius } = scene();
     let best = null, bestD = Infinity;
     for (const [id, p] of lastProjection) {
@@ -633,5 +712,5 @@ const View3D = (() => {
   const setOption = (k, v) => { opts[k] = v; };
 
   return { init, setActive, relayout, pulse, avatar, buildProfile, setOption, focusPerson,
-           onTable: (fn) => { onGroup = fn; }, socialIcon: (k) => SOCIAL[k], PHONE };
+           onTable: (fn) => { onGroup = fn; }, onMe: (fn) => { onMe = fn; }, socialIcon: (k) => SOCIAL[k], PHONE };
 })();

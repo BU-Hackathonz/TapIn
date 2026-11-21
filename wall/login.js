@@ -29,9 +29,24 @@
 
   // ---------------------------------------------------------- steps
 
+  // Signed in before on this device: offer to go straight back in.
+  function showBack() {
+    for (const s of document.querySelectorAll(".step")) s.hidden = s.dataset.step !== "back";
+    $("dots").hidden = true;
+    $("nav").hidden = true;
+    $("back-face").src = me.photo || View3D.avatar(person()).toDataURL();
+    $("back-title").textContent = `Welcome back, ${me.name}`;
+    $("back-sub").textContent = [me.school, me.major].filter(Boolean).join(" · ") || "Your profile is saved on this device.";
+  }
+  $("back-edit").addEventListener("click", () => show(1));
+  $("back-out").addEventListener("click", () => {
+    try { localStorage.removeItem("wall.me"); } catch { /* private mode */ }
+    location.replace("login.html");
+  });
+
   function show(n) {
     step = Math.max(0, Math.min(LAST, n));
-    for (const s of document.querySelectorAll(".step")) s.hidden = Number(s.dataset.step) !== step;
+    for (const s of document.querySelectorAll(".step")) s.hidden = Number(s.dataset.step) !== step || s.dataset.step === "back";
     $("dots").replaceChildren(...Array.from({ length: LAST }, (_, i) => el("li", i < step ? "done" : i === step - 1 ? "on" : "")));
     $("dots").hidden = step === 0;
     $("nav").hidden = step === 0 || step === LAST;
@@ -250,5 +265,10 @@
   chipGroup("skills", "skills", 3, "skills-count", "Skill");
   chipGroup("looking", "looking_for", 2, "looking-count", "Looking for");
   renderApps();
-  show(0);
+  // Remembered sign-in: straight to "welcome back", or to editing when the wall's Edit link sent us here.
+  // Signed out, "← Room" would just bounce back here, so it only shows once there's a profile.
+  document.querySelector(".back").hidden = !saved;
+  if (saved && new URLSearchParams(location.search).has("edit")) show(1);
+  else if (saved) showBack();
+  else show(0);
 })();

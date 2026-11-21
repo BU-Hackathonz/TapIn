@@ -45,8 +45,8 @@ body {
   transition: background-color 0.3s, color 0.3s;
 }
 
-#map3d { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
-#map3d:active { cursor: grabbing; }
+/* plain cursors only: grab/grabbing are missing from many Linux cursor themes and show nothing */
+#map3d { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: default; }
 
 .count { position: fixed; right: 28px; top: 18px; text-align: right; z-index: 2; }
 .count b { display: block; font: 600 40px/1 var(--mono); font-variant-numeric: tabular-nums; }

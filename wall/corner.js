@@ -17,12 +17,21 @@ const Corner = (() => {
   };
 
   // The profile saved by login.html, if this browser has one; otherwise the first person in the room.
+  // Read on every frame by the map, so parse only when the stored text changes.
+  let rawCache = null, meCache = null, meObj = null;
   function saved() {
-    try { return JSON.parse(localStorage.getItem("wall.me") || "null"); } catch { return null; }
+    let raw = null;
+    try { raw = localStorage.getItem("wall.me"); } catch { return null; }
+    if (raw !== rawCache) {
+      rawCache = raw;
+      try { meCache = raw ? JSON.parse(raw) : null; } catch { meCache = null; }
+    }
+    return meCache;
   }
   function me() {
     const p = saved();
-    if (p) return { id: -1, role: "student", points: 0, here: true, group_id: null, ...p };
+    if (p) return (meObj && meObj.src === p) ? meObj.person
+      : (meObj = { src: p, person: { id: -1, role: "student", points: 0, here: true, group_id: null, ...p } }).person;
     const S = getS();
     const people = S ? [...S.people.values()].filter((p) => p.role === "student") : [];
     return people.sort((a, b) => a.id - b.id)[0] || { id: 0, name: "You", role: "student", points: 0, here: true, group_id: null };
@@ -56,7 +65,7 @@ const Corner = (() => {
     if (tab === "you") {
       const p = me();
       const link = el("a", "me-edit", saved() ? "Edit your profile" : "Set up your profile");
-      link.href = "login.html";
+      link.href = saved() ? "login.html?edit" : "login.html";
       body.replaceChildren(el("p", "me-note", saved() ? `Signed in as ${p.name}` : `Signed in as ${p.name} (mock)`), link,
                            ...View3D.buildProfile(p));
       return;
@@ -77,12 +86,24 @@ const Corner = (() => {
       toggleRow("Names on the map", state.names !== false, (v) => { state.names = v; View3D.setOption("names", v); }),
       toggleRow("Spin when idle", state.spin !== false, (v) => { state.spin = v; View3D.setOption("spin", v); }),
       toggleRow("Join messages", state.joins, (v) => { state.joins = v; }),
+      el("h3", "set-h", "Account"),
+      signOutButton(),
       el("h3", "set-h", "Sound"),
       toggleRow("Bell and plucks", Sound.started && !Sound.muted, async (v) => {
         if (v) { try { await Sound.start(); } catch { /* no audio */ } }
         Sound.setMuted(!v);
       }),
     );
+  }
+
+  function signOutButton() {
+    const b = el("button", "me-edit", saved() ? "Sign out" : "Sign in");
+    b.type = "button";
+    b.addEventListener("click", () => {
+      try { localStorage.removeItem("wall.me"); } catch { /* private mode */ }
+      location.href = "login.html";
+    });
+    return b;
   }
 
   function open(v) {
@@ -100,10 +121,13 @@ const Corner = (() => {
     for (const b of document.querySelectorAll(".me-tabs button"))
       b.addEventListener("click", () => { tab = b.dataset.tab; renderBody(); });
     $("me-panel").addEventListener("click", (e) => e.stopPropagation());
-    addEventListener("click", () => open(false));
+    // a tap on "You" in the map opens the panel; the click from that same tap must not close it again
+    addEventListener("click", () => { if (performance.now() - openedAt > 400) open(false); });
     addEventListener("keydown", (e) => { if (e.key === "Escape") open(false); });
     renderTrigger();
   }
 
-  return { mount, me, refresh: renderTrigger, get joins() { return state.joins; } };
+  let openedAt = 0;
+  const show = (which) => { tab = which; openedAt = performance.now(); open(true); };
+  return { mount, me, show, signedIn: () => !!saved(), refresh: renderTrigger, get joins() { return state.joins; } };
 })();
