@@ -43,7 +43,7 @@ flowchart LR
     PHONE["Phone site<br/>/phone"] -- "HTTP: sign-up, claim,<br/>/api/me every 5 s" --> SRV
 ```
 
-- **Stations** are dumb: they send a badge UID with `POST /api/tap`, poll `GET /api/station/{id}` every 500 ms, and light whatever state the server returns. 5 NeoPixel LEDs per station, no buzzer.
+- **Stations** are dumb: they send a badge UID with `POST /api/tap`, poll `GET /api/station/{id}` every 500 ms, and show whatever state the server returns on the board's built-in blue LED, one blink rhythm per state. No LED strip, no buzzer.
 - **Server:** Python FastAPI on one event loop. Each station has at most one open scan window, and every tap restarts its 6 s timer. The window is popped before it's resolved, so a tap that lands mid-resolve opens a fresh window instead of corrupting the old one.
 - **Database:** Tiger Data (see below).
 - **Wall and phone** are plain HTML/JS served by the same server at `/wall` and `/phone`, so there's only one thing to run.
@@ -74,7 +74,7 @@ Phone screenshots were taken in FAKE mode (hard-coded sample data, no server), u
 
 ## Station wiring
 
-Each station is an ESP32 dev board, an RC522 reader and 5 NeoPixel LEDs on breadboards. No soldering, except the RC522 header pins if they came loose.
+Each station is an ESP32 dev board and an RC522 reader on a breadboard. No soldering, except the RC522 header pins if they came loose.
 
 <!-- Station photo goes here: docs/station.jpg -->
 
@@ -87,16 +87,10 @@ Each station is an ESP32 dev board, an RC522 reader and 5 NeoPixel LEDs on bread
 | RC522 RST | ESP32 GPIO 22 | F-F |
 | RC522 3.3V | ESP32 3V3 (never 5 V) | F-F |
 | RC522 GND | ESP32 GND | F-F |
-| ESP32 5V | Breadboard top + rail | M/F |
-| ESP32 GND | Breadboard top − rail, bridged to bottom − rail | M/F, M-M |
-| Diode (plain end → striped end) | Top + rail → bottom + rail (LED supply, about 4.2 V) | diode legs |
-| ESP32 GPIO 16 | 330 Ω resistor → LED 1 DIN | M/F, resistor |
-| Each LED 5V / GND | Bottom + / bottom − rail | M-M |
-| LED n DOUT | LED n+1 DIN, LEDs 1→5 | M-M |
 
-The RC522 IRQ pin stays unconnected. LED brightness is capped at 64 of 255 so USB power holds up. Station 1 (Entrance) glows raspberry and station 2 (Table 2) glows green, matching the wall.
+The RC522 IRQ pin stays unconnected. The station's feedback is the ESP32's built-in blue LED: a heartbeat blip when idle, solid while collecting badges, 3 blinks a second for a check-in, a fast flicker for a join, a double blink for an unknown badge, a slow blink while a sign-up waits for a badge, and a brief blink every 2 s when offline. The firmware can still drive an optional NeoPixel strip on GPIO 16 if one is wired later.
 
-In the enclosure the reader is taped flat under a non-metal lid (3 mm or thinner) with the antenna up, and the LEDs face up through a paper diffuser printed with "Tap in".
+In the enclosure the reader is taped flat under a non-metal lid (3 mm or thinner) with the antenna up, under a paper label printed with "Tap in".
 
 **Firmware libraries:** MFRC522, Adafruit_NeoPixel, ArduinoJson, plus the built-in WiFi and HTTPClient. The firmware never calls `delay()`, uses an 800 ms HTTP timeout, and shows "collecting" the moment a card is read, before the server answers.
 
