@@ -97,15 +97,20 @@
   function render(me, needs) {
     const p = me.person;
     const helper = p.role !== "student";
+    const state = el("span", { class: "switch-state" + (p.focus ? " on" : ""), "aria-hidden": "true" }, p.focus ? "On" : "Off");
     const focus = el("input", { type: "checkbox", class: "switch", id: "focus", role: "switch", checked: p.focus,
-      onchange: e => post(`/me/${p.id}/focus`, { focus: e.target.checked }) });
+      onchange: e => {
+        state.textContent = e.target.checked ? "On" : "Off";
+        state.className = "switch-state" + (e.target.checked ? " on" : "");
+        post(`/me/${p.id}/focus`, { focus: e.target.checked });
+      } });
     app.replaceChildren(
       el("div", { class: "brand" }, "TAP IN"),
       el("h1", {}, p.name, el("span", { class: "points" }, `${me.points} pts`)),
       el("p", {}, el("span", { class: "status" + (me.here ? " here" : "") }, me.here ? "Here now" : "Not checked in"),
         me.here ? null : el("span", { class: "muted" }, " Tap your badge alone at the Entrance.")),
       el("div", { class: "switch-row" },
-        el("label", { for: "focus" }, "Focus mode", el("small", {}, "Nobody gets you as a suggestion.")), focus),
+        el("label", { for: "focus" }, "Focus mode", el("small", {}, "Nobody gets you as a suggestion.")), state, focus),
       el("h2", {}, "People you know who are here"),
       list(me.known_here.map(k => el("li", {}, el("span", { class: "title" }, k.name))), "Nobody you've met is here yet."),
       ...(helper ? needsSection(needs) : groupsSection(me)),

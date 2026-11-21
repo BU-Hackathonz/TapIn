@@ -17,7 +17,7 @@
 
   <form id="form" novalidate>
     <label class="field" for="name">First name</label>
-    <input type="text" id="name" name="name" maxlength="30" autocomplete="given-name" autocapitalize="words" required>
+    <input type="text" id="name" name="name" maxlength="30" autocomplete="given-name" autocapitalize="words" placeholder="e.g. Maya" required>
 
     <fieldset>
       <legend>I'm a</legend>
@@ -29,12 +29,12 @@
     </fieldset>
 
     <fieldset>
-      <legend>What I'm good at <small>(up to 3)</small></legend>
+      <legend>What I'm good at <small id="skills-count">(up to 3)</small></legend>
       <div id="skills"></div>
     </fieldset>
 
     <fieldset>
-      <legend>Looking for <small>(up to 2)</small></legend>
+      <legend>Looking for <small id="looking-count">(up to 2)</small></legend>
       <div id="looking"></div>
     </fieldset>
 
@@ -50,8 +50,10 @@
 <script src="common.js"></script>
 <script>
   const saved = store.get("tapin_form", sessionStorage) || {};
-  const skills = chipGroup("skills", SKILLS, saved.skills || [], 3);
-  const looking = chipGroup("looking_for", SKILLS, saved.looking_for || [], 2);
+  const counter = (id, max) => v => { document.getElementById(id).textContent = v.length ? `(${v.length} of ${max} picked)` : `(up to ${max})`; };
+  const skills = chipGroup("skills", SKILLS, saved.skills || [], 3, counter("skills-count", 3));
+  const looking = chipGroup("looking_for", SKILLS, saved.looking_for || [], 2, counter("looking-count", 2));
+  counter("skills-count", 3)(picked(skills)); counter("looking-count", 2)(picked(looking));
   document.getElementById("skills").append(skills);
   document.getElementById("looking").append(looking);
   if (saved.name) document.getElementById("name").value = saved.name;
@@ -69,7 +71,7 @@
     const err = document.getElementById("error");
     const go = document.getElementById("go");
     const body = {
-      name: document.getElementById("name").value.trim(),
+      name: document.getElementById("name").value.trim().split(/\s+/)[0],  // first name only
       role: document.querySelector("input[name=role]:checked").value,
       skills: picked(skills),
       looking_for: picked(looking),

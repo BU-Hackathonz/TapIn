@@ -32,29 +32,41 @@ function chipGroup(name, values, checked, max, onChange) {
 const picked = box => [...box.querySelectorAll("input:checked")].map(b => b.value);
 
 // FAKE = true at the top of a page: answer from these hard-coded replies (same shapes as the server).
-const fake = { claimFrom: 0, focus: false, mode: "open", looking: ["firmware"] };
+// The people and tables match the fake room in tools/seed.py, so screenshots look like the real thing.
+const fake = { claimFrom: 0, focus: false };
 function fakeReply(method, path, body) {
-  const g = (id, n, known) => ({ id, name: `Table ${id}`, station_id: 2, mode: "open", working_on: "a robot arm",
-    looking_for: ["firmware"], size: n, known_count: known });
+  const g = (id, working_on, looking_for, size, known_count) =>
+    ({ id, name: `Table ${id}`, station_id: id === 2 ? 2 : 1, mode: "open", working_on, looking_for, size, known_count });
+  const min = m => new Date(Date.now() - m * 60000).toISOString();
   if (path === "/signup") return { person_id: 1, claim_code: "FAKE01", expires_in: 30 };
   if (path.startsWith("/claim/")) {
     fake.claimFrom ||= Date.now();
-    return { status: Date.now() - fake.claimFrom > 4000 ? "claimed" : "waiting" };
+    return { status: Date.now() - fake.claimFrom > 4000 ? "claimed" : "waiting" };  // countdown shows about 4 s
   }
   if (path.endsWith("/focus")) { fake.focus = body.focus; return { ok: true }; }
-  if (path.endsWith("/mode")) { fake.mode = body.mode; fake.looking = body.looking_for; return { ok: true }; }
+  if (path.endsWith("/mode")) return { ok: true };
   if (path === "/needs") return [
-    { group_id: 2, table: "Table 2", need: "firmware", since: new Date(Date.now() - 12 * 60000).toISOString(), handled_by: null },
-    { group_id: 4, table: "Table 4", need: "design", since: new Date(Date.now() - 30 * 60000).toISOString(), handled_by: 9 }];
-  if (path.startsWith("/me/")) return {
-    person: { id: 1, name: "Maya", role: "student", skills: ["firmware"], looking_for: ["design"], working_on: "", focus: fake.focus },
-    here: true,
-    group: { ...g(3, 2, 1), mode: fake.mode, looking_for: fake.looking, points: 25, members: [{ id: 1, name: "Maya" }, { id: 8, name: "Sam" }] },
-    known_here: [{ id: 8, name: "Sam" }],
-    suggested_groups: [{ group: g(2, 3, 1), score: 9, reason: "needs firmware" }, { group: g(4, 2, 1), score: 4, reason: "you know Leo" }],
-    suggested_people: [{ person: { id: 9, name: "Priya", skills: ["design"] }, score: 6, reason: "does design, which you want" }],
-    points: 31,
-  };
+    { group_id: 2, table: "Table 2", need: "firmware", since: min(12), handled_by: null },
+    { group_id: 3, table: "Table 3", need: "backend", since: min(25), handled_by: null },
+    { group_id: 1, table: "Table 1", need: "design", since: min(40), handled_by: 19 }];
+  if (path.startsWith("/me/")) {
+    const form = store.get("tapin_form", sessionStorage) || {};
+    return {
+      person: { id: 1, name: form.name || "Maya", role: form.role || "student", skills: ["firmware", "hardware"],
+                looking_for: ["design"], working_on: "", focus: fake.focus },
+      here: true,
+      group: null,  // like Maya in the seed room: on her own, so the tables that fit her show
+      known_here: [{ id: 2, name: "Sam" }],
+      suggested_groups: [
+        { group: g(2, "a robot arm", ["firmware"], 3, 1), score: 14, reason: "needs firmware" },
+        { group: g(3, "a study-room finder", ["backend"], 2, 0), score: 8, reason: "could use your firmware" },
+        { group: g(1, "a T delay predictor", ["design"], 3, 0), score: 5, reason: "could use your firmware" }],
+      suggested_people: [
+        { person: { id: 9, name: "Lina", skills: ["design"] }, score: 7, reason: "does design, which you want" },
+        { person: { id: 12, name: "Ravi", skills: ["firmware"] }, score: 4, reason: "also does firmware" }],
+      points: 6,
+    };
+  }
   return null;
 }
 
