@@ -60,6 +60,8 @@
     const done = needs.filter(n => n.handled_by != null);
     return [
       el("h2", {}, "Tables waiting for help"),
+      // Spec: staff see how many needs got met (the server gives no handled time, so no wait for those)
+      needs.length ? el("p", { class: "muted" }, `${done.length} of ${needs.length} needs met`) : null,
       list([
         ...open.map((n, i) => el("li", { class: i === 0 ? "top" : "" },
           el("div", { class: "title" }, n.table, " ", el("span", { class: "why" }, "needs " + n.need)),
