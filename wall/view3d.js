@@ -7,7 +7,7 @@ const View3D = (() => {
   const PHONE = matchMedia("(max-width: 700px), (pointer: coarse)").matches;
   const PRESET = PHONE ? { dpr: 1.5, fps: 30, labels: 10 } : { dpr: 2, fps: 60, labels: 40 };
   const R = 300;               // table centers sit on this sphere
-  let canvas, ctx, scene, COLOR, W = 0, H = 0, active = false;
+  let canvas, ctx, scene, W = 0, H = 0, active = false;
   let rotY = 0.4, rotX = -0.3, zoom = 1, lastTouch = 0, lastFrame = 0;
   const pos = new Map();       // person id -> {x,y,z,tx,ty,tz}
   const centers = new Map();   // group id -> {x,y,z,r}
@@ -16,31 +16,75 @@ const View3D = (() => {
   let zoomGoal = 1, focusId = null, spinX = 0, spinY = 0, pointers = 0, liftY = 0;
   const cam = { x: 0, y: 0, z: 0 };   // point the camera orbits; eases to a tapped person
 
-  // Mockup profile picture: initials on a gradient whose hue comes from the name. Cached per person.
+  // Mockup profile picture: initials on a colour from the name, drawn in the active theme's style. Cached.
   const avatars = new Map();
   function avatar(person) {
-    const key = `${person.id}:${person.name}`;
+    const style = Theme.c.avatar, key = `${style}:${person.id}:${person.name}`;
     if (avatars.has(key)) return avatars.get(key);
     const c = document.createElement("canvas");
     c.width = c.height = 128;
     const g = c.getContext("2d");
     let h = 0;
     for (const ch of person.name) h = (h * 31 + ch.charCodeAt(0)) % 360;
-    const grad = g.createLinearGradient(0, 0, 128, 128);
-    grad.addColorStop(0, `hsl(${h} 55% 52%)`);
-    grad.addColorStop(1, `hsl(${(h + 40) % 360} 60% 30%)`);
-    g.fillStyle = grad;
-    g.beginPath(); g.arc(64, 64, 64, 0, Math.PI * 2); g.fill();
-    // a soft head-and-shoulders silhouette behind the initials reads as "profile photo"
-    g.fillStyle = "rgba(255,255,255,0.16)";
-    g.beginPath(); g.arc(64, 50, 24, 0, Math.PI * 2); g.fill();
-    g.beginPath(); g.ellipse(64, 122, 46, 38, 0, Math.PI, 0); g.fill();
-    const initials = person.name.split(/\s+/).filter((w) => /[A-Za-z]/.test(w[0])).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
-    g.fillStyle = "#fff"; g.font = '600 48px "IBM Plex Sans", sans-serif';
+    const initials = person.name.split(/\s+/).filter((w) => /[A-Za-z]/.test(w[0])).map((w) => w[0]).join("").slice(0, 2).toUpperCase() || "?";
+    const circle = () => { g.beginPath(); g.arc(64, 64, 62, 0, Math.PI * 2); };
+    const silhouette = (fill) => {
+      g.fillStyle = fill;
+      g.beginPath(); g.arc(64, 50, 24, 0, Math.PI * 2); g.fill();
+      g.beginPath(); g.ellipse(64, 122, 46, 38, 0, Math.PI, 0); g.fill();
+    };
+    let ink = "#fff", font = '600 48px "IBM Plex Sans", sans-serif';
+    if (style === "mono") {
+      circle(); g.fillStyle = `hsl(0 0% ${82 + (h % 10)}%)`; g.fill();
+      silhouette("rgba(0,0,0,0.06)"); ink = "#111";
+    } else if (style === "pencil") {
+      circle(); g.fillStyle = `hsl(${h} 55% 84%)`; g.fill();
+      g.strokeStyle = "rgba(40,40,40,0.25)"; g.lineWidth = 2;
+      for (let i = -128; i < 128; i += 10) { g.beginPath(); g.moveTo(i, 128); g.lineTo(i + 128, 0); g.stroke(); }  // hatching
+      g.globalCompositeOperation = "destination-in"; circle(); g.fill(); g.globalCompositeOperation = "source-over";
+      circle(); g.strokeStyle = "#2b2b2b"; g.lineWidth = 4; g.stroke();
+      ink = "#1d1d1d"; font = '52px "Patrick Hand", cursive';
+    } else if (style === "line") {
+      circle(); g.fillStyle = "rgba(207,232,255,0.08)"; g.fill();
+      g.strokeStyle = "#e6f3ff"; g.lineWidth = 4; g.stroke();
+      ink = "#e6f3ff"; font = '600 44px "IBM Plex Mono", monospace';
+    } else {
+      const grad = g.createLinearGradient(0, 0, 128, 128);
+      grad.addColorStop(0, `hsl(${h} 55% 52%)`);
+      grad.addColorStop(1, `hsl(${(h + 40) % 360} 60% 30%)`);
+      circle(); g.fillStyle = grad; g.fill();
+      silhouette("rgba(255,255,255,0.16)");
+    }
+    g.fillStyle = ink; g.font = font;
     g.textAlign = "center"; g.textBaseline = "middle";
-    g.fillText(initials || "?", 64, 68);
+    g.fillText(initials, 64, 68);
     avatars.set(key, c);
     return c;
+  }
+
+  // Sketch style: every stroke is drawn twice with a small, stable wobble (seeded per element, so it doesn't boil).
+  const seeded = (n) => { let x = (n * 2654435761) >>> 0; return () => ((x = Math.imul(x ^ (x >>> 15), 2246822507) >>> 0) / 4294967296 - 0.5); };
+  const hash = (str) => { let h = 7; for (const ch of String(str)) h = Math.imul(h ^ ch.charCodeAt(0), 16777619); return h >>> 0; };
+  function line(x1, y1, x2, y2, seed) {
+    if (!Theme.c.rough) { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); return; }
+    const r = seeded(seed), len = Math.hypot(x2 - x1, y2 - y1) || 1, nx = -(y2 - y1) / len, ny = (x2 - x1) / len;
+    for (let pass = 0; pass < 2; pass++) {
+      const bow = r() * Math.min(6, len * 0.04), mx = (x1 + x2) / 2 + nx * bow, my = (y1 + y2) / 2 + ny * bow;
+      ctx.beginPath();
+      ctx.moveTo(x1 + r() * 2, y1 + r() * 2);
+      ctx.quadraticCurveTo(mx, my, x2 + r() * 2, y2 + r() * 2);
+      ctx.stroke();
+    }
+  }
+  function ring(x, y, rad, seed) {
+    if (!Theme.c.rough) { ctx.beginPath(); ctx.arc(x, y, rad, 0, Math.PI * 2); return; }
+    const r = seeded(seed);
+    ctx.beginPath();
+    for (let pass = 0; pass < 2; pass++) {
+      const a0 = r() * 6, rx = rad * (1 + r() * 0.06), ry = rad * (1 + r() * 0.06);
+      ctx.moveTo(x + Math.cos(a0) * rx + r() * 2, y + Math.sin(a0) * ry);
+      ctx.ellipse(x + r() * 2, y + r() * 2, rx, ry, r() * 0.4, a0, a0 + Math.PI * 2.08);
+    }
   }
 
   const fib = (i, n) => {
@@ -50,12 +94,11 @@ const View3D = (() => {
   };
   const spread = (n) => 34 + 14 * Math.sqrt(n);
 
-  function init(sceneFn, colors) {
+  function init(sceneFn) {
     canvas = document.getElementById("map3d");
     ctx = canvas.getContext("2d");
     if (!ctx) return false;
     scene = sceneFn;
-    COLOR = colors;
     bindInput();
     addEventListener("resize", size);
     size();
@@ -154,17 +197,17 @@ const View3D = (() => {
       if (!p.off) C.set(gid, { ...p, r: c.r });
     }
     const focusLinks = picked && t < pickedUntil ? picked : null;
+    const T = Theme.c;
 
     // table regions, far first
     for (const [gid, c] of [...C].sort((a, b) => b[1].z - a[1].z)) {
       const g = S.groups.get(gid);
       ctx.globalAlpha = depthAlpha(c.z);
-      ctx.beginPath();
-      ctx.arc(c.x, c.y, c.r * c.s, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(127,224,189,0.05)";
+      ring(c.x, c.y, c.r * c.s, gid * 977);
+      ctx.fillStyle = T.regionFill;
       ctx.fill();
       ctx.setLineDash(g?.mode === "heads_down" ? [6, 6] : []);
-      ctx.strokeStyle = g?.glow ? COLOR.raspberry : "#3a3a3a";
+      ctx.strokeStyle = g?.glow ? T.accent : T.region;
       ctx.lineWidth = g?.glow ? 3 : 1.5;
       ctx.stroke();
       ctx.setLineDash([]);
@@ -177,18 +220,18 @@ const View3D = (() => {
       const pa = S.people.get(l.a), pb = S.people.get(l.b);
       const inner = pa.group_id && pa.group_id === pb.group_id;
       const mine = focusLinks && (l.a === focusLinks || l.b === focusLinks);
-      ctx.globalAlpha = (mine ? 1 : depthAlpha((a.z + b.z) / 2) * (inner ? 0.55 : 0.2));
-      ctx.strokeStyle = S.fresh.has(k) || mine ? COLOR.raspberry : inner ? COLOR.mint : "#8a8a8a";
+      ctx.globalAlpha = mine ? 1 : Math.min(1, depthAlpha((a.z + b.z) / 2) * (inner ? 0.55 : 0.2) * T.linkAlpha);
+      ctx.strokeStyle = S.fresh.has(k) || mine ? T.accent : inner ? T.inner : T.link;
       ctx.lineWidth = Math.min(1 + (l.strength - 1) * 0.7, 4) * (mine ? 1.6 : 1);
-      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+      line(a.x, a.y, b.x, b.y, hash(k));
     }
 
     // newcomer -> suggested table
     ctx.setLineDash([5, 7]);
-    ctx.strokeStyle = COLOR.raspberry; ctx.lineWidth = 2; ctx.globalAlpha = 0.9;
+    ctx.strokeStyle = T.accent; ctx.lineWidth = 2; ctx.globalAlpha = 0.9;
     for (const h of S.hints) {
       const a = P.get(h.pid), c = C.get(h.gid);
-      if (a && c && h.until > Date.now()) { ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(c.x, c.y); ctx.stroke(); }
+      if (a && c && h.until > Date.now()) line(a.x, a.y, c.x, c.y, h.pid);
     }
     ctx.setLineDash([]);
 
@@ -198,14 +241,14 @@ const View3D = (() => {
       const person = S.people.get(id);
       const r = radius(person) * p.s;
       const base = person.here ? depthAlpha(p.z) : 0.22;
-      const col = person.here ? COLOR[person.role] || COLOR.student : COLOR.away;
+      const col = person.here ? T[person.role] || T.student : T.away;
       // Dot below ~14 px on screen, profile picture above ~22 px, cross-fade between.
       const pic = Math.max(0, Math.min(1, (r - 14) / 8));
       if (pic < 1) {
         ctx.globalAlpha = base * (1 - pic);
-        ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
-        if (person.focus) { ctx.strokeStyle = col; ctx.lineWidth = 2.5; ctx.stroke(); }
-        else { ctx.fillStyle = col; ctx.fill(); }
+        ring(p.x, p.y, r, id);
+        if (person.focus || T.rough) { ctx.strokeStyle = col; ctx.lineWidth = T.rough ? 1.6 : 2.5; ctx.stroke(); }
+        if (!person.focus) { ctx.fillStyle = col; ctx.globalAlpha *= T.rough ? 0.85 : 1; ctx.fill(); }
       }
       if (pic > 0) {
         const rr = r * 1.25;
@@ -216,7 +259,7 @@ const View3D = (() => {
         ctx.restore();
         ctx.beginPath(); ctx.arc(p.x, p.y, rr, 0, Math.PI * 2);
         ctx.setLineDash(person.focus ? [4, 4] : []);
-        ctx.strokeStyle = id === focusLinks ? COLOR.raspberry : col;
+        ctx.strokeStyle = id === focusLinks ? T.accent : col;
         ctx.lineWidth = Math.max(2, rr * 0.08);
         ctx.stroke();
         ctx.setLineDash([]);
@@ -232,21 +275,21 @@ const View3D = (() => {
       boxes.push(b);
       return true;
     };
-    const big = PHONE ? 15 : 20, small = PHONE ? 12 : 14;
+    const k = T.rough ? 1.2 : 1, big = (PHONE ? 15 : 20) * k, small = (PHONE ? 12 : 14) * k;
     for (const [gid, c] of [...C].sort((a, b) => a[1].z - b[1].z)) {
       const g = S.groups.get(gid), need = scene().needLine(g), top = c.y - c.r * c.s - 10;
-      ctx.font = `700 ${big}px "IBM Plex Sans", sans-serif`;
+      ctx.font = `700 ${big}px ${T.font}`;
       const w = Math.max(ctx.measureText(g?.name || "").width, need.length * small * 0.5);
       const lx = Math.max(w / 2 + 8, Math.min(W - w / 2 - 8, c.x));   // keep the label on screen
       if (!fits(lx, top, w, big + small + 8)) continue;
       ctx.globalAlpha = Math.max(0.5, depthAlpha(c.z));
-      ctx.fillStyle = "#f2f2f2";
+      ctx.fillStyle = T.title;
       ctx.fillText(g?.name || "", lx, top - small - 4);
-      ctx.fillStyle = g?.mode === "heads_down" ? "#8a8a8a" : COLOR.mint;
-      ctx.font = `${small}px "IBM Plex Sans", sans-serif`;
+      ctx.fillStyle = g?.mode === "heads_down" ? T.dim : T.need;
+      ctx.font = `${small}px ${T.font}`;
       ctx.fillText(need, lx, top);
     }
-    ctx.font = `${small}px "IBM Plex Sans", sans-serif`;
+    ctx.font = `${small}px ${T.font}`;
     const near = order.slice(-PRESET.labels).map(([id]) => id).reverse();
     if (focusLinks) near.unshift(focusLinks);
     for (const id of near) {
@@ -255,7 +298,7 @@ const View3D = (() => {
       const y = p.y + radius(person) * p.s * 1.25 + 15;
       if (!fits(p.x, y, ctx.measureText(person.name).width, small)) continue;
       ctx.globalAlpha = id === focusLinks ? 1 : depthAlpha(p.z) * 0.9;
-      ctx.fillStyle = "#d6d6d6";
+      ctx.fillStyle = T.name;
       ctx.fillText(person.name, p.x, y);
     }
 
@@ -264,7 +307,7 @@ const View3D = (() => {
       const u = (t - pulses[i].t0) / 1400, p = P.get(pulses[i].id);
       if (u >= 1 || !p) { pulses.splice(i, 1); continue; }
       ctx.globalAlpha = 1 - u;
-      ctx.strokeStyle = pulses[i].color; ctx.lineWidth = 3;
+      ctx.strokeStyle = T[pulses[i].kind] || T.accent; ctx.lineWidth = 3;
       ctx.beginPath(); ctx.arc(p.x, p.y, 10 + u * 70, 0, Math.PI * 2); ctx.stroke();
     }
     ctx.globalAlpha = 1;
@@ -272,8 +315,8 @@ const View3D = (() => {
   }
   let lastProjection = new Map();
 
-  function pulse(id, color) {
-    pulses.push({ id, color: color || COLOR.raspberry, t0: performance.now() });
+  function pulse(id, kind = "accent") {
+    pulses.push({ id, kind, t0: performance.now() });
   }
 
   // ------------------------------------------------------------ input

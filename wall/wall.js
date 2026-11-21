@@ -5,8 +5,6 @@
   const host = qs.get("server") || location.host;
   const HTTP = `${location.protocol === "https:" ? "https" : "http"}://${host}`;
   const WS = `${location.protocol === "https:" ? "wss" : "ws"}://${host}/ws`;
-  const COLOR = { student: "#f2f2f2", mentor: "#f2c46d", staff: "#f2c46d", away: "#6b6b6b",
-                  raspberry: "#b8466f", mint: "#7fe0bd" };
 
   const S = { people: new Map(), groups: new Map(), links: new Map(), needs: [], fresh: new Map(), hints: [] };
   const lk = (a, b) => (a < b ? `${a}-${b}` : `${b}-${a}`);
@@ -78,7 +76,7 @@
     S.hints = S.hints.filter((h) => h.until > now && S.people.has(h.pid));
   }
 
-  const ripple = (pid, color = COLOR.raspberry) => View3D.pulse(pid, color);
+  const ripple = (pid, kind = "accent") => View3D.pulse(pid, kind);   // accent | join | help, coloured by the theme
 
   function glow(gid, ms = 2500) {
     const g = S.groups.get(gid);
@@ -153,7 +151,7 @@
         for (let j = i + 1; j < d.member_ids.length; j++) keys.push(lk(d.member_ids[i], d.member_ids[j]));
       freshen(keys);
       glow(d.group_id);
-      d.member_ids.forEach((id) => ripple(id, COLOR.mint));
+      d.member_ids.forEach((id) => ripple(id, "join"));
       Sound.links(keys.length);
     },
     async group_joined(d) {
@@ -165,11 +163,11 @@
       for (const [a, b] of d.new_links) if (!S.links.has(lk(a, b))) S.links.set(lk(a, b), { a, b, strength: 1 });
       freshen(d.new_links.map(([a, b]) => lk(a, b)));
       glow(d.group_id);
-      d.new_member_ids.forEach((id) => ripple(id, COLOR.mint));
+      d.new_member_ids.forEach((id) => ripple(id, "join"));
       Sound.links(d.new_links.length);
     },
     help(d) {
-      ripple(d.mentor_id, COLOR.mentor);
+      ripple(d.mentor_id, "help");
       glow(d.group_id);
       syncSoon();
     },
@@ -227,7 +225,9 @@
     $("start").classList.add("gone");
     try { await Sound.start(); } catch (e) { console.error("sound", e); }
   });
-  View3D.init(() => ({ visible, shownGroups, S, radius, needLine }), COLOR);
+  Theme.set(Theme.initial());
+  Theme.mountPicker();
+  View3D.init(() => ({ visible, shownGroups, S, radius, needLine }));
   View3D.setActive(true);
 
   // ?demo, or no Tap In server behind this page (e.g. hosted on its own): run the built-in demo room.
