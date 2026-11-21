@@ -27,43 +27,42 @@
   --bg: #292826; --side: #222120; --line: #3a3835; --fg: #ece6da; --muted: #9f9b92; --dim: #66645e;
   --pink: #ff6fae; --green: #9fd1a6; --forest: #4f6150; --sand: #e6dcc6; --fume: 0.5;
 }
+/* Real sand: a light ground with dark ink, a deep forest green and a stronger pink. */
+:root[data-palette="sandlight"] {
+  --bg: #d9cba8; --side: #cfc19d; --line: #b9aa85; --fg: #26241c; --muted: #6a624c; --dim: #948a6b;
+  --pink: #e0367f; --green: #2f6d4e; --forest: #9f9c70; --sand: #3a372b; --fume: 0.38; --scan: 0.05; --vig: 0.12;
+}
 * { box-sizing: border-box; }
+body.idle, body.idle * { cursor: none; }
 html, body { height: 100%; margin: 0; }
 body {
   display: grid; background: var(--bg); color: var(--fg); font: 400 var(--u)/1.35 var(--sans);
   grid-template-columns: minmax(0, 1fr) var(--side-w);
   grid-template-rows: minmax(0, 1fr) var(--strip-h);
   grid-template-areas: "stage side" "moment side";
-  overflow: hidden; cursor: none; user-select: none; -webkit-user-select: none;
+  overflow: hidden; user-select: none; -webkit-user-select: none;
 }
 #stage { grid-area: stage; position: relative; min-width: 0; min-height: 0; z-index: 1; }
 #room { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
 .conn { position: absolute; left: 2.5%; bottom: 3%; margin: 0; font: 500 var(--u)/1 var(--mono); color: var(--pink); }
 .mono { font-family: var(--mono); }
 
-/* Slow pink fume behind everything: three large soft blobs drifting on long loops. Subtle on purpose. */
-#fume { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
-#fume i { position: absolute; width: 62vmax; height: 62vmax; border-radius: 50%; filter: blur(9vmax); mix-blend-mode: screen; will-change: transform; }
-#fume i:nth-child(1) { left: -18vmax; bottom: -30vmax; opacity: calc(0.2 * var(--fume, 1)); background: radial-gradient(circle, var(--pink) 0%, transparent 62%); animation: fume-a 41s ease-in-out infinite alternate; }
-#fume i:nth-child(2) { left: 28vmax; top: -34vmax; opacity: calc(0.11 * var(--fume, 1)); background: radial-gradient(circle, var(--pink) 0%, transparent 60%); animation: fume-b 53s ease-in-out infinite alternate; }
-#fume i:nth-child(3) { right: -6vmax; bottom: -22vmax; opacity: calc(0.14 * var(--fume, 1)); background: radial-gradient(circle, var(--forest) 0%, transparent 62%); animation: fume-c 47s ease-in-out infinite alternate; }
-@keyframes fume-a { to { transform: translate(22vmax, -16vmax) scale(1.22) rotate(18deg); } }
-@keyframes fume-b { to { transform: translate(-20vmax, 22vmax) scale(1.3) rotate(-14deg); } }
-@keyframes fume-c { to { transform: translate(-24vmax, -14vmax) scale(1.18) rotate(10deg); } }
+/* Pixelated pink fume: a small canvas stretched with hard pixels and ordered-dither steps, drifting slowly and stirred by the mouse (see host.js). */
+#fume { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; image-rendering: pixelated; image-rendering: crisp-edges; }
 
 /* A faint CRT scanline and vignette over the whole screen. */
 body::before {
   content: ""; position: fixed; inset: 0; z-index: 4; pointer-events: none;
   background:
-    repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.13) 0 1px, transparent 1px 3px),
-    radial-gradient(ellipse at 50% 45%, transparent 60%, rgba(0, 0, 0, 0.32) 100%);
+    repeating-linear-gradient(to bottom, rgba(0, 0, 0, var(--scan, 0.13)) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse at 50% 45%, transparent 60%, rgba(0, 0, 0, var(--vig, 0.32)) 100%);
 }
 
 /* Wordmark: italic serif in sand with a moving sheen, scanlines through it, and a pink and a green edge split so it
    reads as a hologram. The dot of the i is a Wi-Fi mark. */
 #brand { position: fixed; z-index: 3; display: flex; align-items: baseline; gap: 0.7em; pointer-events: none; }
 .wm {
-  position: relative; display: inline-block; font: italic 400 calc(var(--u) * 2.9)/1 var(--serif); letter-spacing: -0.01em; color: transparent;
+  position: relative; display: inline-block; padding: 0.46em 0.1em 0.08em; margin: -0.46em -0.1em -0.08em; font: italic 400 calc(var(--u) * 2.9)/1 var(--serif); letter-spacing: -0.01em; color: transparent;
   background: linear-gradient(105deg, var(--sand) 0 38%, #fffaf0 50%, var(--sand) 62% 100%); background-size: 260% 100%;
   -webkit-background-clip: text; background-clip: text;
   -webkit-mask-image: repeating-linear-gradient(to bottom, #000 0 2px, rgba(0, 0, 0, 0.5) 2px 3px);

@@ -4,7 +4,8 @@
 //   ?server=host:port   point at another server (testing against tools/fake_taps.py --events)
 //   ?silent             skip the Start screen (no sound)
 //   ?venue=Name         small text next to the wordmark
-//   ?palette=moss|sand|cool   ground palette to compare      ?logo=strip|ghost|side   wordmark placement
+//   ?palette=moss|sand|cool|sandlight   ground palette to compare      ?logo=strip|ghost|side   wordmark placement
+//   ?grid   bring back the dot grid (parked)      ?mouse=off   the mouse does not stir the background
 (() => {
   "use strict";
   const qs = new URLSearchParams(location.search);
@@ -29,7 +30,9 @@
   // ------------------------------------------------------------ state
   const S = { people: new Map(), groups: new Map(), links: [], needs: [], stats: null, board: null };
   let graphRaw = null, layout = null, W = 0, H = 0, K = 1;
+  const GRID = qs.has("grid"), MOUSE = qs.get("mouse") !== "off";
   const born = new Map();          // person id -> time first seen live (fade-in)
+  const trails = new Map();        // person id -> recent positions while they glide to a seat
   const activity = [];
   const ice = new Map();           // person id -> Gemini line (kept briefly)
 
@@ -186,6 +189,61 @@
   };
 
   // ------------------------------------------------------------ drawing
+  const rgbOf = (hex) => { const h = String(hex).replace("#", ""); return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]; };
+  const withAlpha = (hex, a) => { const [r, g, b] = rgbOf(hex); return "rgba(" + r + "," + g + "," + b + "," + a + ")"; };
+
+  // ---- the pixel fume: a small canvas of value noise, warped and drifting, posterized with an ordered (Bayer) dither so it
+  // reads as hard foil-like pixels. Pink, with a lighter glint at the brightest step. The mouse stirs it.
+  const fume = $("fume"), fctx = fume.getContext("2d");
+  const FW = 256, FH = 144;
+  fume.width = FW; fume.height = FH;
+  const fimg = fctx.createImageData(FW, FH);
+  const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map((x) => (x + 0.5) / 16);
+  const hash = (x, y) => { let h = Math.imul(x, 374761393) + Math.imul(y, 668265263); h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967295; };
+  const vnoise = (x, y) => {
+    const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi, u = xf * xf * (3 - 2 * xf), w = yf * yf * (3 - 2 * yf);
+    const a = hash(xi, yi), b = hash(xi + 1, yi), c = hash(xi, yi + 1), d = hash(xi + 1, yi + 1);
+    return a + (b - a) * u + (c - a) * w + (a - b - c + d) * u * w;
+  };
+  const fbm = (x, y) => 0.55 * vnoise(x, y) + 0.3 * vnoise(x * 2.1, y * 2.1) + 0.15 * vnoise(x * 4.3, y * 4.3);
+  const mouse = { x: -1, y: -1, t: -1e9 };
+  const PINK = rgbOf(C.pink), GLINT = [Math.min(255, PINK[0] + 70), Math.min(255, PINK[1] + 90), Math.min(255, PINK[2] + 60)];
+  const FUME_ALPHA = Math.max(0.15, parseFloat(v("--fume")) || 1);
+  function drawFume(t) {
+    const tt = t / 1000, d = fimg.data;
+    const mx = (mouse.x / innerWidth) * FW, my = (mouse.y / innerHeight) * FH;
+    const mk = MOUSE ? Math.max(0, 1 - (t - mouse.t) / 2500) : 0;      // the stir fades out two and a half seconds after the mouse stops
+    for (let y = 0; y < FH; y++) {
+      for (let x = 0; x < FW; x++) {
+        const nx = (x / FW) * 3.4, ny = (y / FH) * 2.1;
+        const w = fbm(nx + tt * 0.045, ny - tt * 0.038);
+        let lv = fbm(nx * 1.1 + w * 1.7 - tt * 0.03, ny * 1.1 + w * 1.3 + tt * 0.028);
+        lv *= 0.32 + 0.6 * ((y / FH) ** 1.4 * 0.4 + (1 - x / FW) * 0.6);             // thicker toward the lower left, thin up and right
+        if (mk > 0) { const dd = Math.hypot(x - mx, (y - my) * 1.2); if (dd < 30) lv += (1 - dd / 30) ** 2 * 0.55 * mk; }
+        const q = Math.floor(lv * 3.6 + BAYER[(y & 3) * 4 + (x & 3)]);                  // 0..4 steps, ordered dither
+        const i = (y * FW + x) * 4;
+        if (q <= 1) { d[i + 3] = 0; continue; }
+        const c = q >= 4 ? GLINT : PINK;
+        d[i] = c[0]; d[i + 1] = c[1]; d[i + 2] = c[2];
+        d[i + 3] = (q === 2 ? 20 : q === 3 ? 44 : 80) * FUME_ALPHA;
+      }
+    }
+    fctx.putImageData(fimg, 0, 0);
+  }
+
+  // A soft glow under whatever just happened: pink under the person who just checked in, green under a table that
+  // formed, grew or got help. (This replaces the dot grid while it is parked.)
+  function drawGlow(t, m, byId, tables) {
+    if (!m) return;
+    const k = Math.min(1, (t - m.start) / 450) * Math.max(0, Math.min(1, (m.until - t) / 1400));
+    const target = m.kind === "checkin" ? byId.get(m.person) : tables.get(m.group);
+    if (!target || k <= 0) return;
+    const R = 240 * K, col = m.kind === "checkin" ? C.pink : C.green;
+    const g = ctx.createRadialGradient(target.x, target.y, 0, target.x, target.y, R);
+    g.addColorStop(0, withAlpha(col, 0.18 * k)); g.addColorStop(1, withAlpha(col, 0));
+    ctx.fillStyle = g; ctx.fillRect(target.x - R, target.y - R, R * 2, R * 2);
+  }
+
   const trunc = (s, n) => (s.length > n ? s.slice(0, n - 1).trimEnd() + "…" : s);
   function halo(text, x, y, fill) {      // text with a thin ground-colored outline, so lines never hide it
     ctx.lineJoin = "round"; ctx.lineWidth = 5 * K; ctx.strokeStyle = C.bg;
@@ -250,7 +308,11 @@
     const hiGroup = m && m.group != null ? m.group : null;
     const hiColor = m && m.kind === "checkin" ? C.pink : C.green;
     const lab = Math.max(14, Math.round(16 * K)), nameSz = Math.max(16, Math.round(17 * K));
-    drawGrid(t, m, byId, tables);
+    if (GRID) drawGrid(t, m, byId, tables); else drawGlow(t, m, byId, tables);
+    for (const p of pos) {                                          // short trails behind people who are still gliding to a seat
+      const tr = trails.get(p.id) ?? trails.set(p.id, []).get(p.id);
+      if (Math.hypot(p.tx - p.x, p.ty - p.y) > 4) { tr.push({ x: p.x, y: p.y }); if (tr.length > 14) tr.shift(); } else if (tr.length) tr.shift();
+    }
 
     // ---- links, drawn quietly under everything else
     ctx.lineCap = "round";
@@ -262,6 +324,12 @@
       ms.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
       if (ms.length > 2) ctx.closePath();
       ctx.stroke();
+      const edges = ms.length > 2 ? ms.length : 1;                       // a small light travels along each link of the table
+      for (let i = 0; i < edges; i++) {
+        const a = ms[i], b = ms[(i + 1) % ms.length], f = (t / 3400 + i * 0.37 + tb.id * 0.19) % 1, sz = 2.6 * K;
+        ctx.globalAlpha = 0.75; ctx.fillStyle = C.fg;
+        ctx.fillRect(a.x + (b.x - a.x) * f - sz / 2, a.y + (b.y - a.y) * f - sz / 2, sz, sz);
+      }
     }
     const between = new Map(), bridge = new Map();
     for (const l of S.links) {
@@ -335,23 +403,37 @@
       const helper = p.role !== "student";
       const age = born.has(p.id) ? Math.min(1, (t - born.get(p.id)) / 900) : 1;
       ctx.globalAlpha = 0.2 + 0.8 * age;
-      const r = p.r * (newest ? 1.9 : 1);
+      // A little life: each person drifts a couple of pixels and breathes; people still gliding leave a fading trail; a new
+      // arrival sends out one ripple.
+      const nx = p.x + Math.sin(t / 900 + p.id * 1.3) * 2.2 * K, ny = p.y + Math.cos(t / 1100 + p.id * 0.9) * 2.2 * K;
+      const r = p.r * (newest ? 1.9 : 1) * (1 + 0.07 * Math.sin(t / 650 + p.id));
       const col = newest ? C.pink : quiet ? C.dim : C.green;
+      const tr = trails.get(p.id);
+      if (tr && tr.length > 1) {
+        ctx.lineWidth = 2 * K; ctx.strokeStyle = newest ? C.pink : C.green;
+        for (let i = 1; i < tr.length; i++) { ctx.globalAlpha = (i / tr.length) * 0.5; ctx.beginPath(); ctx.moveTo(tr[i - 1].x, tr[i - 1].y); ctx.lineTo(tr[i].x, tr[i].y); ctx.stroke(); }
+        ctx.globalAlpha = 0.2 + 0.8 * age;
+      }
+      if (age < 1) {
+        ctx.strokeStyle = col; ctx.lineWidth = 1.6 * K; ctx.globalAlpha = (1 - age) * 0.7;
+        ctx.beginPath(); ctx.arc(nx, ny, r + age * 40 * K, 0, Math.PI * 2); ctx.stroke();
+        ctx.globalAlpha = 0.2 + 0.8 * age;
+      }
       ctx.lineWidth = 1.8 * K;
       if (helper) {
         ctx.strokeStyle = col; ctx.fillStyle = C.bg;
-        ctx.beginPath(); ctx.rect(p.x - r, p.y - r, r * 2, r * 2); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.rect(nx - r, ny - r, r * 2, r * 2); ctx.fill(); ctx.stroke();
       } else if (quiet) {
         ctx.strokeStyle = col; ctx.fillStyle = C.bg;
-        ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.arc(nx, ny, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
       } else {
         ctx.fillStyle = col;
-        ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(nx, ny, r, 0, Math.PI * 2); ctx.fill();
       }
       if (newest) {                                          // the ring means "newest" without relying on color alone
         ctx.strokeStyle = C.pink; ctx.lineWidth = 2.2 * K;
         ctx.globalAlpha = 0.6 + 0.4 * Math.sin(t / 300);
-        ctx.beginPath(); ctx.arc(p.x, p.y, r + 8 * K, 0, Math.PI * 2); ctx.stroke();
+        ctx.beginPath(); ctx.arc(nx, ny, r + 8 * K, 0, Math.PI * 2); ctx.stroke();
       }
       ctx.globalAlpha = 0.2 + 0.8 * age;
 
@@ -379,12 +461,13 @@
     ctx.textBaseline = "alphabetic";
   }
 
-  let last = 0;
+  let last = 0, lastFume = -1e9;
   function frame(t) {
     requestAnimationFrame(frame);
     pump(t);
+    if (t - lastFume > 90) { lastFume = t; drawFume(t); }               // the fume steps about 11 times a second, which is part of the look
     const moving = layout && !layout.isSettled();
-    if (!moving && t - last < 48) return;            // at rest: about 20 redraws a second, enough for the turning rings
+    if (!moving && t - last < 33) return;            // at rest: about 30 redraws a second, for the turning rings and the drift
     last = t;
     if (moving) layout.step();
     draw(t);
@@ -414,6 +497,13 @@
     setTimeout(connect, backoff);
     backoff = Math.min(backoff * 2, 5000);
   }
+
+  // ------------------------------------------------------------ the mouse: it shows when it moves and hides after a few idle seconds.
+  // Nothing on this page is clickable; the mouse only stirs the background fume.
+  let idleTimer = 0;
+  const wake = () => { document.body.classList.remove("idle"); clearTimeout(idleTimer); idleTimer = setTimeout(() => document.body.classList.add("idle"), 3000); };
+  addEventListener("pointermove", (e) => { mouse.x = e.clientX; mouse.y = e.clientY; mouse.t = performance.now(); wake(); });
+  wake();
 
   // ------------------------------------------------------------ boot
   if (qs.has("silent")) $("start").classList.add("gone");
