@@ -25,29 +25,26 @@ body { background: var(--bg); color: var(--text); overflow: hidden; font: 18px/1
 body.demo .demo-tag { display: inline-block; }
 
 .arrival {
-  position: fixed; left: 0; right: 0; bottom: 70px; text-align: center; font-size: 34px;
+  position: fixed; left: 0; right: 0; bottom: 34px; text-align: center; font-size: 34px;
   opacity: 0; transition: opacity 0.6s; pointer-events: none;
 }
 .arrival.on { opacity: 1; }
 .arrival b { color: var(--raspberry-text); }
 .arrival em { font-style: normal; color: var(--mint); }
 
-.chips {
-  position: fixed; left: 0; right: 0; bottom: 14px; display: flex; justify-content: center; gap: 8px;
-  padding: 0 16px; overflow-x: auto; scrollbar-width: none; z-index: 2;
-}
-.chips button {
-  flex: none; font: 600 13px "IBM Plex Mono", monospace; color: var(--muted); background: var(--bg);
-  border: 1px solid var(--line); padding: 6px 12px; min-height: 36px; cursor: pointer;
-}
-.chips button.on { color: var(--bg); background: var(--mint); border-color: var(--mint); }
-
-/* profile: side panel on wide screens, bottom sheet on phones */
+/* profile: compact card in the bottom-right corner */
 .profile {
-  position: fixed; z-index: 4; top: 84px; right: 24px; width: 360px; max-height: calc(100% - 170px); overflow-y: auto;
+  position: fixed; z-index: 4; bottom: 24px; right: 24px; width: 330px; max-height: calc(100% - 120px); overflow-y: auto;
   background: var(--panel); border: 1px solid var(--line); border-top: 3px solid var(--raspberry);
-  padding: 20px 20px 16px; font-size: 15px; animation: rise 0.25s ease-out;
+  padding: 18px 18px 14px; font-size: 15px; animation: rise 0.25s ease-out;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
 }
+.p-socials { display: flex; gap: 8px; margin-top: 12px; }
+.p-social {
+  width: 36px; height: 36px; border: 0; border-radius: 8px; display: grid; place-items: center;
+  cursor: default; padding: 0;
+}
+.p-social:focus-visible { outline: 2px solid var(--mint); outline-offset: 2px; }
 .profile[hidden] { display: none; }
 .profile-close {
   position: absolute; top: 6px; right: 6px; width: 40px; height: 40px; border: 0; background: transparent;
@@ -99,15 +96,11 @@ body.demo .demo-tag { display: inline-block; }
   .count { right: 16px; top: 12px; }
   .count b { font-size: 28px; }
   .count span { font-size: 13px; }
-  .arrival { font-size: 20px; padding: 0 16px; bottom: 64px; }
-  .chips { justify-content: flex-start; bottom: 12px; }
+  .arrival { font-size: 20px; padding: 0 16px; bottom: 24px; }
   .conn { right: 16px; bottom: auto; top: 70px; }
   .start button { font-size: 22px; padding: 14px 40px; }
-  .profile {
-    top: auto; bottom: 0; left: 0; right: 0; width: auto; max-height: 62%;
-    border-left: 0; border-right: 0; border-bottom: 0; padding: 18px 16px 20px;
-  }
-  .p-pic { width: 60px; height: 60px; }
+  .profile { right: 12px; bottom: 12px; width: min(330px, calc(100vw - 24px)); max-height: 58%; padding: 16px 14px 12px; }
+  .p-pic { width: 56px; height: 56px; }
 }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }

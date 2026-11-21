@@ -1,18 +1,18 @@
 // 3D room view on a plain 2D canvas (perspective projection, no WebGL), so it runs on phones too.
 // Tables are regions on a sphere, people orbit inside their table, new arrivals sit in the core.
 // Drag to rotate (a flick keeps it turning, slowed by friction), pinch or scroll to zoom, double-tap or right-click to reset, tap a person for their card,
-// tap a table chip to isolate it. Idle for a few seconds and it rotates on its own.
+// Idle for a few seconds and it rotates on its own.
 // Zoom in and dots turn into profile pictures (mockups: initials on a colour from the name, no real photos).
 const View3D = (() => {
   const PHONE = matchMedia("(max-width: 700px), (pointer: coarse)").matches;
   const PRESET = PHONE ? { dpr: 1.5, fps: 30, labels: 10 } : { dpr: 2, fps: 60, labels: 40 };
   const R = 300;               // table centers sit on this sphere
   let canvas, ctx, scene, COLOR, W = 0, H = 0, active = false;
-  let rotY = 0.4, rotX = -0.3, zoom = 1, lastTouch = 0, lastFrame = 0, isolate = null;
+  let rotY = 0.4, rotX = -0.3, zoom = 1, lastTouch = 0, lastFrame = 0;
   const pos = new Map();       // person id -> {x,y,z,tx,ty,tz}
   const centers = new Map();   // group id -> {x,y,z,r}
   const pulses = [];
-  let picked = null, pickedUntil = 0, chipKey = "";
+  let picked = null, pickedUntil = 0;
   let zoomGoal = 1, focusId = null, spinX = 0, spinY = 0, pointers = 0, liftY = 0;
   const cam = { x: 0, y: 0, z: 0 };   // point the camera orbits; eases to a tapped person
 
@@ -106,7 +106,6 @@ const View3D = (() => {
       });
     }
     for (const id of [...pos.keys()]) if (!seen.has(id)) pos.delete(id);
-    renderChips(shownGroups);
   }
 
   function project(x, y, z) {
@@ -154,13 +153,12 @@ const View3D = (() => {
       const p = project(c.x, c.y, c.z);
       if (!p.off) C.set(gid, { ...p, r: c.r });
     }
-    const dim = (gid) => isolate !== null && gid !== isolate;
     const focusLinks = picked && t < pickedUntil ? picked : null;
 
     // table regions, far first
     for (const [gid, c] of [...C].sort((a, b) => b[1].z - a[1].z)) {
       const g = S.groups.get(gid);
-      ctx.globalAlpha = dim(gid) ? 0.12 : depthAlpha(c.z);
+      ctx.globalAlpha = depthAlpha(c.z);
       ctx.beginPath();
       ctx.arc(c.x, c.y, c.r * c.s, 0, Math.PI * 2);
       ctx.fillStyle = "rgba(127,224,189,0.05)";
@@ -179,8 +177,7 @@ const View3D = (() => {
       const pa = S.people.get(l.a), pb = S.people.get(l.b);
       const inner = pa.group_id && pa.group_id === pb.group_id;
       const mine = focusLinks && (l.a === focusLinks || l.b === focusLinks);
-      const hidden = dim(pa.group_id) && dim(pb.group_id);
-      ctx.globalAlpha = hidden ? 0.04 : (mine ? 1 : depthAlpha((a.z + b.z) / 2) * (inner ? 0.55 : 0.2));
+      ctx.globalAlpha = (mine ? 1 : depthAlpha((a.z + b.z) / 2) * (inner ? 0.55 : 0.2));
       ctx.strokeStyle = S.fresh.has(k) || mine ? COLOR.raspberry : inner ? COLOR.mint : "#8a8a8a";
       ctx.lineWidth = Math.min(1 + (l.strength - 1) * 0.7, 4) * (mine ? 1.6 : 1);
       ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
@@ -200,7 +197,7 @@ const View3D = (() => {
     for (const [id, p] of order) {
       const person = S.people.get(id);
       const r = radius(person) * p.s;
-      const base = dim(person.group_id) ? 0.12 : person.here ? depthAlpha(p.z) : 0.22;
+      const base = person.here ? depthAlpha(p.z) : 0.22;
       const col = person.here ? COLOR[person.role] || COLOR.student : COLOR.away;
       // Dot below ~14 px on screen, profile picture above ~22 px, cross-fade between.
       const pic = Math.max(0, Math.min(1, (r - 14) / 8));
@@ -237,7 +234,6 @@ const View3D = (() => {
     };
     const big = PHONE ? 15 : 20, small = PHONE ? 12 : 14;
     for (const [gid, c] of [...C].sort((a, b) => a[1].z - b[1].z)) {
-      if (dim(gid)) continue;
       const g = S.groups.get(gid), need = scene().needLine(g), top = c.y - c.r * c.s - 10;
       ctx.font = `700 ${big}px "IBM Plex Sans", sans-serif`;
       const w = Math.max(ctx.measureText(g?.name || "").width, need.length * small * 0.5);
@@ -255,7 +251,7 @@ const View3D = (() => {
     if (focusLinks) near.unshift(focusLinks);
     for (const id of near) {
       const p = P.get(id), person = S.people.get(id);
-      if (!p || dim(person.group_id)) continue;
+      if (!p) continue;
       const y = p.y + radius(person) * p.s * 1.25 + 15;
       if (!fits(p.x, y, ctx.measureText(person.name).width, small)) continue;
       ctx.globalAlpha = id === focusLinks ? 1 : depthAlpha(p.z) * 0.9;
@@ -283,7 +279,7 @@ const View3D = (() => {
   // ------------------------------------------------------------ input
 
   function reset() {
-    rotY = 0.4; rotX = -0.3; zoomGoal = 1; focusId = null; isolate = null; picked = null; spinX = spinY = 0; markChips();
+    rotY = 0.4; rotX = -0.3; zoomGoal = 1; focusId = null; picked = null; spinX = spinY = 0;
   }
   const setZoom = (z) => { zoomGoal = zoom = Math.max(0.5, Math.min(4.5, z)); };
 
@@ -405,7 +401,40 @@ const View3D = (() => {
       major: MAJORS[Math.floor(r() * MAJORS.length)],
       year: 2026 + Math.floor(r() * 4),
       bio: BIOS[Math.floor(r() * BIOS.length)],
+      // everyone shows LinkedIn and GitHub; Instagram and a website only for some, so profiles differ
+      socials: ["linkedin", "github", ...(r() < 0.5 ? ["instagram"] : []), ...(r() < 0.6 ? ["web"] : [])],
     };
+  }
+
+  // Mock social buttons. They go nowhere on purpose: made-up handles could belong to real people.
+  const SOCIAL = {
+    linkedin: { label: "LinkedIn", bg: "#0A66C2", svg:
+      '<circle cx="7" cy="6.6" r="1.7" fill="#fff"/><rect x="5.5" y="9.2" width="3" height="9.3" fill="#fff"/>' +
+      '<path fill="#fff" d="M10.6 9.2h2.8v1.3c.4-.8 1.4-1.5 2.9-1.5 3 0 3.5 2 3.5 4.5v5h-2.9v-4.4c0-1.1 0-2.4-1.5-2.4s-1.8 1.2-1.8 2.4v4.4h-3z"/>' },
+    github: { label: "GitHub", bg: "#24292f", svg:
+      '<g transform="translate(4 4)"><path fill="#fff" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></g>' },
+    instagram: { label: "Instagram", bg: "linear-gradient(45deg,#f9a03f,#e1306c 50%,#833ab4)", svg:
+      '<rect x="5" y="5" width="14" height="14" rx="4" fill="none" stroke="#fff" stroke-width="1.8"/>' +
+      '<circle cx="12" cy="12" r="3.3" fill="none" stroke="#fff" stroke-width="1.8"/><circle cx="16.3" cy="7.7" r="1" fill="#fff"/>' },
+    web: { label: "Website", bg: "#3a3a3a", svg:
+      '<circle cx="12" cy="12" r="7" fill="none" stroke="#fff" stroke-width="1.6"/>' +
+      '<ellipse cx="12" cy="12" rx="3" ry="7" fill="none" stroke="#fff" stroke-width="1.6"/>' +
+      '<path d="M5 12h14" stroke="#fff" stroke-width="1.6"/>' },
+  };
+  function socials(keys) {
+    const row = document.createElement("div");
+    row.className = "p-socials";
+    for (const k of keys) {
+      const s = SOCIAL[k], b = document.createElement("button");
+      b.type = "button";
+      b.className = "p-social";
+      b.title = `${s.label} (mock)`;
+      b.setAttribute("aria-label", `${s.label} (mock link)`);
+      b.style.background = s.bg;
+      b.innerHTML = `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">${s.svg}</svg>`;  // static icon markup only
+      row.append(b);
+    }
+    return row;
   }
 
   function showProfile(person) {
@@ -464,32 +493,9 @@ const View3D = (() => {
                               : el("p", "p-muted", "No connections yet"));
 
     const body = document.getElementById("profile-body");
-    body.replaceChildren(head, el("p", "p-bio", m.bio), stats, table, skills, looking, knows,
-                         el("p", "p-foot", "Mock profile · skills, major and bio are sample data"));
+    body.replaceChildren(head, el("p", "p-bio", m.bio), socials(m.socials), stats, table, skills, looking, knows,
+                         el("p", "p-foot", "Mock profile · skills, major, bio and links are sample data"));
     document.getElementById("profile").hidden = false;
-  }
-
-  // Table chips: tap one to isolate that table, tap again or "All" to show everything.
-  function renderChips(groups) {
-    const key = groups.map((g) => `${g.id}:${g.name}`).join(",");
-    if (key === chipKey) return;
-    chipKey = key;
-    const bar = document.getElementById("chips");
-    bar.replaceChildren();
-    const mk = (label, gid) => {
-      const b = document.createElement("button");
-      b.type = "button"; b.textContent = label; b.dataset.gid = gid ?? "";
-      b.addEventListener("click", () => { isolate = gid === null || isolate === gid ? null : gid; markChips(); });
-      bar.append(b);
-    };
-    mk("All", null);
-    for (const g of groups) mk(g.name.replace("Table ", "T"), g.id);
-    if (isolate !== null && !groups.some((g) => g.id === isolate)) isolate = null;
-    markChips();
-  }
-  function markChips() {
-    for (const b of document.querySelectorAll("#chips button"))
-      b.classList.toggle("on", b.dataset.gid === "" ? isolate === null : Number(b.dataset.gid) === isolate);
   }
 
   return { init, setActive, relayout, pulse, PHONE };
