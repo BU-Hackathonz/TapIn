@@ -47,12 +47,31 @@
     applyGraph(g);
     S.needs = needs;
     render();
+    Panels.needs(S.needs);
+    Panels.tables(rankedTables());
     Corner.refresh();
+    if (!demo) {
+      const statsVersion = statsRevision;
+      void getJSON("/api/stats").then(data => {
+        if (statsVersion === statsRevision) Panels.stats(data);
+      }).catch(() => {});
+      const revision = tableRevision;
+      void getJSON("/api/leaderboard").then(data => {
+        if (revision === tableRevision) Panels.tables(data.groups);
+      }).catch(() => {});
+    }
   }
 
   // ------------------------------------------------------------ room state for the 3D view
 
   let visible = [], shownGroups = [];
+  let tableRevision = 0;
+  let statsRevision = 0;
+  const rankedTables = () => [...S.groups.values()].sort((a, b) => b.points - a.points || a.id - b.id);
+  function updateTables() {
+    tableRevision++;
+    Panels.tables(rankedTables());
+  }
   const radius = (p) => Math.min(16, 8 + Math.sqrt(p.points || 0) * 0.8);
 
   function render() {
@@ -127,6 +146,7 @@
       setTimeout(() => ripple(p.id), 60);
       Sound.arrive();
       toast(p.name);
+      Panels.checkIn(p, S.groups.get(sugg[0]?.group_id), sugg[0]);
     },
     async group_formed(d) {
       await syncGraph();
@@ -137,6 +157,9 @@
       glow(d.group_id);
       d.member_ids.forEach((id) => ripple(id, "join"));
       Sound.links(keys.length);
+      const group = S.groups.get(d.group_id);
+      if (group) Panels.log(`${group.name} formed`);
+      updateTables();
     },
     async group_joined(d) {
       if (!S.groups.has(d.group_id)) await syncGraph();
@@ -149,10 +172,14 @@
       glow(d.group_id);
       d.new_member_ids.forEach((id) => ripple(id, "join"));
       Sound.links(d.new_links.length);
+      const group = S.groups.get(d.group_id);
+      if (group) Panels.log(`${group.name} welcomed ${d.new_member_ids.length === 1 ? "a member" : "new members"}`);
     },
     help(d) {
       ripple(d.mentor_id, "help");
       glow(d.group_id);
+      const mentor = S.people.get(d.mentor_id), group = S.groups.get(d.group_id);
+      if (mentor && group) Panels.log(`${mentor.name} helped ${group.name}`);
       syncSoon();
     },
     link_strengthened(d) {
@@ -166,14 +193,26 @@
         const p = S.people.get(x.id);
         if (p) p.points = x.points;
       }
+      for (const entry of d.groups || []) {
+        const group = S.groups.get(entry.id);
+        if (group) group.points = entry.points;
+      }
+      updateTables();
       render();
     },
+    stats_updated(d) {
+      statsRevision++;
+      Panels.stats(d);
+    },
+    icebreaker: Panels.icebreaker,
     needs_updated(d) {
       S.needs = d.needs || [];
+      Panels.needs(S.needs);
       render();
     },
     person_created(d) {
       toast(d.name);
+      Panels.log(`${d.name} linked a badge`);
       syncSoon();
     },
   };
@@ -191,7 +230,7 @@
     const ws = new WebSocket(WS);
     ws.onopen = () => {
       backoff = 1000;
-      syncAll().catch((e) => console.error("sync", e));  // catch up on anything missed while down
+      queue = queue.then(syncAll).catch((e) => console.error("sync", e));  // catch up before processing new events
     };
     ws.onmessage = (e) => { try { handle(JSON.parse(e.data)); } catch (err) { console.error(err); } };
     ws.onclose = () => {
