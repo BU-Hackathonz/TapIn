@@ -34,7 +34,23 @@ def check(name: str, ok: bool, detail: str = "") -> None:
 
 
 def main() -> int:
-    from server import db
+    from collections import defaultdict
+
+    from server import db, matching
+
+    # Ties go to the person with fewer connections, even when their id is higher.
+    def row(i, skills, looking):
+        return {"id": i, "name": f"P{i}", "skills": skills, "looking_for": looking, "focus": False}
+
+    nbrs = defaultdict(set)
+    nbrs[2] = {10, 11, 12}  # P2 has met 3 people; P3 has met nobody
+    tied = matching.State(
+        people={1: row(1, ["design"], ["hardware"]), 2: row(2, ["hardware"], ["design"]), 3: row(3, ["hardware"], ["design"]),
+                10: row(10, [], []), 11: row(11, [], []), 12: row(12, [], [])},
+        here={1, 2, 3}, nbrs=nbrs, groups={}, members={})
+    top = matching.suggested_people(tied, 1)
+    check("tie: equal scores", len(top) == 2 and top[0]["score"] == top[1]["score"], str(top))
+    check("tie: fewer connections wins over lower id", top[0]["person_id"] == 3, str(top))
 
     with TestClient(app) as c:
         run = c.portal.call
