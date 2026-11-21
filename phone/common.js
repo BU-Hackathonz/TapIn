@@ -31,7 +31,35 @@ function chipGroup(name, values, checked, max, onChange) {
 }
 const picked = box => [...box.querySelectorAll("input:checked")].map(b => b.value);
 
+// FAKE = true at the top of a page: answer from these hard-coded replies (same shapes as the server).
+const fake = { claimFrom: 0, focus: false, mode: "open", looking: ["firmware"] };
+function fakeReply(method, path, body) {
+  const g = (id, n, known) => ({ id, name: `Table ${id}`, station_id: 2, mode: "open", working_on: "a robot arm",
+    looking_for: ["firmware"], size: n, known_count: known });
+  if (path === "/signup") return { person_id: 1, claim_code: "FAKE01", expires_in: 30 };
+  if (path.startsWith("/claim/")) {
+    fake.claimFrom ||= Date.now();
+    return { status: Date.now() - fake.claimFrom > 4000 ? "claimed" : "waiting" };
+  }
+  if (path.endsWith("/focus")) { fake.focus = body.focus; return { ok: true }; }
+  if (path.endsWith("/mode")) { fake.mode = body.mode; fake.looking = body.looking_for; return { ok: true }; }
+  if (path === "/needs") return [
+    { group_id: 2, table: "Table 2", need: "firmware", since: new Date(Date.now() - 12 * 60000).toISOString(), handled_by: null },
+    { group_id: 4, table: "Table 4", need: "design", since: new Date(Date.now() - 30 * 60000).toISOString(), handled_by: 9 }];
+  if (path.startsWith("/me/")) return {
+    person: { id: 1, name: "Maya", role: "student", skills: ["firmware"], looking_for: ["design"], working_on: "", focus: fake.focus },
+    here: true,
+    group: { ...g(3, 2, 1), mode: fake.mode, looking_for: fake.looking, points: 25, members: [{ id: 1, name: "Maya" }, { id: 8, name: "Sam" }] },
+    known_here: [{ id: 8, name: "Sam" }],
+    suggested_groups: [{ group: g(2, 3, 1), score: 9, reason: "needs firmware" }, { group: g(4, 2, 1), score: 4, reason: "you know Leo" }],
+    suggested_people: [{ person: { id: 9, name: "Priya", skills: ["design"] }, score: 6, reason: "does design, which you want" }],
+    points: 31,
+  };
+  return null;
+}
+
 async function api(method, path, body) {
+  if (typeof FAKE !== "undefined" && FAKE) return { status: 200, data: fakeReply(method, path, body) };
   const r = await fetch("/api" + path, {
     method, headers: body ? { "content-type": "application/json" } : {}, body: body ? JSON.stringify(body) : undefined,
   });
