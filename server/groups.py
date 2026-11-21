@@ -1,0 +1,180 @@
+"""Resolve a closed scan window: check-in, new group, join, help or repeat (Playbook: Resolving a scan).
+
+resolve() runs inside one transaction and returns (kind, station_state, events). The caller broadcasts the events.
+"""
+from itertools import combinations
+
+from . import points as P
+
+HERE = f"{P.HERE_HOURS} hours"
+
+
+async def known_here(conn, person_id: int) -> list[int]:
+    rows = await conn.fetch(
+        f"""SELECT p.id FROM connections c
+            JOIN people p ON p.id = CASE WHEN c.person_a=$1 THEN c.person_b ELSE c.person_a END
+            WHERE (c.person_a=$1 OR c.person_b=$1) AND p.last_checkin > now() - interval '{HERE}'""",
+        person_id,
+    )
+    return [r["id"] for r in rows]
+
+
+async def active_group_of(conn, person_id: int):
+    """Newest group the person is in that still has someone here now."""
+    return await conn.fetchval(
+        f"""SELECT gm.group_id FROM group_members gm
+            WHERE gm.person_id=$1 AND EXISTS (
+              SELECT 1 FROM group_members m JOIN people p ON p.id=m.person_id
+              WHERE m.group_id=gm.group_id AND p.last_checkin > now() - interval '{HERE}')
+            ORDER BY gm.joined_at DESC LIMIT 1""",
+        person_id,
+    )
+
+
+async def list_needs(conn) -> list[dict]:
+    rows = await conn.fetch(
+        """SELECT n.group_id, g.name AS "table", n.need, n.since, n.handled_by
+           FROM needs n JOIN groups g ON g.id=n.group_id ORDER BY n.since"""
+    )
+    return [{**dict(r), "since": r["since"].isoformat()} for r in rows]
+
+
+async def _connect_pairs(conn, ids, award, new_links, strengthened, pay):
+    for x, y in combinations(ids, 2):
+        a, b = min(x, y), max(x, y)
+        row = await conn.fetchrow(
+            """INSERT INTO connections (person_a, person_b) VALUES ($1,$2)
+               ON CONFLICT (person_a, person_b)
+               DO UPDATE SET strength = connections.strength + 1, last_seen = now()
+               RETURNING strength, (xmax = 0) AS inserted""",
+            a, b,
+        )
+        if row["inserted"]:
+            new_links.append([a, b])
+            if pay:
+                award["people"][a] = award["people"].get(a, 0) + P.NEW_CONNECTION
+                award["people"][b] = award["people"].get(b, 0) + P.NEW_CONNECTION
+        else:
+            strengthened.append({"a": a, "b": b, "strength": row["strength"]})
+
+
+async def _new_group(conn, station_id: int, first) -> int:
+    gid = await conn.fetchval(
+        "INSERT INTO groups (station_id, looking_for, working_on) VALUES ($1,$2,$3) RETURNING id",
+        station_id, first["looking_for"], first["working_on"],
+    )
+    await conn.execute("UPDATE groups SET name = 'Table ' || id WHERE id=$1", gid)
+    return gid
+
+
+async def _apply_points(conn, award: dict) -> dict:
+    for pid, pts in award["people"].items():
+        await conn.execute("UPDATE people SET points = points + $2 WHERE id=$1", pid, pts)
+    for gid, pts in award["groups"].items():
+        await conn.execute("UPDATE groups SET points = points + $2 WHERE id=$1", gid, pts)
+    people = await conn.fetch("SELECT id, points FROM people WHERE id = ANY($1::int[])", list(award["people"]))
+    grps = await conn.fetch("SELECT id, points FROM groups WHERE id = ANY($1::int[])", list(award["groups"]))
+    return {"people": [dict(r) for r in people], "groups": [dict(r) for r in grps]}
+
+
+async def _members(conn, gid: int) -> list[int]:
+    return [r["person_id"] for r in await conn.fetch("SELECT person_id FROM group_members WHERE group_id=$1", gid)]
+
+
+async def _first_active_group(conn, ids):
+    for i in ids:
+        gid = await active_group_of(conn, i)
+        if gid:
+            return gid  # first tapper's group wins
+    return None
+
+
+async def resolve(conn, station_id: int, person_ids: list[int]):
+    rows = {r["id"]: r for r in await conn.fetch("SELECT * FROM people WHERE id = ANY($1::int[])", person_ids)}
+    ids = [i for i in person_ids if i in rows]  # keep tap order
+    award = {"people": {}, "groups": {}}
+    events: list = []
+    new_links: list = []
+    strengthened: list = []
+    gid = None
+
+    if len(ids) == 1:
+        pid = ids[0]
+        first_today = await conn.fetchval(
+            """SELECT last_checkin IS NULL
+                  OR (last_checkin AT TIME ZONE $2)::date < (now() AT TIME ZONE $2)::date
+               FROM people WHERE id=$1""",
+            pid, P.TIMEZONE,
+        )
+        await conn.execute("UPDATE people SET last_checkin = now() WHERE id=$1", pid)
+        if first_today:
+            award["people"][pid] = P.FIRST_CHECKIN
+        events.append(("checked_in", {
+            "person_id": pid, "station_id": station_id,
+            "known_here": await known_here(conn, pid), "suggested_groups": [],
+        }))
+        kind, state = "checkin", "checked_in"
+    else:
+        counts = {
+            i: await conn.fetchval("SELECT count(*) FROM connections WHERE person_a=$1 OR person_b=$1", i) for i in ids
+        }
+        helpers = [i for i in ids if rows[i]["role"] in ("mentor", "staff")]
+        students = [i for i in ids if i not in helpers]
+        await conn.execute("UPDATE people SET last_checkin = now() WHERE id = ANY($1::int[])", ids)
+
+        if helpers and students:
+            # Help: the mentor is not a member; the students' group is the one helped. No points for help links.
+            gid = await _first_active_group(conn, students)
+            formed = gid is None
+            if formed:
+                gid = await _new_group(conn, station_id, rows[students[0]])
+            members = await _members(conn, gid)
+            added = [s for s in students if s not in members]
+            for s in added:
+                await conn.execute("INSERT INTO group_members (group_id, person_id) VALUES ($1,$2)", gid, s)
+            await _connect_pairs(conn, ids, award, new_links, strengthened, pay=False)
+            await conn.execute("UPDATE needs SET handled_by=$2 WHERE group_id=$1 AND handled_by IS NULL", gid, helpers[0])
+            if formed:
+                events.append(("group_formed", {"group_id": gid, "member_ids": added, "station_id": station_id}))
+            events.append(("help", {"group_id": gid, "mentor_id": helpers[0]}))
+            events.append(("needs_updated", {"needs": await list_needs(conn)}))
+            kind, state = "help", "joined"
+        else:
+            gid = await _first_active_group(conn, ids)
+            joiners: list = []
+            if gid is None:
+                gid = await _new_group(conn, station_id, rows[ids[0]])
+                for i in ids:
+                    await conn.execute("INSERT INTO group_members (group_id, person_id) VALUES ($1,$2)", gid, i)
+                events.append(("group_formed", {"group_id": gid, "member_ids": ids, "station_id": station_id}))
+                kind = "new_group"
+            else:
+                members = await _members(conn, gid)
+                joiners = [i for i in ids if i not in members]
+                for j in joiners:
+                    await conn.execute("INSERT INTO group_members (group_id, person_id) VALUES ($1,$2)", gid, j)
+                    group_pts = P.MEMBER_WELCOME * len(members)
+                    if counts[j] < P.WELCOME_BONUS_BELOW:
+                        group_pts *= 2
+                    award["people"][j] = award["people"].get(j, 0) + P.JOIN_GROUP
+                    for m in members:
+                        award["people"][m] = award["people"].get(m, 0) + P.MEMBER_WELCOME
+                    award["groups"][gid] = award["groups"].get(gid, 0) + group_pts
+                kind = "join"
+            await _connect_pairs(conn, ids, award, new_links, strengthened, pay=True)
+            if joiners:
+                events.append(("group_joined", {"group_id": gid, "new_member_ids": joiners, "new_links": new_links}))
+            if kind == "join" and not joiners and not new_links:
+                kind = "repeat"
+            state = "joined" if new_links else "repeat"
+
+        for s in strengthened:
+            events.append(("link_strengthened", s))
+
+    if award["people"] or award["groups"]:
+        events.append(("points_updated", await _apply_points(conn, award)))
+    await conn.execute(
+        "INSERT INTO scan_events (station_id, kind, size, group_id) VALUES ($1,$2,$3,$4)",
+        station_id, kind, len(ids), gid,
+    )
+    return kind, state, events
