@@ -66,7 +66,7 @@ docs/       Images for this README, the printable station sign
 
 ## Station wiring
 
-Each station is an ESP32 dev board, an RC522 reader and 5 NeoPixel LEDs on breadboards. No soldering, except the RC522 header pins if they came loose.
+Each station is an ESP32 dev board and an RC522 reader on a breadboard. No LED strip, diode, resistor or buzzer. No soldering, except the RC522 header pins if they came loose.
 
 <!-- Station photo goes here: docs/station.jpg -->
 
@@ -79,18 +79,28 @@ Each station is an ESP32 dev board, an RC522 reader and 5 NeoPixel LEDs on bread
 | RC522 RST | ESP32 GPIO 22 | F-F |
 | RC522 3.3V | ESP32 3V3 (never 5 V) | F-F |
 | RC522 GND | ESP32 GND | F-F |
-| ESP32 5V | Breadboard top + rail | M/F |
-| ESP32 GND | Breadboard top − rail, bridged to bottom − rail | M/F, M-M |
-| Diode (plain end → striped end) | Top + rail → bottom + rail (LED supply, about 4.2 V) | diode legs |
-| ESP32 GPIO 16 | 330 Ω resistor → LED 1 DIN | M/F, resistor |
-| Each LED 5V / GND | Bottom + / bottom − rail | M-M |
-| LED n DOUT | LED n+1 DIN, LEDs 1→5 | M-M |
 
-The RC522 IRQ pin stays unconnected. LED brightness is capped at 64 of 255 so USB power holds up. Station 1 (Entrance) glows raspberry and station 2 (Table 2) glows green, matching the wall.
+The RC522 IRQ pin stays unconnected. Station 1 is the Entrance and station 2 is Table 2.
 
-In the enclosure the reader is taped flat under a non-metal lid (3 mm or thinner) with the antenna up, and the LEDs face up through a paper diffuser printed with "Tap in".
+**Feedback at the station** is the ESP32 board's own blue LED (GPIO 2), next to the red power LED. It blinks 3 times at boot, then shows each state as its own rhythm:
 
-**Firmware libraries:** MFRC522, Adafruit_NeoPixel, ArduinoJson, plus the built-in WiFi and HTTPClient. The firmware never calls `delay()`, uses an 800 ms HTTP timeout, and shows "collecting" the moment a card is read, before the server answers.
+| State | Blue LED |
+|---|---|
+| idle | 0.15 s blip every 3 s |
+| collecting | Solid on |
+| checked in | 3 Hz blink |
+| joined | 10 Hz flicker |
+| repeat | One 0.4 s blink |
+| claim | Slow 1 Hz blink |
+| claimed | Solid on |
+| unknown | Double blink, repeating |
+| offline | Brief blink every 2 s |
+
+The wall and its sounds carry the big moments. The firmware still drives 5 NeoPixels on GPIO 16 if someone wires them later (see [firmware/README.md](firmware/README.md)).
+
+In the enclosure the reader is taped flat under a non-metal lid (3 mm or thinner) with the antenna up.
+
+**Firmware libraries:** MFRC522, Adafruit_NeoPixel, ArduinoJson, plus the built-in WiFi and HTTPClient. The main loop never calls `delay()`, uses an 800 ms HTTP timeout, and shows "collecting" the moment a card is read, before the server answers.
 
 ## Setup
 
