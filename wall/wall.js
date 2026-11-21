@@ -1,4 +1,4 @@
-// Tap In wall: a full-screen map of the room. Rebuilds from /api/graph and /api/needs, then follows /ws events.
+// Tap In wall: a full-screen 3D map of the room. Rebuilds from /api/graph and /api/needs, then follows /ws events.
 // ?server=host:port points the wall at another server (default: same origin). ?silent skips the Start screen.
 (() => {
   const qs = new URLSearchParams(location.search);
@@ -51,49 +51,10 @@
     render();
   }
 
-  // ------------------------------------------------------------ map
+  // ------------------------------------------------------------ room state for the 3D view
 
-  const svg = d3.select("#map");
-  const gHulls = svg.append("g");
-  const gLinks = svg.append("g");
-  const gHints = svg.append("g");
-  const gNodes = svg.append("g");
-  const gLabels = svg.append("g");
-  const gFx = svg.append("g");
-
-  let view = "2d", lastSig = "", visible = [], shownGroups = [], centers = new Map(), lobby = { x: 0, y: 0 };
-
+  let visible = [], shownGroups = [];
   const radius = (p) => Math.min(16, 8 + Math.sqrt(p.points || 0) * 0.8);
-
-  const sim = d3.forceSimulation()
-    .alphaDecay(0.025)
-    .force("charge", d3.forceManyBody().strength(-45))
-    .force("collide", d3.forceCollide((d) => radius(d) + 22))
-    .force("x", d3.forceX((d) => d.tx).strength(0.16))
-    .force("y", d3.forceY((d) => d.ty).strength(0.16))
-    .on("tick", tick);
-
-  function layout(W, H) {
-    // Top band for brand and count, bottom band for the arrival line.
-    const top = 90, bottom = H - 110, n = shownGroups.length;
-    lobby = { x: W / 2, y: (top + bottom) / 2 };
-    centers = new Map();
-    if (n <= 10) {
-      // Tables on a ring, new arrivals in the middle.
-      const rx = W * 0.36, ry = (bottom - top) * 0.36;
-      shownGroups.forEach((g, i) => {
-        const a = -Math.PI / 2 + (i / Math.max(n, 1)) * Math.PI * 2;
-        centers.set(g.id, { x: lobby.x + rx * Math.cos(a), y: lobby.y + ry * Math.sin(a) });
-      });
-    } else {
-      // Too many for a ring: grid on the right, arrivals in a column on the left.
-      lobby = { x: W * 0.1, y: lobby.y };
-      const cols = Math.ceil(Math.sqrt(n * 1.6)), rows = Math.ceil(n / cols);
-      const x0 = W * 0.2, y0 = top + 50, cw = (W - x0) / cols, ch = (bottom - y0) / rows;
-      shownGroups.forEach((g, i) => centers.set(g.id, {
-        x: x0 + cw * (i % cols + 0.5), y: y0 + ch * (Math.floor(i / cols) + 0.5) }));
-    }
-  }
 
   function render() {
     // A table shows while anyone in it is here; its away members show dimmed inside it.
@@ -101,127 +62,37 @@
     for (const p of S.people.values()) if (p.here && p.group_id) hereGroups.add(p.group_id);
     shownGroups = [...S.groups.values()].filter((g) => hereGroups.has(g.id));
     visible = [...S.people.values()].filter((p) => p.here || (p.group_id && hereGroups.has(p.group_id)));
-    // Narrow screens lay out on a virtual 1000 px-wide map and scale it down, so phones see the whole room.
-    const box = svg.node().getBoundingClientRect(), k = box.width ? Math.max(1, 1000 / box.width) : 1;
-    const W = box.width * k, H = box.height * k;
-    if (W) svg.attr("viewBox", `0 0 ${W} ${H}`);  // hidden in 3D view: zero size
-    layout(W, H);
-    for (const p of visible) {
-      const c = (p.group_id && centers.get(p.group_id)) || lobby;
-      p.tx = c.x; p.ty = c.y;
-      if (p.x === undefined) { p.x = c.x + (Math.random() - 0.5) * 40; p.y = c.y + (Math.random() - 0.5) * 40; }
-    }
-
-    gNodes.selectAll("g.node").data(visible, (d) => d.id).join((enter) => {
-      const g = enter.append("g").attr("class", "node");
-      g.append("circle");
-      g.append("text").attr("text-anchor", "middle");
-      return g;
-    })
-      .attr("class", (d) => `node${d.here ? "" : " away"}${d.focus ? " focus" : ""}`)
-      .call((g) => g.select("circle")
-        .attr("r", radius)
-        .attr("fill", (d) => (d.here ? COLOR[d.role] || COLOR.student : COLOR.away))
-        .style("color", (d) => COLOR[d.role] || COLOR.student))
-      .call((g) => g.select("text").attr("y", (d) => radius(d) + 16).text((d) => d.name));
-
-    const ids = new Set(visible.map((p) => p.id));
-    const links = [...S.links.entries()].filter(([, l]) => ids.has(l.a) && ids.has(l.b));
-    gLinks.selectAll("line").data(links, ([k]) => k).join("line")
-      .attr("class", ([k, l]) => {
-        const a = S.people.get(l.a), b = S.people.get(l.b);
-        return `link${a.group_id && a.group_id === b.group_id ? " inner" : ""}${S.fresh.has(k) ? " fresh" : ""}`;
-      })
-      .attr("stroke-width", ([, l]) => Math.min(1.5 + (l.strength - 1) * 0.8, 5));
-
-    gHulls.selectAll("circle").data(shownGroups, (g) => g.id).join("circle")
-      .attr("class", (g) => `hull ${g.mode}${g.glow ? " glow" : ""}`);
-
-    const labels = gLabels.selectAll("g.glabel").data(shownGroups, (g) => g.id).join((enter) => {
-      const g = enter.append("g").attr("class", "glabel").attr("text-anchor", "middle");
-      g.append("text").attr("class", "name");
-      g.append("text").attr("class", "need").attr("dy", "1.3em");
-      return g;
-    });
-    labels.select(".name").text((g) => g.name);
-    labels.select(".need").attr("class", (g) => `need${g.mode === "heads_down" ? " hd" : ""}`).text(needLine);
-
-    // Only reheat when someone moved table or the screen changed; style-only renders (glows) stay still.
-    const sig = `${W}x${H}|` + visible.map((p) => `${p.id}:${p.group_id || 0}`).join(",");
-    if (view === "2d" && sig !== lastSig) {
-      lastSig = sig;
-      sim.nodes(visible);
-      sim.alpha(Math.max(sim.alpha(), 0.5)).restart();
-    } else if (view === "2d") tick();
     View3D.relayout();
     $("here").textContent = [...S.people.values()].filter((p) => p.here).length;
   }
 
   function needLine(g) {
+    if (!g) return "";
     if (g.mode === "heads_down") return "heads-down";
     const open = S.needs.filter((n) => n.group_id === g.id && !n.handled_by).map((n) => n.need);
     return open.length ? `needs ${open.join(", ")}` : "";
   }
 
-  function hullOf(gid) {
-    const ms = visible.filter((p) => p.group_id === gid);
-    if (!ms.length) return null;
-    const cx = d3.mean(ms, (p) => p.x), cy = d3.mean(ms, (p) => p.y);
-    const r = d3.max(ms, (p) => Math.hypot(p.x - cx, p.y - cy) + radius(p)) + 30;
-    return { cx, cy, r };
-  }
-
-  function tick() {
-    gNodes.selectAll("g.node").attr("transform", (d) => `translate(${d.x},${d.y})`);
-    gLinks.selectAll("line")
-      .attr("x1", ([, l]) => S.people.get(l.a).x).attr("y1", ([, l]) => S.people.get(l.a).y)
-      .attr("x2", ([, l]) => S.people.get(l.b).x).attr("y2", ([, l]) => S.people.get(l.b).y);
-    const hulls = new Map(shownGroups.map((g) => [g.id, hullOf(g.id)]));
-    gHulls.selectAll("circle").each(function (g) {
-      const h = hulls.get(g.id);
-      if (h) d3.select(this).attr("cx", h.cx).attr("cy", h.cy).attr("r", h.r);
-    });
-    gLabels.selectAll("g.glabel").attr("transform", (g) => {
-      const h = hulls.get(g.id);
-      return h ? `translate(${h.cx},${h.cy - h.r - 30})` : null;
-    });
-    gHints.selectAll("line")
-      .attr("x1", (h) => S.people.get(h.pid)?.x).attr("y1", (h) => S.people.get(h.pid)?.y)
-      .attr("x2", (h) => hulls.get(h.gid)?.cx).attr("y2", (h) => hulls.get(h.gid)?.cy);
-  }
-
-  function drawHints() {
+  function pruneHints() {
     const now = Date.now();
-    S.hints = S.hints.filter((h) => h.until > now && S.people.has(h.pid) && shownGroups.some((g) => g.id === h.gid));
-    gHints.selectAll("line").data(S.hints, (h) => `${h.pid}-${h.gid}`).join("line").attr("class", "hint");
-    tick();
+    S.hints = S.hints.filter((h) => h.until > now && S.people.has(h.pid));
   }
 
-  function ripple(pid, color = COLOR.raspberry) {
-    View3D.pulse(pid, color);
-    const p = S.people.get(pid);
-    if (!p || p.x === undefined) return;
-    gFx.append("circle").attr("class", "ripple").attr("cx", p.x).attr("cy", p.y).attr("r", radius(p))
-      .style("stroke", color)
-      .transition().duration(1400).ease(d3.easeCubicOut).attr("r", 80).style("opacity", 0).remove();
-  }
+  const ripple = (pid, color = COLOR.raspberry) => View3D.pulse(pid, color);
 
   function glow(gid, ms = 2500) {
     const g = S.groups.get(gid);
     if (!g) return;
     g.glow = true;
-    render();
-    setTimeout(() => { g.glow = false; render(); }, ms);
+    setTimeout(() => { g.glow = false; }, ms);
   }
 
   function freshen(keys, ms = 3000) {
     const until = Date.now() + ms;
     for (const k of keys) S.fresh.set(k, until);
-    render();
     setTimeout(() => {
       const now = Date.now();
       for (const [k, t] of S.fresh) if (t <= now) S.fresh.delete(k);
-      render();
     }, ms + 50);
   }
 
@@ -266,8 +137,7 @@
       const sugg = d.suggested_groups || [];
       S.hints.push(...sugg.slice(0, 1).map((s) => ({ pid: p.id, gid: s.group_id, until: Date.now() + 10000 })));
       render();
-      drawHints();
-      setTimeout(drawHints, 10100);
+      setTimeout(pruneHints, 10100);
       setTimeout(() => ripple(p.id), 60);
       Sound.arrive();
       arrival(p, sugg);
@@ -357,22 +227,8 @@
     $("start").classList.add("gone");
     try { await Sound.start(); } catch (e) { console.error("sound", e); }
   });
-  window.addEventListener("resize", () => render());
-
-  // 2D map or 3D view. ?view=2d|3d wins, then the last choice on this device, then 3D.
-  const has3d = View3D.init(() => ({ visible, shownGroups, S, radius, needLine }), COLOR);
-  function setView(v) {
-    view = v === "3d" && has3d ? "3d" : "2d";
-    document.body.dataset.view = view;
-    $("view-btn").textContent = view === "3d" ? "2D" : "3D";
-    View3D.setActive(view === "3d");
-    if (view === "2d") { lastSig = ""; render(); } else sim.stop();
-    try { localStorage.setItem("tapin.view", view); } catch { /* private mode */ }
-  }
-  $("view-btn").addEventListener("click", () => setView(view === "3d" ? "2d" : "3d"));
-  let saved = null;
-  try { saved = localStorage.getItem("tapin.view"); } catch { /* private mode */ }
-  setView(qs.get("view") || saved || "3d");
+  View3D.init(() => ({ visible, shownGroups, S, radius, needLine }), COLOR);
+  View3D.setActive(true);
 
   // ?demo, or no Tap In server behind this page (e.g. hosted on its own): run the built-in demo room.
   function startDemo() {

@@ -10,12 +10,14 @@
 <link rel="stylesheet" href="wall.css">
 </head>
 <body>
-<svg id="map" aria-label="Room map"></svg>
 <canvas id="map3d" aria-label="3D room view"></canvas>
-<div id="card3d" class="card3d" hidden></div>
+<aside id="profile" class="profile" aria-label="Profile" hidden>
+  <button type="button" id="profile-close" class="profile-close" aria-label="Close profile">×</button>
+  <div id="profile-body"></div>
+</aside>
 <nav id="chips" class="chips" aria-label="Tables"></nav>
 
-<div class="brand">TAP IN <button type="button" id="view-btn" class="view-btn">3D</button><span class="demo-tag">DEMO</span></div>
+<span class="demo-tag">DEMO</span>
 <div class="count"><b id="here">0</b><span>here now</span></div>
 <div id="conn" class="conn" title="Live connection"></div>
 <p id="arrival" class="arrival" aria-live="polite"></p>
@@ -25,7 +27,6 @@
   <p>Click once to turn on sound.</p>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tone@14.8.49/build/Tone.js"></script>
 <script src="sound.js"></script>
 <script src="view3d.js"></script>

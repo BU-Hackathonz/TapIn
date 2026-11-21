@@ -13,7 +13,7 @@ const View3D = (() => {
   const centers = new Map();   // group id -> {x,y,z,r}
   const pulses = [];
   let picked = null, pickedUntil = 0, chipKey = "";
-  let zoomGoal = 1, focusId = null, spinX = 0, spinY = 0, pointers = 0;
+  let zoomGoal = 1, focusId = null, spinX = 0, spinY = 0, pointers = 0, liftY = 0;
   const cam = { x: 0, y: 0, z: 0 };   // point the camera orbits; eases to a tapped person
 
   // Mockup profile picture: initials on a gradient whose hue comes from the name. Cached per person.
@@ -117,7 +117,7 @@ const View3D = (() => {
     const D = 950 / zoom, f = Math.min(W, H) * (H > W ? 1.35 : 0.95);
     // Near plane: anything closer than 60 units (or behind) the camera is culled, not drawn inside-out.
     const depth = z2 + D, s = depth > 60 ? f / depth : 0;
-    return { x: W / 2 + x1 * s, y: H / 2 + y2 * s, s, z: z2, off: depth <= 60 };
+    return { x: W / 2 + x1 * s, y: H / 2 + liftY + y2 * s, s, z: z2, off: depth <= 60 };
   }
   const depthAlpha = (z) => Math.max(0.18, Math.min(1, 0.6 - z / (R * 2.2)));
 
@@ -135,6 +135,9 @@ const View3D = (() => {
     const goal = f || { x: 0, y: 0, z: 0 };
     cam.x += (goal.x - cam.x) * 0.1; cam.y += (goal.y - cam.y) * 0.1; cam.z += (goal.z - cam.z) * 0.1;
     zoom += (zoomGoal - zoom) * 0.12;
+    // Phones: the profile is a bottom sheet, so lift the view to keep the tapped person above it.
+    const sheet = W <= 700 && !document.getElementById("profile").hidden;
+    liftY += ((sheet ? -H * 0.3 : 0) - liftY) * 0.12;
     draw(t);
   }
 
@@ -299,6 +302,8 @@ const View3D = (() => {
   }
 
   function bindInput() {
+    document.getElementById("profile-close").addEventListener("click", hideCard);
+    addEventListener("keydown", (e) => { if (e.key === "Escape") hideCard(); });
     const pts = new Map();
     let moved = 0, pinch = 0, lastTap = 0, lastMove = 0, pinched = false;
     canvas.addEventListener("pointerdown", (e) => {
@@ -366,27 +371,103 @@ const View3D = (() => {
       const d = Math.hypot(p.x - x, p.y - y), person = S.people.get(id);
       if (d < Math.max(22, radius(person) * p.s + 8) && d < bestD) { best = id; bestD = d; }
     }
-    if (best === null) { hideCard(); focusId = null; zoomGoal = Math.min(zoomGoal, 1); return; }
+    if (best === null) { hideCard(); return; }
     // Fly to the person: the camera orbits them and zooms until their picture shows.
-    picked = best; pickedUntil = performance.now() + 8000;
+    picked = best; pickedUntil = Infinity;
     focusId = best; zoomGoal = Math.max(zoom, 3);
-    const person = S.people.get(best), g = S.groups.get(person.group_id);
-    const card = document.getElementById("card3d");
-    card.replaceChildren();
-    const img = document.createElement("img");
+    showProfile(S.people.get(best));
+  }
+  function hideCard() {
+    document.getElementById("profile").hidden = true;
+    picked = null; focusId = null; zoomGoal = Math.min(zoomGoal, 1);
+  }
+
+  // ------------------------------------------------------------ mock profile
+
+  // The wall's data has no bios, so everything not in /api/graph is made up from the name (stable per person).
+  const SKILLS = ["hardware", "firmware", "frontend", "backend", "design", "ml", "data", "mobile", "pitch", "research"];
+  const MAJORS = ["Computer Engineering", "Computer Science", "Data Science", "Mechanical Engineering", "Design",
+                  "Business Analytics", "Biomedical Engineering", "Economics", "Physics", "Urban Studies"];
+  const BIOS = ["Here to build something people use by Sunday.", "First hackathon, looking for a team that ships.",
+                "Likes soldering more than slides.", "Will trade debugging for snacks.",
+                "Wants to try hardware this time.", "Making Boston's commute less painful."];
+  function seedOf(person) {
+    let h = 2166136261;
+    for (const ch of `${person.id}:${person.name}`) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
+    return () => ((h = Math.imul(h ^ (h >>> 15), 2246822507) >>> 0) / 4294967296);
+  }
+  function mock(person) {
+    const r = seedOf(person), pickN = (xs, n) => [...xs].sort(() => r() - 0.5).slice(0, n);
+    const skills = person.skills?.length ? person.skills : pickN(SKILLS, 1 + Math.floor(r() * 3));
+    return {
+      skills,
+      looking: person.looking_for?.length ? person.looking_for : pickN(SKILLS.filter((s) => !skills.includes(s)), 2),
+      major: MAJORS[Math.floor(r() * MAJORS.length)],
+      year: 2026 + Math.floor(r() * 4),
+      bio: BIOS[Math.floor(r() * BIOS.length)],
+    };
+  }
+
+  function showProfile(person) {
+    const { S, needLine } = scene();
+    const m = mock(person), g = S.groups.get(person.group_id);
+    const el = (tag, cls, text) => {
+      const e = document.createElement(tag);
+      if (cls) e.className = cls;
+      if (text !== undefined) e.textContent = text;
+      return e;
+    };
+    const chips = (xs, cls) => { const d = el("div", "p-chips"); for (const x of xs) d.append(el("span", cls, x)); return d; };
+    const known = [];
+    for (const l of S.links.values()) {
+      const other = l.a === person.id ? l.b : l.b === person.id ? l.a : null;
+      if (other !== null && S.people.has(other)) known.push(S.people.get(other));
+    }
+    const here = known.filter((p) => p.here);
+
+    const head = el("div", "p-head");
+    const img = el("img", "p-pic");
     img.src = avatar(person).toDataURL();
     img.alt = "";
-    const text = document.createElement("div");
-    const b = document.createElement("b");
-    b.textContent = person.name;
-    const line = g ? `${g.name}${scene().needLine(g) ? " · " + scene().needLine(g) : ""}` : person.here ? "just arrived" : "away";
-    text.append(b, document.createElement("br"), line);
-    card.append(img, text);
-    card.hidden = false;
-    clearTimeout(pick.timer);
-    pick.timer = setTimeout(hideCard, 8000);
+    const who = el("div");
+    who.append(el("h2", "", person.name));
+    const tags = el("div", "p-tags");
+    tags.append(el("span", `p-role ${person.role}`, person.role));
+    tags.append(el("span", `p-state${person.here ? " here" : ""}`, person.focus ? "focus mode" : person.here ? "here now" : "away"));
+    who.append(tags, el("p", "p-sub", `${m.major} · '${String(m.year).slice(2)}`));
+    head.append(img, who);
+
+    const table = el("section", "p-sec");
+    table.append(el("h3", "", "Table"));
+    if (g) {
+      table.append(el("p", "p-strong", `${g.name}${g.working_on ? ` · ${g.working_on}` : ""}`));
+      const need = needLine(g);
+      if (need) table.append(el("p", "p-need", need));
+    } else {
+      table.append(el("p", "p-muted", person.here ? "Just arrived, not at a table yet" : "Not here right now"));
+    }
+
+    const stats = el("div", "p-stats");
+    for (const [n, label] of [[person.points || 0, "points"], [known.length, "connections"], [here.length, "know here"]]) {
+      const s = el("div");
+      s.append(el("b", "", String(n)), el("span", "", label));
+      stats.append(s);
+    }
+
+    const skills = el("section", "p-sec");
+    skills.append(el("h3", "", "Skills"), chips(m.skills, "p-chip"));
+    const looking = el("section", "p-sec");
+    looking.append(el("h3", "", "Looking for"), chips(m.looking, "p-chip want"));
+    const knows = el("section", "p-sec");
+    knows.append(el("h3", "", "Knows"));
+    knows.append(known.length ? chips(known.slice(0, 6).map((p) => p.name), "p-chip person")
+                              : el("p", "p-muted", "No connections yet"));
+
+    const body = document.getElementById("profile-body");
+    body.replaceChildren(head, el("p", "p-bio", m.bio), stats, table, skills, looking, knows,
+                         el("p", "p-foot", "Mock profile · skills, major and bio are sample data"));
+    document.getElementById("profile").hidden = false;
   }
-  function hideCard() { document.getElementById("card3d").hidden = true; picked = null; }
 
   // Table chips: tap one to isolate that table, tap again or "All" to show everything.
   function renderChips(groups) {

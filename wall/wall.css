@@ -1,16 +1,16 @@
-/* Tap In wall: one full-screen map. Same palette as the phone site; sized for a 1080p projector. */
+/* Tap In wall: one full-screen 3D map. Same palette as the phone site; sized for a 1080p projector and phones. */
 :root {
-  --bg: #121212; --line: #2c2c2c; --text: #f2f2f2; --muted: #8a8a8a;
+  --bg: #121212; --panel: #1a1a1a; --line: #2c2c2c; --text: #f2f2f2; --muted: #8a8a8a;
   --raspberry: #b8466f; --raspberry-text: #ffd9e6; --mint: #7fe0bd; --amber: #f2c46d;
 }
 * { box-sizing: border-box; margin: 0; }
 html, body { height: 100%; }
 body { background: var(--bg); color: var(--text); overflow: hidden; font: 18px/1.35 "IBM Plex Sans", system-ui, sans-serif; }
 
-#map { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+#map3d { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+#map3d:active { cursor: grabbing; }
 
-.brand { position: fixed; left: 28px; top: 22px; font: 600 20px "IBM Plex Mono", monospace; letter-spacing: 0.14em; color: var(--mint); }
-.count { position: fixed; right: 28px; top: 18px; text-align: right; }
+.count { position: fixed; right: 28px; top: 18px; text-align: right; z-index: 2; }
 .count b { display: block; font: 600 40px/1 "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; }
 .count span { color: var(--muted); }
 .conn { position: fixed; right: 28px; bottom: 22px; width: 10px; height: 10px; border-radius: 50%; background: var(--line); }
@@ -18,38 +18,68 @@ body { background: var(--bg); color: var(--text); overflow: hidden; font: 18px/1
 .conn.down { background: var(--amber); }
 .conn.demo { background: var(--raspberry); }
 .demo-tag {
-  display: none; font: 600 11px "IBM Plex Mono", monospace; letter-spacing: 0.1em; color: var(--raspberry-text);
+  position: fixed; left: 28px; top: 24px; z-index: 2; display: none;
+  font: 600 11px "IBM Plex Mono", monospace; letter-spacing: 0.1em; color: var(--raspberry-text);
   border: 1px solid var(--raspberry); padding: 3px 6px;
 }
 body.demo .demo-tag { display: inline-block; }
 
 .arrival {
-  position: fixed; left: 0; right: 0; bottom: 34px; text-align: center; font-size: 34px;
-  opacity: 0; transition: opacity 0.6s;
+  position: fixed; left: 0; right: 0; bottom: 70px; text-align: center; font-size: 34px;
+  opacity: 0; transition: opacity 0.6s; pointer-events: none;
 }
 .arrival.on { opacity: 1; }
 .arrival b { color: var(--raspberry-text); }
 .arrival em { font-style: normal; color: var(--mint); }
 
-/* map */
-.node circle { transition: opacity 0.6s; }
-.node.away circle { opacity: 0.25; }
-.node.focus circle { fill: var(--bg) !important; stroke: currentColor; stroke-width: 3; }
-.node text {
-  fill: #d6d6d6; font-size: 14px; pointer-events: none; paint-order: stroke; stroke: var(--bg); stroke-width: 4px;
+.chips {
+  position: fixed; left: 0; right: 0; bottom: 14px; display: flex; justify-content: center; gap: 8px;
+  padding: 0 16px; overflow-x: auto; scrollbar-width: none; z-index: 2;
 }
-.node.away text { fill: var(--muted); opacity: 0.6; }
-.link { stroke: #8a8a8a; stroke-opacity: 0.1; }
-.link.inner { stroke: var(--mint); stroke-opacity: 0.45; }
-.link.fresh { stroke: var(--raspberry); stroke-opacity: 1; }
-.hint { stroke: var(--raspberry); stroke-width: 2; stroke-dasharray: 5 7; }
-.hull { fill: none; stroke: var(--line); stroke-width: 2; }
-.hull.heads_down { stroke-dasharray: 6 6; }
-.hull.glow { stroke: var(--raspberry); stroke-width: 3; }
-.glabel .name { fill: var(--text); font-weight: 700; font-size: 22px; }
-.glabel .need { fill: var(--mint); font-size: 15px; }
-.glabel .need.hd { fill: var(--muted); }
-.ripple { fill: none; stroke: var(--raspberry); stroke-width: 3; }
+.chips button {
+  flex: none; font: 600 13px "IBM Plex Mono", monospace; color: var(--muted); background: var(--bg);
+  border: 1px solid var(--line); padding: 6px 12px; min-height: 36px; cursor: pointer;
+}
+.chips button.on { color: var(--bg); background: var(--mint); border-color: var(--mint); }
+
+/* profile: side panel on wide screens, bottom sheet on phones */
+.profile {
+  position: fixed; z-index: 4; top: 84px; right: 24px; width: 360px; max-height: calc(100% - 170px); overflow-y: auto;
+  background: var(--panel); border: 1px solid var(--line); border-top: 3px solid var(--raspberry);
+  padding: 20px 20px 16px; font-size: 15px; animation: rise 0.25s ease-out;
+}
+.profile[hidden] { display: none; }
+.profile-close {
+  position: absolute; top: 6px; right: 6px; width: 40px; height: 40px; border: 0; background: transparent;
+  color: var(--muted); font-size: 26px; line-height: 1; cursor: pointer;
+}
+.profile-close:hover, .profile-close:focus-visible { color: var(--text); outline: none; }
+.p-head { display: flex; gap: 14px; align-items: center; padding-right: 28px; }
+.p-pic { width: 72px; height: 72px; border-radius: 50%; flex: none; border: 2px solid var(--line); }
+.p-head h2 { font-size: 24px; line-height: 1.15; }
+.p-tags { display: flex; gap: 6px; margin: 4px 0 2px; }
+.p-role, .p-state {
+  font: 600 11px "IBM Plex Mono", monospace; letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 2px 6px; border: 1px solid var(--line); color: var(--muted);
+}
+.p-role.mentor, .p-role.staff { color: var(--amber); border-color: var(--amber); }
+.p-state.here { color: var(--mint); border-color: var(--mint); }
+.p-sub { color: var(--muted); font-size: 14px; }
+.p-bio { margin: 14px 0 0; color: #d6d6d6; }
+.p-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 16px 0 4px; }
+.p-stats div { background: var(--bg); padding: 8px 10px; }
+.p-stats b { display: block; font: 600 22px "IBM Plex Mono", monospace; }
+.p-stats span { color: var(--muted); font-size: 12px; }
+.p-sec { margin-top: 14px; }
+.p-sec h3 { font: 600 11px "IBM Plex Mono", monospace; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.p-strong { font-weight: 600; }
+.p-need { color: var(--mint); font-size: 14px; }
+.p-muted { color: var(--muted); }
+.p-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.p-chip { font-size: 13px; padding: 3px 9px; background: var(--bg); border: 1px solid var(--line); }
+.p-chip.want { border-color: var(--mint); color: var(--mint); }
+.p-chip.person { color: #d6d6d6; }
+.p-foot { margin-top: 16px; font: 11px "IBM Plex Mono", monospace; color: #5e5e5e; }
 
 .start {
   position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -60,50 +90,24 @@ body.demo .demo-tag { display: inline-block; }
 .start p { color: var(--muted); }
 .start.gone { display: none; }
 
-/* 3D view */
-#map3d { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
-#map3d:active { cursor: grabbing; }
-body[data-view="3d"] #map, body[data-view="2d"] #map3d, body[data-view="2d"] #chips, body[data-view="2d"] .card3d { display: none; }
-.brand { display: flex; align-items: center; gap: 14px; z-index: 2; }
-.view-btn {
-  font: 600 13px "IBM Plex Mono", monospace; letter-spacing: 0.08em; color: var(--text); background: transparent;
-  border: 1px solid var(--line); padding: 6px 10px; min-height: 32px; cursor: pointer;
-}
-.view-btn:hover, .view-btn:focus-visible { border-color: var(--mint); color: var(--mint); outline: none; }
-.chips {
-  position: fixed; left: 0; right: 0; bottom: 14px; display: flex; justify-content: center; gap: 8px;
-  padding: 0 16px; overflow-x: auto; scrollbar-width: none; z-index: 2;
-}
-.chips button {
-  flex: none; font: 600 13px "IBM Plex Mono", monospace; color: var(--muted); background: var(--bg);
-  border: 1px solid var(--line); padding: 6px 12px; min-height: 36px; cursor: pointer;
-}
-.chips button.on { color: var(--bg); background: var(--mint); border-color: var(--mint); }
-body[data-view="3d"] .arrival { bottom: 70px; }
-/* person card: pinned top-centre so the camera can fly to the person underneath it */
-.card3d {
-  position: fixed; z-index: 3; left: 50%; top: 84px; transform: translateX(-50%);
-  display: flex; align-items: center; gap: 12px; background: #1a1a1a; border-left: 3px solid var(--raspberry);
-  padding: 10px 16px 10px 10px; font-size: 16px; color: var(--muted); max-width: min(360px, calc(100vw - 32px)); pointer-events: none;
-}
-.card3d[hidden] { display: none; }
-.card3d img { width: 48px; height: 48px; border-radius: 50%; flex: none; }
-.card3d b { color: var(--text); font-size: 18px; }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 
 /* phones */
 @media (max-width: 700px) {
   body { font-size: 16px; }
-  .brand { left: 16px; top: 14px; font-size: 16px; }
+  .demo-tag { left: 16px; top: 18px; }
   .count { right: 16px; top: 12px; }
   .count b { font-size: 28px; }
   .count span { font-size: 13px; }
-  .arrival { font-size: 20px; padding: 0 16px; bottom: 24px; }
-  body[data-view="3d"] .arrival { bottom: 64px; }
+  .arrival { font-size: 20px; padding: 0 16px; bottom: 64px; }
   .chips { justify-content: flex-start; bottom: 12px; }
   .conn { right: 16px; bottom: auto; top: 70px; }
   .start button { font-size: 22px; padding: 14px 40px; }
-  .glabel .name { font-size: 16px; }
-  .glabel .need, .node text { font-size: 12px; }
+  .profile {
+    top: auto; bottom: 0; left: 0; right: 0; width: auto; max-height: 62%;
+    border-left: 0; border-right: 0; border-bottom: 0; padding: 18px 16px 20px;
+  }
+  .p-pic { width: 60px; height: 60px; }
 }
 
-@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
