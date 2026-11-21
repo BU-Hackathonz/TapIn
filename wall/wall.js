@@ -59,7 +59,7 @@
   const gLabels = svg.append("g");
   const gFx = svg.append("g");
 
-  let lastSig = "", visible = [], shownGroups = [], centers = new Map(), lobby = { x: 0, y: 0 };
+  let view = "2d", lastSig = "", visible = [], shownGroups = [], centers = new Map(), lobby = { x: 0, y: 0 };
 
   const radius = (p) => Math.min(16, 8 + Math.sqrt(p.points || 0) * 0.8);
 
@@ -99,7 +99,10 @@
     for (const p of S.people.values()) if (p.here && p.group_id) hereGroups.add(p.group_id);
     shownGroups = [...S.groups.values()].filter((g) => hereGroups.has(g.id));
     visible = [...S.people.values()].filter((p) => p.here || (p.group_id && hereGroups.has(p.group_id)));
-    const { width: W, height: H } = svg.node().getBoundingClientRect();
+    // Narrow screens lay out on a virtual 1000 px-wide map and scale it down, so phones see the whole room.
+    const box = svg.node().getBoundingClientRect(), k = box.width ? Math.max(1, 1000 / box.width) : 1;
+    const W = box.width * k, H = box.height * k;
+    if (W) svg.attr("viewBox", `0 0 ${W} ${H}`);  // hidden in 3D view: zero size
     layout(W, H);
     for (const p of visible) {
       const c = (p.group_id && centers.get(p.group_id)) || lobby;
@@ -143,11 +146,12 @@
 
     // Only reheat when someone moved table or the screen changed; style-only renders (glows) stay still.
     const sig = `${W}x${H}|` + visible.map((p) => `${p.id}:${p.group_id || 0}`).join(",");
-    if (sig !== lastSig) {
+    if (view === "2d" && sig !== lastSig) {
       lastSig = sig;
       sim.nodes(visible);
       sim.alpha(Math.max(sim.alpha(), 0.5)).restart();
-    } else tick();
+    } else if (view === "2d") tick();
+    View3D.relayout();
     $("here").textContent = [...S.people.values()].filter((p) => p.here).length;
   }
 
@@ -192,6 +196,7 @@
   }
 
   function ripple(pid, color = COLOR.raspberry) {
+    View3D.pulse(pid, color);
     const p = S.people.get(pid);
     if (!p || p.x === undefined) return;
     gFx.append("circle").attr("class", "ripple").attr("cx", p.x).attr("cy", p.y).attr("r", radius(p))
@@ -351,5 +356,20 @@
     try { await Sound.start(); } catch (e) { console.error("sound", e); }
   });
   window.addEventListener("resize", () => render());
+
+  // 2D map or 3D view. ?view=2d|3d wins, then the last choice on this device, then 3D.
+  const has3d = View3D.init(() => ({ visible, shownGroups, S, radius, needLine }), COLOR);
+  function setView(v) {
+    view = v === "3d" && has3d ? "3d" : "2d";
+    document.body.dataset.view = view;
+    $("view-btn").textContent = view === "3d" ? "2D" : "3D";
+    View3D.setActive(view === "3d");
+    if (view === "2d") { lastSig = ""; render(); } else sim.stop();
+    try { localStorage.setItem("tapin.view", view); } catch { /* private mode */ }
+  }
+  $("view-btn").addEventListener("click", () => setView(view === "3d" ? "2d" : "3d"));
+  let saved = null;
+  try { saved = localStorage.getItem("tapin.view"); } catch { /* private mode */ }
+  setView(qs.get("view") || saved || "3d");
   connect();
 })();
