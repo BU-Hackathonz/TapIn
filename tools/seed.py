@@ -174,6 +174,9 @@ async def main() -> None:
             if input("Type RESET to continue: ").strip() != "RESET":
                 sys.exit("Nothing deleted.")
             await conn.execute(f"TRUNCATE {', '.join(TABLES)} RESTART IDENTITY")
+            if await conn.fetchval("SELECT to_regclass('scans_per_10min')"):
+                # Clear old chart buckets too; CALL must run on its own, outside a transaction.
+                await conn.execute("CALL refresh_continuous_aggregate('scans_per_10min', NULL, NULL)")
             print("Database wiped.")
         elif a.remove:
             n = await delete_people(conn, "uid = ANY($1::text[])", SEED_UIDS)
