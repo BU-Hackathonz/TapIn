@@ -98,6 +98,9 @@ async def main() -> int:
         gid = formed[0]["group_id"] if formed else None
         check("3 +5 each", await points(b) == 5 and await points(c) == 5, f"{await points(b)},{await points(c)}")
         check("3 state joined", scans.current_state(2)["state"] == "joined")
+        n3 = await db.pool.fetch("SELECT need, handled_by FROM needs WHERE group_id=$1", gid)
+        check("3 need created from the first tapper's looking_for", [(r["need"], r["handled_by"]) for r in n3] == [("design", None)], str([tuple(r) for r in n3]))
+        check("3 needs_updated emitted", len(of_type("needs_updated")) == 1)
 
         # 4. third person taps with one member -> group_joined, welcome bonus
         events.clear()

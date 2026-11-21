@@ -33,11 +33,24 @@ async def active_group_of(conn, person_id: int):
 
 
 async def list_needs(conn) -> list[dict]:
+    """The needs board: what each OPEN group is looking for (heads-down groups stay off it)."""
     rows = await conn.fetch(
         """SELECT n.group_id, g.name AS "table", n.need, n.since, n.handled_by
-           FROM needs n JOIN groups g ON g.id=n.group_id ORDER BY n.since"""
+           FROM needs n JOIN groups g ON g.id=n.group_id WHERE g.mode='open' ORDER BY n.since"""
     )
     return [{**dict(r), "since": r["since"].isoformat()} for r in rows]
+
+
+async def sync_needs(conn, group_id: int, tags) -> None:
+    """One need row per looking_for tag. Drops still-open needs for tags no longer wanted; keeps handled ones."""
+    tags = list(tags or [])
+    await conn.execute(
+        "DELETE FROM needs WHERE group_id=$1 AND handled_by IS NULL AND NOT (need = ANY($2::text[]))", group_id, tags
+    )
+    have = {r["need"] for r in await conn.fetch("SELECT need FROM needs WHERE group_id=$1", group_id)}
+    for tag in tags:
+        if tag not in have:
+            await conn.execute("INSERT INTO needs (group_id, need) VALUES ($1,$2)", group_id, tag)
 
 
 async def _connect_pairs(conn, ids, award, new_links, strengthened, pay):
@@ -65,6 +78,7 @@ async def _new_group(conn, station_id: int, first) -> int:
         station_id, first["looking_for"], first["working_on"],
     )
     await conn.execute("UPDATE groups SET name = 'Table ' || id WHERE id=$1", gid)
+    await sync_needs(conn, gid, first["looking_for"])
     return gid
 
 
@@ -152,6 +166,7 @@ async def resolve(conn, station_id: int, person_ids: list[int]):
                 for i in ids:
                     await conn.execute("INSERT INTO group_members (group_id, person_id) VALUES ($1,$2)", gid, i)
                 events.append(("group_formed", {"group_id": gid, "member_ids": ids, "station_id": station_id}))
+                events.append(("needs_updated", {"needs": await list_needs(conn)}))
                 kind = "new_group"
             else:
                 members = await _members(conn, gid)
