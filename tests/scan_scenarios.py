@@ -59,6 +59,11 @@ async def main() -> int:
     if db.pool is None:
         print("no DATABASE_URL")
         return 1
+    real = await db.pool.fetchval("SELECT count(*) FROM people WHERE uid NOT LIKE 'TST%'")
+    if real and not os.environ.get("ALLOW_LIVE"):
+        # Cleanup deletes scan_events by time, which would also delete real scans.
+        print(f"refusing to run: {real} real people in the database (set ALLOW_LIVE=1 to override)")
+        return 1
     started = await db.pool.fetchval("SELECT now()")
     hub.clients.add(FakeClient())
     try:
