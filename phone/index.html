@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tap In</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono&family=IBM+Plex+Sans:wght@400;600&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <div class="brand">TAP IN</div>
+  <h1>Find the table that needs you</h1>
+  <p class="muted">Make a profile, tap a badge, and see who you already know here.</p>
+  <p id="back" hidden><a class="button secondary" id="back-link" href="me.html">Go to your page</a></p>
+
+  <form id="form" novalidate>
+    <label class="field" for="name">First name</label>
+    <input type="text" id="name" name="name" maxlength="30" autocomplete="given-name" autocapitalize="words" required>
+
+    <fieldset>
+      <legend>I'm a</legend>
+      <div class="chips" id="role">
+        <label class="chip"><input type="radio" name="role" value="student" checked><span>student</span></label>
+        <label class="chip"><input type="radio" name="role" value="mentor"><span>mentor</span></label>
+        <label class="chip"><input type="radio" name="role" value="staff"><span>staff</span></label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>What I'm good at <small>(up to 3)</small></legend>
+      <div id="skills"></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Looking for <small>(up to 2)</small></legend>
+      <div id="looking"></div>
+    </fieldset>
+
+    <label class="field" for="working">Working on today <small>(optional)</small></label>
+    <input type="text" id="working" name="working_on" maxlength="80" placeholder="a robot arm, a study-room finder...">
+
+    <button type="submit" id="go">Get my badge</button>
+    <p class="note">First name only. Ask us and we'll delete it.</p>
+    <p class="error" id="error" role="alert"></p>
+  </form>
+</main>
+<script src="common.js"></script>
+<script>
+  const saved = store.get("tapin_form", sessionStorage) || {};
+  const skills = chipGroup("skills", SKILLS, saved.skills || [], 3);
+  const looking = chipGroup("looking_for", SKILLS, saved.looking_for || [], 2);
+  document.getElementById("skills").append(skills);
+  document.getElementById("looking").append(looking);
+  if (saved.name) document.getElementById("name").value = saved.name;
+  if (saved.working_on) document.getElementById("working").value = saved.working_on;
+  if (saved.role) document.querySelector(`input[name=role][value="${saved.role}"]`).checked = true;
+
+  const me = store.get("tapin_person");
+  if (me) {
+    document.getElementById("back").hidden = false;
+    document.getElementById("back-link").href = "me.html?id=" + encodeURIComponent(me);
+  }
+
+  document.getElementById("form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const err = document.getElementById("error");
+    const go = document.getElementById("go");
+    const body = {
+      name: document.getElementById("name").value.trim(),
+      role: document.querySelector("input[name=role]:checked").value,
+      skills: picked(skills),
+      looking_for: picked(looking),
+      working_on: document.getElementById("working").value.trim(),
+    };
+    if (!body.name) { err.textContent = "Add your first name."; document.getElementById("name").focus(); return; }
+    store.set("tapin_form", body, sessionStorage);  // kept so "Try again" on the claim page needs no retyping
+    err.textContent = "";
+    go.disabled = true;
+    try {
+      const { status, data } = await api("POST", "/signup", body);
+      if (status !== 200) { err.textContent = signupError(status, data); return; }
+      store.set("tapin_claim", data, sessionStorage);
+      location.href = "claim.html";
+    } catch (_) {
+      err.textContent = signupError(0);
+    } finally {
+      go.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>
