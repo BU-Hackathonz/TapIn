@@ -9,7 +9,7 @@
 (() => {
   "use strict";
   const qs = new URLSearchParams(location.search);
-  document.documentElement.dataset.palette = qs.get("palette") || "sand";
+  document.documentElement.dataset.palette = qs.get("palette") || "cool";
   if (qs.get("logo")) document.documentElement.dataset.logo = qs.get("logo");
   const HOST = qs.get("server") || location.host;
   const HTTP = `${location.protocol}//${HOST}`;
@@ -215,6 +215,7 @@
   const drawn = { people: [], tables: [] };       // where things were last drawn (room-canvas pixels), for the fume and for picking
   const off = new Map();                          // "p<id>" / "t<gid>" -> { x, y, rel }: how far the user has dragged a person or a table
   let drag = null;
+  const lvBuf = new Float32Array(FW * FH);
   const pushX = new Float32Array(FW * FH), pushY = new Float32Array(FW * FH), pushK = new Float32Array(FW * FH);
   const PINK = rgbOf(C.pink), GLINT = [Math.min(255, PINK[0] + 70), Math.min(255, PINK[1] + 90), Math.min(255, PINK[2] + 60)];
   const FUME_ALPHA = Math.max(0.15, parseFloat(v("--fume")) || 1);
@@ -251,6 +252,7 @@
         const r1 = Math.exp(-(((u1 - c1) / 0.26) ** 2)), r2 = 0.6 * Math.exp(-(((u2 - c2) / 0.22) ** 2));
         let lv = sm * 0.5 + (r1 + r2) * (0.3 + 0.75 * sm);
         lv *= Math.max(0, 1 - pushK[pi] * 0.9);                                              // and thins out right around it
+        lvBuf[pi] = lv;
         const q = Math.floor(lv * 3.6 + BAYER[(y & 3) * 4 + (x & 3)]);                  // 0..4 steps, ordered dither
         const i = (y * FW + x) * 4;
         if (q <= 1) { d[i + 3] = 0; continue; }
@@ -260,6 +262,34 @@
       }
     }
     fctx.putImageData(fimg, 0, 0);
+    drawDigits(t);
+  }
+
+  // The field of numbers: a grid of small digits that sits in front of the smoke. Where a wave passes they turn pink and
+  // change quickly; elsewhere they are quiet and mostly still. People, tables and the mouse push them out of the way.
+  const dg = $("digits"), dctx = dg.getContext("2d");
+  let DCELL = 22, DCOLS = 0, DROWS = 0;
+  function sizeDigits() {
+    dg.width = innerWidth; dg.height = innerHeight;
+    DCELL = Math.max(18, Math.round(innerHeight / 46)); DCOLS = Math.ceil(innerWidth / DCELL); DROWS = Math.ceil(innerHeight / DCELL);
+  }
+  addEventListener("resize", sizeDigits); sizeDigits();
+  function drawDigits(t) {
+    dctx.clearRect(0, 0, dg.width, dg.height);
+    dctx.font = `400 ${Math.round(DCELL * 0.62)}px ${MONO}`; dctx.textAlign = "center"; dctx.textBaseline = "middle";
+    for (let r = 0; r < DROWS; r++) {
+      for (let c = 0; c < DCOLS; c++) {
+        const fx = Math.min(FW - 1, Math.floor(((c + 0.5) * DCELL / innerWidth) * FW)), fy = Math.min(FH - 1, Math.floor(((r + 0.5) * DCELL / innerHeight) * FH)), pi = fy * FW + fx;
+        const hot = Math.max(0, Math.min(1, (lvBuf[pi] - 0.28) * 2.4)), pk = pushK[pi];
+        const a = (0.1 + hot * 0.6) * Math.max(0, 1 - pk * 0.95);
+        if (a < 0.02) continue;
+        const tick = Math.floor((t / 1000) * (0.3 + 3.5 * hot) + hash(c, r) * 10);
+        const d = Math.floor(hash(c * 3 + tick, r * 5 + tick * 7) * 10);
+        dctx.globalAlpha = a; dctx.fillStyle = hot > 0.3 ? C.pink : C.muted;
+        dctx.fillText(String(d), (c + 0.5) * DCELL + pushX[pi] * DCELL * 1.3, (r + 0.5) * DCELL + pushY[pi] * DCELL * 1.3);
+      }
+    }
+    dctx.globalAlpha = 1;
   }
 
   // A soft glow under whatever just happened: pink under the person who just checked in, green under a table that
@@ -335,7 +365,7 @@
     }
     const tables = layout.tables();
     // Tables drift a little and turn a little: the seats, the mentor and the ring move together, never far.
-    const drift = (gid) => ({ dx: (Math.sin(t / 2300 + gid * 1.7) * 7 + Math.sin(t / 3700 + gid * 0.6) * 4) * K, dy: (Math.cos(t / 2700 + gid * 1.1) * 7 + Math.cos(t / 4100 + gid) * 3) * K, rot: Math.sin(t / 6500 + gid * 2.3) * 0.14 });
+    const drift = (gid) => ({ dx: (Math.sin(t / 1700 + gid * 1.7) * 9 + Math.sin(t / 2900 + gid * 0.6) * 5) * K, dy: (Math.cos(t / 2000 + gid * 1.1) * 9 + Math.cos(t / 3300 + gid) * 4) * K, rot: Math.sin(t / 4200 + gid * 2.3) * 0.3 + Math.sin(t / 2500 + gid) * 0.08, sc: 1 + 0.045 * Math.sin(t / 2100 + gid * 1.3) });
     // What the user has dragged lets go after a few seconds and eases home. A table moves as a whole; a person moves alone
     // and tugs the rest of their table a third of the way along.
     const dtm = Math.min(100, t - (draw.lt || t)); draw.lt = t;
@@ -350,13 +380,13 @@
     }
     for (const [gid, tb] of tables) {
       const d = drift(gid), to = off.get("t" + gid) || { x: 0, y: 0 }, pu = pull.get(gid) || { x: 0, y: 0 };
-      tb.ox = tb.x; tb.oy = tb.y; tb.x += d.dx + to.x + pu.x; tb.y += d.dy + to.y + pu.y; tb.rot = d.rot;
+      tb.ox = tb.x; tb.oy = tb.y; tb.x += d.dx + to.x + pu.x; tb.y += d.dy + to.y + pu.y; tb.rot = d.rot; tb.sc = d.sc;
     }
     for (const p of pos) {
       const gid = p.gid != null ? p.gid : p.seatTable;
       const tb = gid != null ? tables.get(gid) : null;
       if (tb) {
-        const rx = p.x - tb.ox, ry = p.y - tb.oy, c = Math.cos(tb.rot), s = Math.sin(tb.rot);
+        const rx = (p.x - tb.ox) * tb.sc, ry = (p.y - tb.oy) * tb.sc, c = Math.cos(tb.rot), s = Math.sin(tb.rot);
         p.x = tb.x + rx * c - ry * s; p.y = tb.y + rx * s + ry * c;
       }
       const o = off.get("p" + p.id);
@@ -381,15 +411,20 @@
       const ms = pos.filter((p) => p.gid === tb.id).sort((a, b) => a.ang - b.ang);
       if (ms.length < 2) continue;
       ctx.globalAlpha = 0.8; ctx.strokeStyle = C.deep; ctx.lineWidth = 1.4 * K;
+      const dist = (p) => Math.hypot(p.x - tb.x, p.y - tb.y), rs = ms.reduce((s, p) => s + dist(p), 0) / ms.length;
+      const round = ms.length > 2 && ms.every((p) => Math.abs(dist(p) - rs) < 0.12 * rs + 6 * K);   // seats on one ring: draw the ring itself, not a polygon
       ctx.beginPath();
-      ms.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
-      if (ms.length > 2) ctx.closePath();
+      if (round) ctx.arc(tb.x, tb.y, rs, 0, Math.PI * 2);
+      else { ms.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y))); if (ms.length > 2) ctx.closePath(); }
       ctx.stroke();
       const edges = ms.length > 2 ? ms.length : 1;                       // a small light travels along each link of the table
       for (let i = 0; i < edges; i++) {
         const a = ms[i], b = ms[(i + 1) % ms.length], f = (t / 3400 + i * 0.37 + tb.id * 0.19) % 1, sz = 2.6 * K;
         ctx.globalAlpha = 0.75; ctx.fillStyle = C.fg;
-        ctx.fillRect(a.x + (b.x - a.x) * f - sz / 2, a.y + (b.y - a.y) * f - sz / 2, sz, sz);
+        if (round) {
+          const aa = Math.atan2(a.y - tb.y, a.x - tb.x), dd = (Math.atan2(b.y - tb.y, b.x - tb.x) - aa + Math.PI * 2) % (Math.PI * 2), an = aa + dd * f;
+          ctx.fillRect(tb.x + Math.cos(an) * rs - sz / 2, tb.y + Math.sin(an) * rs - sz / 2, sz, sz);
+        } else ctx.fillRect(a.x + (b.x - a.x) * f - sz / 2, a.y + (b.y - a.y) * f - sz / 2, sz, sz);
       }
     }
     const between = new Map(), bridge = new Map();
@@ -439,13 +474,7 @@
       ctx.lineDashOffset = -(t / (hi ? 30 : 140)) * (gid % 2 ? 1 : -1);   // neighbouring rings turn opposite ways
       ctx.strokeStyle = hi ? hiColor : quiet ? C.dim : C.deep;
       ctx.globalAlpha = hi ? 0.75 + 0.25 * Math.sin(t / 380) : quiet ? 0.55 : 0.95;
-      ctx.beginPath();                                                // not a circle: an outline that slowly breathes out of round
-      for (let k = 0; k <= 72; k++) {
-        const a = (k / 72) * Math.PI * 2, rr = ringR * (1 + 0.1 * Math.sin(2 * a + t / 2600 + gid * 1.9) + 0.07 * Math.sin(3 * a - t / 3300 + gid * 0.8));
-        const px = tb.x + Math.cos(a) * rr, py = tb.y + Math.sin(a) * rr;
-        k ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
-      }
-      ctx.closePath(); ctx.stroke();
+      ctx.beginPath(); ctx.arc(tb.x, tb.y, ringR * tb.sc, 0, Math.PI * 2); ctx.stroke();   // a true circle, breathing in and out with its table
       ctx.restore();
 
       const needs = S.needs.filter((n) => n.group_id === gid && n.handled_by == null).map((n) => n.need);
@@ -472,7 +501,7 @@
       ctx.globalAlpha = 0.2 + 0.8 * age;
       // A little life: each person drifts a couple of pixels and breathes; people still gliding leave a fading trail; a new
       // arrival sends out one ripple.
-      const nx = p.x + Math.sin(t / 900 + p.id * 1.3) * 3.2 * K, ny = p.y + Math.cos(t / 1100 + p.id * 0.9) * 3.2 * K;
+      const nx = p.x + Math.sin(t / 650 + p.id * 1.3) * 4.5 * K, ny = p.y + Math.cos(t / 800 + p.id * 0.9) * 4.5 * K;
       const r = p.r * (newest ? 1.9 : 1) * (1 + 0.07 * Math.sin(t / 650 + p.id));
       const col = newest ? C.pink : quiet ? C.dim : C.green;
       const tr = trails.get(p.id);
