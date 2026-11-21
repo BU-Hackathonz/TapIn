@@ -46,7 +46,7 @@ We split the work by layer and agreed on the JSON shapes first, so four people c
 
 ## The stations
 
-[CHECK: a sentence on the enclosures and a photo caption.] Each station is an ESP32, an RC522 reader and 5 LEDs, about $15 of parts [CHECK: real cost]. The LEDs light one by one as each badge joins a scan, so a group arriving lights up together [CHECK: firmware].
+[CHECK: a sentence on the enclosures and a photo caption.] Each station is just an ESP32 and an RC522 reader [CHECK: real cost]. We cut the LED strip to keep the stations simple and reliable; the board's own blue light blinks a different rhythm for each state, and the wall carries the big moment with animation and sound. [CHECK: firmware on real hardware]
 
 ## Built on Tiger Data
 
