@@ -33,12 +33,14 @@ A join only counts when the whole group scans in at the same station, so the har
 
 ## Architecture
 
-```
-ESP32 + RC522 stations ──HTTP──▶ FastAPI server ──▶ Tiger Data (TimescaleDB)
-  (Entrance, Table 2)              │   scan windows, groups, points, matching
-                                   │   Gemini icebreakers (background, 2 s timeout)
-                                   ├──WebSocket──▶ Wall display (d3 + Tone.js)
-                                   └──HTTP───────▶ Phone site
+```mermaid
+flowchart LR
+    S1["Station 1: Entrance<br/>ESP32 + RC522 + 5 LEDs"] -- "POST /api/tap<br/>poll /api/station every 500 ms" --> SRV
+    S2["Station 2: Table 2<br/>ESP32 + RC522 + 5 LEDs"] -- "POST /api/tap<br/>poll /api/station every 500 ms" --> SRV
+    SRV["FastAPI server<br/>scan windows, groups, points, matching"] <--> DB[("Tiger Data<br/>TimescaleDB")]
+    SRV -. "icebreaker, 2 s timeout" .-> GEM["Gemini API"]
+    SRV -- "WebSocket events" --> WALL["Wall display<br/>/wall, d3 + Tone.js"]
+    PHONE["Phone site<br/>/phone"] -- "HTTP: sign-up, claim,<br/>/api/me every 5 s" --> SRV
 ```
 
 - **Stations** are dumb: they send a badge UID with `POST /api/tap`, poll `GET /api/station/{id}` every 500 ms, and light whatever state the server returns. 5 NeoPixel LEDs per station, no buzzer.
@@ -57,6 +59,12 @@ docs/       Images for this README, the printable station sign
 ```
 
 ## Screenshots
+
+| Sign-up | Tap your badge | Where you stand | Mentor view |
+|---|---|---|---|
+| ![Phone sign-up page](docs/phone-signup.jpg) | ![Badge claim countdown](docs/phone-claim.jpg) | ![Where you stand page](docs/phone-me.jpg) | ![Mentor needs board](docs/phone-mentor.jpg) |
+
+Phone screenshots were taken in FAKE mode (hard-coded sample data, no server), using the fake people from `tools/seed.py`.
 
 <!-- docs/wall-checkin.png: the wall mid check-in, with lines and a suggested group -->
 <!-- docs/group-forming.png: a group forming on the wall -->
