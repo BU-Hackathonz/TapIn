@@ -60,6 +60,27 @@ The wall's interaction is spread across two files: `view3d.js` (pointer, wheel, 
 
 ## 5. The host screen (the part David would build)
 
+### 5.0 Design reference: Wall Display v5 (the favorite)
+
+The host screen follows the team's chosen mockup, `v5-wall-display.png` in this folder (from the BostonHacks Drive folder: "Tap In — Wall Display v5 (FAVORITE)"; the PDF "Wall Display Mockups (v1–v5)" has the other four). The Playbook already says to build the wall from v5; the wall on `main` is a different design, so this is a return to the plan, not a new look. What the mockup shows, so nobody has to guess:
+
+- **Page:** 1920×1080, near-black `#121212`, the right column a shade lighter (`#161616`), flat, hairline dividers, square corners, no glows, gradients or glass.
+- **Type:** IBM Plex Sans for names and text, IBM Plex Mono for times, numbers and table labels.
+- **Colors and what they mean:**
+  - **Raspberry** means *you, right now*: the person who just tapped in, their lines, the table that fits them (a dashed circle and a raspberry label), the most urgent need, the top table's points, the latest chart bar, and the time in the bottom strip.
+  - **Green** means *groups*: members, links inside a table, table labels, leaderboard points, mentors.
+  - **Grey** means *out of the way*: a heads-down table (label `table 4 · heads-down`, hollow dots) and a person on focus mode (hollow dot, `Ben (focus)`).
+- **Marks:** people are dots with the name under them; the newest person is larger with a ring; a mentor is a square (`Priya, mentor`); solo people float, each with a line to someone they know. Tables are not drawn as boxes, only as a label floating above the cluster.
+- **Left (about 75%):** the room plan, the wordmark `Tap In` top left.
+- **Right column:** `32 here · 5 groups · 47 links today`; *Groups, by points* (top 4, numbers in mono, with the note "Groups get double for welcoming someone new."); *Needs* with minutes waiting and a handled one struck through with the mentor's name; *Activity* (last 5, mono times, key words highlighted); *Scans per 10 min, last 2h* at the bottom as 12 bars with the newest in raspberry.
+- **Bottom strip:** the time in raspberry mono, then the sentence with the name in bold, then the table that fits them in grey: `3:41 pm  Maya checked in. Knows Jordan and Grace. Table 2 needs firmware, and that's her thing.`
+
+Two things in the mockup must change before it goes on a real wall:
+1. **Header text.** It reads `spark! lab · tapin.boston`. The domain is not registered, so it cannot be shown; use the venue or nothing. Decision for David (section 10, item 8).
+2. **Colors, for color blindness** (the team's own v5 notes): make the green clearly lighter (mint `#7FE0BD`) and the raspberry deeper (`#B0446E`), keep the ring on the newest person so the signal is not color alone, nothing under 18 px, and the right column about 20% larger than drawn.
+
+The mockup's names and numbers are sample data.
+
 ### 5.1 What it shows
 
 One 1920×1080 page, no scrolling, no input.
@@ -156,6 +177,7 @@ Rule while the team is building: if phase 1 is not verified by 6:15 PM, the exis
 | 5 | Host entry: mode only (A) or host code (B)? | A | David |
 | 6 | A landing page at `/`? | Yes, two buttons, tiny | David, Yaovi |
 | 7 | Who reviews and merges the host screen PR? | Jun reviews, David merges, since `wall/` is Jun's | Jun |
+| 8 | Header text on the host screen (the mockup says `spark! lab · tapin.boston`) | Drop the domain until it is registered and loads; show the venue name or nothing | David |
 
 ## 11. Risks
 
