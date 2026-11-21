@@ -134,7 +134,11 @@ One moment at a time, about 8 seconds each, queued so two arrivals never fight f
 - **Explore the room** (new tab on `me.html`): Jun's 3D map, moved from the wall. It was built for phones (a plain 2D canvas, touch and pinch, 30 fps preset), so this is mostly moving and wiring, not rewriting. The profile card is dropped or reduced to what we really have (first name, skills, working on). The mock bios and drawn faces must not appear to real people.
 - **Constraint to decide on:** Explore needs the room's data (`/api/graph`, `/ws`). If phones come in through the public tunnel, those calls are blocked on purpose (we exposed only the phone's own calls). `tapin.boston` is not registered, so tonight every phone is on `cmap` and this is moot. If the tunnel ever happens, either allow a participant-scoped read or keep Explore on `cmap` only.
 
-## 7. Chat: recommended out of scope tonight
+## 7. Chat: deferred by David until the main system works
+
+**Decision (David, Saturday ~6 PM):** no chat work until the main system is working end to end. After that, options get proposed, and each one has to avoid redundancy with what already exists: the needs board (structured requests for help), suggestions with a reason, the claim and check-in flow, and table membership. The analysis below is kept as background for that later proposal.
+
+### Background: why not tonight
 
 Chat was part of the idea. The recommendation is not to build it tonight:
 
@@ -173,7 +177,7 @@ Rule while the team is building: if phase 1 is not verified by 6:15 PM, the exis
 | 1 | Is the wall display-only, with interaction on phones? | Yes | David, Jun |
 | 2 | Build the 2D host screen as a new page, leaving the 3D wall alone until it is verified? | Yes | Jun (owns `wall/`) |
 | 3 | Move the 3D map to the phone as Explore? | Yes, after phase 1 | Jun, Yaovi |
-| 4 | Chat? | Not tonight | David |
+| 4 | Chat? | Deferred by David until the main system works; options proposed then, with no overlap with the needs board, suggestions or table membership | David (decided) |
 | 5 | Host entry: mode only (A) or host code (B)? | A | David |
 | 6 | A landing page at `/`? | Yes, two buttons, tiny | David, Yaovi |
 | 7 | Who reviews and merges the host screen PR? | Jun reviews, David merges, since `wall/` is Jun's | Jun |
