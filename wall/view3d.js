@@ -153,6 +153,12 @@ const View3D = (() => {
     return [Math.cos(th) * rad, y, Math.sin(th) * rad];
   };
   const spread = (n) => 34 + 14 * Math.sqrt(n);
+  // 2D layout of n people in a circle (sunflower spacing); the third value keeps the same shape as fib()
+  const disc = (i, n) => {
+    if (n <= 1) return [0, 0, 0];
+    const r = Math.sqrt((i + 0.5) / n) * 1.1, th = i * 2.399963;
+    return [Math.cos(th) * r, Math.sin(th) * r, 0];
+  };
 
   function init(sceneFn) {
     canvas = document.getElementById("map3d");
@@ -186,9 +192,15 @@ const View3D = (() => {
     // Stretch the sphere toward the screen's long side: tall on portrait phones, wide on the projector.
     const xs = W > H ? Math.min(1.8, W / H) : 0.5, ys = H > W ? 1.7 : 0.8;
     shownGroups.forEach((g, i) => {
-      const [x, y, z] = fib(i, shownGroups.length);
       const n = visible.filter((p) => p.group_id === g.id).length;
       const k = shownGroups.length === 1 ? 0 : R;
+      if (opts.flat) {
+        // 2D: tables on a ring around you, everything on one plane
+        const a = -Math.PI / 2 + (i / shownGroups.length) * Math.PI * 2;
+        centers.set(g.id, { x: Math.cos(a) * k * 1.15 * xs, y: Math.sin(a) * k * 1.15 * (H > W ? 1.5 : 0.95), z: 0, r: spread(n) });
+        return;
+      }
+      const [x, y, z] = fib(i, shownGroups.length);
       centers.set(g.id, { x: x * k * xs, y: y * k * ys, z: z * k, r: spread(n) });
     });
     const byGroup = new Map();
@@ -203,7 +215,7 @@ const View3D = (() => {
       // With you in the middle, people not at a table circle around you instead of sitting on top of you.
       const c = centers.get(gid) || { x: 0, y: 0, z: 0, r: me ? Math.max(70, spread(ms.length)) : spread(ms.length) };
       ms.forEach((p, i) => {
-        let [ox, oy, oz] = fib(i, ms.length);
+        let [ox, oy, oz] = opts.flat ? disc(i, ms.length) : fib(i, ms.length);
         if (lobby && me && ms.length === 1) [ox, oy, oz] = [1, 0, 0];
         const r = c.r * (lobby && me ? 1 : 0.72);
         const q = pos.get(p.id) || { x: c.x, y: c.y, z: c.z };
@@ -249,12 +261,13 @@ const View3D = (() => {
     const dt = Math.min(64, t - lastFrame);
     lastFrame = t;
     coast(dt, t);
-    if (opts.spin && t - lastTouch > 5000) rotY += 0.00018 * dt;   // idle spin
+    if (opts.flat) { rotX *= 0.85; rotY *= 0.85; }                    // 2D: ease back to looking straight on
+    else if (opts.spin && t - lastTouch > 5000) rotY += 0.00018 * dt;   // idle spin
     for (const q of pos.values()) {
       q.x += (q.tx - q.x) * 0.08; q.y += (q.ty - q.y) * 0.08; q.z += (q.tz - q.z) * 0.08;
     }
     const f = (focusId !== null && pos.get(focusId)) || (focusGroup !== null && centers.get(focusGroup));
-    const goal = f || { x: 0, y: 0, z: 0 };
+    const goal = f || { x: opts.flat ? panX : 0, y: opts.flat ? panY : 0, z: 0 };
     cam.x += (goal.x - cam.x) * 0.1; cam.y += (goal.y - cam.y) * 0.1; cam.z += (goal.z - cam.z) * 0.1;
     zoom += (zoomGoal - zoom) * 0.12;
     // Phones: the profile is a bottom sheet, so lift the view to keep the tapped person above it.
@@ -442,7 +455,8 @@ const View3D = (() => {
   // ------------------------------------------------------------ input
 
   function reset() {
-    rotY = 0.4; rotX = -0.3; zoomGoal = 1; focusId = null; focusGroup = null; picked = null; spinX = spinY = 0;
+    panX = panY = 0;
+    rotY = opts.flat ? 0 : 0.4; rotX = opts.flat ? 0 : -0.3; zoomGoal = 1; focusId = null; focusGroup = null; picked = null; spinX = spinY = 0;
   }
   const setZoom = (z) => { zoomGoal = zoom = Math.max(0.5, Math.min(4.5, z)); };
 
@@ -480,7 +494,13 @@ const View3D = (() => {
       const cur = { x: e.clientX, y: e.clientY }, now = performance.now();
       pts.set(e.pointerId, cur);
       lastTouch = now;
-      if (pts.size === 1) {
+      if (pts.size === 1 && opts.flat) {
+        // 2D: dragging pans the map instead of turning it
+        const sc = (Math.min(W, H) * (H > W ? 1.35 : 0.95)) / (950 / zoom);
+        panX -= (cur.x - prev.x) / sc; panY -= (cur.y - prev.y) / sc;
+        focusId = null; focusGroup = null;
+        moved += Math.abs(cur.x - prev.x) + Math.abs(cur.y - prev.y);
+      } else if (pts.size === 1) {
         // Upside down (rolled past the top), a sideways drag must turn the other way to follow the finger.
         const flip = Math.cos(rotX) < 0 ? -1 : 1;
         const dy = (cur.x - prev.x) * 0.006 * flip, dx = (cur.y - prev.y) * 0.006, dt = Math.max(8, now - lastMove);
@@ -715,8 +735,12 @@ const View3D = (() => {
   }
 
   // Viewer settings from the corner tab.
-  const opts = { names: true, spin: true };
-  const setOption = (k, v) => { opts[k] = v; };
+  const opts = { names: true, spin: true, flat: false };
+  let panX = 0, panY = 0;
+  const setOption = (k, v) => {
+    opts[k] = v;
+    if (k === "flat") { panX = panY = 0; spinX = spinY = 0; if (!v) { rotY = 0.4; rotX = -0.3; } relayout(); }
+  };
 
   return { init, setActive, relayout, pulse, avatar, buildProfile, setOption, focusPerson,
            onTable: (fn) => { onGroup = fn; }, onMe: (fn) => { onMe = fn; }, socialIcon: (k) => SOCIAL[k], PHONE };

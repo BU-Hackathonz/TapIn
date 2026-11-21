@@ -238,16 +238,6 @@
     const head = el("div", "pv-head");
     head.append(pic, text);
     card.replaceChildren(head, ...[chips, apps].filter((x) => x.children.length));   // skipped steps leave no gap
-    // What's next: join the room (tap window) or host an event. The button below follows along.
-    const enter = $("enter");
-    const label = (room) => {
-      const inRoom = room && room.status === "in";
-      enter.textContent = inRoom ? `Enter ${room.name}` : "Skip for now";
-      enter.classList.toggle("ghost", !inRoom);
-      enter.classList.toggle("primary", inRoom);
-    };
-    $("room-slot").replaceChildren(Room.card({ kicker: "What's next", onChange: label }));
-    label(Room.current);
   }
 
   // ---------------------------------------------------------- wire up

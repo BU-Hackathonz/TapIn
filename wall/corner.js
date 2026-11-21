@@ -49,7 +49,13 @@ const Corner = (() => {
     const room = Room.current;
     b.append(icon, room.status === "in" ? `Leave ${room.name}` : "Not in a room");
     b.disabled = room.status !== "in";
-    b.addEventListener("click", () => { Room.leave(); show("you"); });
+    b.addEventListener("click", () => { Room.leave(); show("settings"); });
+    return b;
+  }
+  function chooseButton() {
+    const b = el("button", "me-edit", Room.current.status === "in" ? "Join or host another" : "Join a room or host an event");
+    b.type = "button";
+    b.addEventListener("click", () => { open(false); Room.chooser({ here: hereCount, name: me().name }); });
     return b;
   }
 
@@ -102,7 +108,9 @@ const Corner = (() => {
       const p = me();
       const link = el("a", "me-edit", saved() ? "Edit your profile" : "Set up your profile");
       link.href = saved() ? "login.html?edit" : "login.html";
-      body.replaceChildren(Room.card({ here: hereCount }), el("p", "me-note", saved() ? `Signed in as ${p.name}` : `Signed in as ${p.name} (mock)`), link,
+      const r = Room.current;
+      const status = el("p", "me-room", r.status === "in" ? `${r.host ? "Hosting" : "In"} ${r.name}${r.host && r.code ? ` · code ${r.code}` : ""}` : "Not in a room");
+      body.replaceChildren(status, el("p", "me-note", saved() ? `Signed in as ${p.name}` : `Signed in as ${p.name} (mock)`), link,
                            ...View3D.buildProfile(p));
       return;
     }
@@ -117,13 +125,15 @@ const Corner = (() => {
       styles.append(b);
     }
     body.replaceChildren(
+      el("h3", "set-h", "Profile"), profileForm(),
       el("h3", "set-h", "Style"), styles,
       el("h3", "set-h", "Display"),
+      toggleRow("2D map", state.flat === true, (v) => { state.flat = v; View3D.setOption("flat", v); }),
       toggleRow("Names on the map", state.names !== false, (v) => { state.names = v; View3D.setOption("names", v); }),
       toggleRow("Spin when idle", state.spin !== false, (v) => { state.spin = v; View3D.setOption("spin", v); }),
       toggleRow("Join messages", state.joins, (v) => { state.joins = v; }),
       el("h3", "set-h", "Room"),
-      leaveButton(),
+      leaveButton(), chooseButton(),
       el("h3", "set-h", "Account"),
       signOutButton(),
       el("h3", "set-h", "Sound"),
@@ -132,6 +142,40 @@ const Corner = (() => {
         Sound.setMuted(!v);
       }),
     );
+  }
+
+  // Quick edits without leaving the room; photo, skills and apps live on the full editor.
+  function profileForm() {
+    const p = me(), mine = saved() || {};
+    const form = el("form", "set-profile");
+    const field = (label, name, value, ph, max) => {
+      const l = el("label", "", label), i = el("input");
+      i.type = "text"; i.name = name; i.value = value || ""; i.placeholder = ph; i.maxLength = max;
+      l.append(i);
+      return l;
+    };
+    const saveBtn = el("button", "room-join", "Save");
+    saveBtn.type = "submit";
+    const more = el("a", "set-more", "Photo, skills and apps");
+    more.href = "login.html?edit";
+    const done = el("span", "set-saved", "");
+    form.append(field("Name", "name", mine.name || p.name, "First name", 30), field("School", "school", mine.school, "Boston University", 60),
+                field("Major", "major", mine.major, "Computer Engineering", 40), field("One line about you", "bio", mine.bio, "Likes soldering more than slides.", 80));
+    const row = el("div", "set-actions");
+    row.append(saveBtn, more, done);
+    form.append(row);
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const f = form.elements, next = { ...(saved() || { role: "student", skills: [], looking_for: [], links: {}, socials: [] }) };
+      next.name = f.name.value.trim() || "Guest";
+      for (const k of ["school", "major", "bio"]) { const v = f[k].value.trim(); if (v) next[k] = v; else delete next[k]; }
+      try { localStorage.setItem("wall.me", JSON.stringify(next)); } catch { done.textContent = "Couldn't save in this browser"; return; }
+      renderTrigger();
+      View3D.relayout();
+      done.textContent = "Saved";
+      setTimeout(() => { done.textContent = ""; }, 1800);
+    });
+    return form;
   }
 
   function signOutButton() {

@@ -5,6 +5,7 @@
   // Sign in first. The venue projector has nobody to sign in, so it opens the wall with ?kiosk.
   let signedIn = false;
   try { signedIn = !!localStorage.getItem("wall.me"); } catch { /* private mode: treat as signed out */ }
+  if (qs.has("kiosk")) document.body.classList.add("kiosk");
   if (!signedIn && !qs.has("kiosk")) {
     location.replace(`login.html${location.search}`);
     return;
@@ -36,6 +37,7 @@
     for (const id of [...S.people.keys()]) if (!seen.has(id)) S.people.delete(id);
     S.groups = new Map(g.groups.map((x) => [x.id, x]));
     S.links = new Map(g.links.map((l) => [lk(l.a, l.b), { ...l }]));
+    TableServer.applyEdits(S);   // table settings changed on this screen survive a refresh
   }
 
   async function syncGraph() {
@@ -53,6 +55,7 @@
     const [g, needs] = await Promise.all([getJSON("/api/graph"), getJSON("/api/needs")]);
     applyGraph(g);
     S.needs = needs;
+    TableServer.applyEdits(S);
     render();
     Panels.needs(S.needs);
     Panels.tables(rankedTables());
@@ -164,7 +167,7 @@
       glow(d.group_id);
       d.member_ids.forEach((id) => ripple(id, "join"));
       Hub.note(d.group_id, `${d.member_ids.map((id) => S.people.get(id)?.name).filter(Boolean).join(", ")} started the table`);
-      Sound.links(keys.length);
+      if (!S.groups.get(d.group_id)?.muted) Sound.links(keys.length);
       const group = S.groups.get(d.group_id);
       if (group) Panels.log(`${group.name} formed`);
       updateTables();
@@ -180,7 +183,7 @@
       glow(d.group_id);
       d.new_member_ids.forEach((id) => ripple(id, "join"));
       Hub.note(d.group_id, `${d.new_member_ids.map((id) => S.people.get(id)?.name).filter(Boolean).join(", ")} joined the table`);
-      Sound.links(d.new_links.length);
+      if (!S.groups.get(d.group_id)?.muted) Sound.links(d.new_links.length);
       const group = S.groups.get(d.group_id);
       if (group) Panels.log(`${group.name} welcomed ${d.new_member_ids.length === 1 ? "a member" : "new members"}`);
     },
@@ -217,6 +220,7 @@
     icebreaker: Panels.icebreaker,
     needs_updated(d) {
       S.needs = d.needs || [];
+      TableServer.applyEdits(S);
       Panels.needs(S.needs);
       render();
     },
@@ -256,6 +260,11 @@
   Hub.mount(() => S);
   View3D.init(() => ({ visible, shownGroups, S, radius, needLine, me: Corner.signedIn() ? Corner.me() : null, known: Corner.known() }));
   View3D.onMe(() => Corner.show("you"));
+  // First visit signed in and not in a room: ask Join a room or Host an event in a window.
+  if (signedIn && !qs.has("kiosk") && Room.current.status !== "in") {
+    setTimeout(() => Room.chooser({ here: () => [...S.people.values()].filter((p) => p.here).length, name: Corner.me().name }), 600);
+  }
+  Room.onChange(() => Corner.refresh());
   View3D.setActive(true);
 
   // ?demo, or no Tap In server behind this page (e.g. hosted on its own): run the built-in demo room.

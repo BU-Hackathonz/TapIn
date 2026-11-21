@@ -74,3 +74,12 @@ body[data-theme="minimal"] .room-option-icon { background: #f2f2f2; }
 @keyframes fade { from { opacity: 0; } }
 @keyframes pop { from { opacity: 0; transform: translateY(12px) scale(0.97); } }
 @media (prefers-reduced-motion: reduce) { .room-modal, .room-window, .tap-hand, .tap-ring, .tap-led, .done-ring, .done-check { animation: none !important; } .done-ring, .done-check { stroke-dashoffset: 0; } }
+
+/* the first-visit window: a welcome and two big options */
+.room-window.choose { align-items: stretch; text-align: left; gap: 10px; padding-top: 30px; }
+.room-title.big { font-size: 24px; }
+.room-window.choose .room-sub { margin-bottom: 6px; }
+.room-sub.small { font-size: 12px; text-align: center; }
+.room-option.big { padding: 16px; }
+.room-option.big .room-option-icon { width: 52px; height: 52px; border-radius: 14px; }
+.room-option.big b { font-size: 17px; }
