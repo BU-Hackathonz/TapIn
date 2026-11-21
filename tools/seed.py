@@ -70,7 +70,7 @@ def fake_uid(i: int) -> str:
 SEED_UIDS = [fake_uid(i) for i in range(len(PEOPLE))]
 
 
-async def connect():
+async def connect(apply_schema: bool = True):
     import asyncpg
     from server import db
     db.load_env()
@@ -78,7 +78,8 @@ async def connect():
     if not url or "user:pass@host" in url:
         sys.exit("set DATABASE_URL in .env first")
     conn = await asyncpg.connect(url)
-    await conn.execute((ROOT / "server" / "schema.sql").read_text())
+    if apply_schema:  # count.py passes False so it never writes, and works with a read-only login
+        await conn.execute((ROOT / "server" / "schema.sql").read_text())
     return conn, url.split("@")[-1].split("/")[0]
 
 

@@ -2,6 +2,8 @@
 
     python tools/count.py
 
+Read-only: it never writes to the database, so a read-only login is enough.
+
 Real = not a fake 5EED badge (seed.py, fake_taps.py), not Judge 1 or Judge 2, not a "Test ..." person.
 - people signed up: real people with a badge (plus, separately, sign-ups that never claimed a badge;
   those can include the same person retrying, so don't add them to the headline number)
@@ -20,7 +22,7 @@ REAL_IDS = f"SELECT id FROM people WHERE {REAL}"
 
 
 async def main() -> None:
-    conn, host = await connect()
+    conn, host = await connect(apply_schema=False)
     try:
         people = await conn.fetchval(f"SELECT count(*) FROM people WHERE {REAL} AND uid IS NOT NULL")
         unclaimed = await conn.fetchval(f"SELECT count(*) FROM people WHERE {REAL} AND uid IS NULL")
