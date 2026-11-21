@@ -53,7 +53,8 @@ Every agent checks this table before editing a file. If the file isn't yours, as
 | Wall display: room view, panels, sound | @sysoutprntlne (Jun) | `wall/` |
 | Phone site: sign-up, claim, where-you-stand | @unseentrader007 (Yaovi) | `phone/` |
 | Seed data and fake taps | @unseentrader007 (Yaovi) | `tools/seed.py`, `tools/fake_taps.py` |
-| README, Devpost, pitch | @unseentrader007 (Yaovi) | `README.md`, `docs/` |
+| README, pitch | @unseentrader007 (Yaovi) | `README.md`, `docs/` (except the Devpost files) |
+| Devpost | @DxubleBTW (Avery) | `docs/devpost.md`, `docs/devpost-story.md`, `media/devpost/`, and the Devpost submission |
 | Agent board and team rules | @dribeiro0 (David) | `tools/board`, `AGENTS.md`, `CLAUDE.md`, `.claude/`, `.github/` |
 
 **Shared contracts.** The JSON shapes for station ↔ server, phone ↔ server and wall ↔ server, plus the WebSocket events, are in the "Shared contracts" section of the team playbook. Nobody changes a shape alone. Post the old and new shape on the board, tag `@all`, and wait for the owners on the other side to reply before you merge.
