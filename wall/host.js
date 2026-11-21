@@ -18,7 +18,7 @@
   const canvas = $("room"), ctx = canvas.getContext("2d");
   const css = getComputedStyle(document.documentElement);
   const v = (name) => css.getPropertyValue(name).trim();
-  const C = { bg: v("--bg"), fg: v("--fg"), muted: v("--muted"), dim: v("--dim"), pink: v("--pink"), green: v("--green"), forest: v("--forest"), sand: v("--sand") };
+  const C = { bg: v("--bg"), fg: v("--fg"), muted: v("--muted"), dim: v("--dim"), pink: v("--pink"), green: v("--green"), forest: v("--forest"), sand: v("--sand"), deep: v("--deep") || v("--forest") };
   const SANS = v("--sans"), MONO = v("--mono");
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const low = (s) => String(s ?? "").toLowerCase();
@@ -129,10 +129,15 @@
       if (m.links) Sound.links(m.links);
     }
   }
+  let idleShown = false;
   function pump(now) {
     if (cur && now < cur.until) return;
     cur = null;
-    if (!queue.length) return;
+    if (!queue.length) {
+      if (!idleShown) { idleShown = true; $("mtime").textContent = ""; $("mtext").innerHTML = "<span>Tap your badge at a station to join the room.</span>"; }
+      return;
+    }
+    idleShown = false;
     cur = queue.shift();
     show(cur, now);
   }
@@ -207,15 +212,36 @@
   };
   const fbm = (x, y) => 0.55 * vnoise(x, y) + 0.3 * vnoise(x * 2.1, y * 2.1) + 0.15 * vnoise(x * 4.3, y * 4.3);
   const mouse = { x: -1, y: -1, t: -1e9 };
+  const drawn = { people: [], tables: [] };       // where things were last drawn (room-canvas pixels), for the fume and for picking
+  const off = new Map();                          // "p<id>" / "t<gid>" -> { x, y, rel }: how far the user has dragged a person or a table
+  let drag = null;
+  const pushX = new Float32Array(FW * FH), pushY = new Float32Array(FW * FH), pushK = new Float32Array(FW * FH);
   const PINK = rgbOf(C.pink), GLINT = [Math.min(255, PINK[0] + 70), Math.min(255, PINK[1] + 90), Math.min(255, PINK[2] + 60)];
   const FUME_ALPHA = Math.max(0.15, parseFloat(v("--fume")) || 1);
   function drawFume(t) {
     const tt = t / 1000, d = fimg.data;
-    const mx = (mouse.x / innerWidth) * FW, my = (mouse.y / innerHeight) * FH;
-    const mk = MOUSE ? Math.max(0, 1 - (t - mouse.t) / 2500) : 0;      // the stir fades out two and a half seconds after the mouse stops
+    const mk = MOUSE ? Math.max(0, 1 - (t - mouse.t) / 2500) : 0;      // the mouse's push fades out two and a half seconds after it stops
+    // Everything on the plan pushes the smoke away: people a little, tables more gently, the mouse most of all.
+    pushX.fill(0); pushY.fill(0); pushK.fill(0);
+    const rc = canvas.getBoundingClientRect(), fsx = FW / innerWidth, fsy = FH / innerHeight;
+    const rep = (cx, cy, rad, str) => {
+      const fx = (rc.left + cx) * fsx, fy = (rc.top + cy) * fsy, rx = rad * fsx, ry = rad * fsy;
+      for (let y = Math.max(0, Math.floor(fy - ry)); y <= Math.min(FH - 1, Math.ceil(fy + ry)); y++) {
+        for (let x = Math.max(0, Math.floor(fx - rx)); x <= Math.min(FW - 1, Math.ceil(fx + rx)); x++) {
+          const dx = (x - fx) / rx, dy = (y - fy) / ry, d = Math.hypot(dx, dy);
+          if (d >= 1) continue;
+          const k = (1 - d) * (1 - d) * str, i = y * FW + x, n = d || 1;
+          pushK[i] += k; pushX[i] += (dx / n) * k; pushY[i] += (dy / n) * k;
+        }
+      }
+    };
+    for (const p of drawn.people) rep(p.x, p.y, 64 * K, 0.95);
+    for (const tb of drawn.tables) rep(tb.x, tb.y, tb.R + 46 * K, 0.45);
+    if (mk > 0) rep(mouse.x - rc.left, mouse.y - rc.top, 110 * K, 1.3 * mk);
     for (let y = 0; y < FH; y++) {
       for (let x = 0; x < FW; x++) {
-        const nx = (x / FW) * 3.4, ny = (y / FH) * 2.1;
+        const pi = y * FW + x;
+        const nx = (x / FW) * 3.4 + pushX[pi] * 0.9, ny = (y / FH) * 2.1 + pushY[pi] * 0.6;     // the smoke bends round whatever is in it
         const w = fbm(nx + tt * 0.045, ny - tt * 0.038);
         const sm = fbm(nx * 1.1 + w * 1.7 - tt * 0.03, ny * 1.1 + w * 1.3 + tt * 0.028);   // the smoke itself
         // Two slow swells roll through the smoke and fade, one rising from the lower left every 9 s, a gentler one drifting
@@ -224,7 +250,7 @@
         const u2 = (1 - x / FW) * 0.7 + (y / FH) * 0.4 + (w - 0.5) * 0.45, c2 = -0.35 + (((tt + 5) / 14) % 1) * 2.0;
         const r1 = Math.exp(-(((u1 - c1) / 0.26) ** 2)), r2 = 0.6 * Math.exp(-(((u2 - c2) / 0.22) ** 2));
         let lv = sm * 0.5 + (r1 + r2) * (0.3 + 0.75 * sm);
-        if (mk > 0) { const dd = Math.hypot(x - mx, (y - my) * 1.2); if (dd < 30) lv += (1 - dd / 30) ** 2 * 0.55 * mk; }
+        lv *= Math.max(0, 1 - pushK[pi] * 0.9);                                              // and thins out right around it
         const q = Math.floor(lv * 3.6 + BAYER[(y & 3) * 4 + (x & 3)]);                  // 0..4 steps, ordered dither
         const i = (y * FW + x) * 4;
         if (q <= 1) { d[i + 3] = 0; continue; }
@@ -310,14 +336,34 @@
     const tables = layout.tables();
     // Tables drift a little and turn a little: the seats, the mentor and the ring move together, never far.
     const drift = (gid) => ({ dx: (Math.sin(t / 2300 + gid * 1.7) * 7 + Math.sin(t / 3700 + gid * 0.6) * 4) * K, dy: (Math.cos(t / 2700 + gid * 1.1) * 7 + Math.cos(t / 4100 + gid) * 3) * K, rot: Math.sin(t / 6500 + gid * 2.3) * 0.14 });
-    for (const [gid, tb] of tables) { const d = drift(gid); tb.ox = tb.x; tb.oy = tb.y; tb.x += d.dx; tb.y += d.dy; tb.rot = d.rot; }
+    // What the user has dragged lets go after a few seconds and eases home. A table moves as a whole; a person moves alone
+    // and tugs the rest of their table a third of the way along.
+    const dtm = Math.min(100, t - (draw.lt || t)); draw.lt = t;
+    for (const [k, o] of off) {
+      if (o.rel != null && t - o.rel > 3000) { const f = Math.exp(-dtm / 900); o.x *= f; o.y *= f; if (Math.hypot(o.x, o.y) < 0.5) off.delete(k); }
+    }
+    const pull = new Map();
+    for (const p of pos) {
+      const o = off.get("p" + p.id), gid = p.gid != null ? p.gid : p.seatTable;
+      if (!o || gid == null) continue;
+      const q = pull.get(gid) || { x: 0, y: 0 }; q.x += o.x * 0.3; q.y += o.y * 0.3; pull.set(gid, q);
+    }
+    for (const [gid, tb] of tables) {
+      const d = drift(gid), to = off.get("t" + gid) || { x: 0, y: 0 }, pu = pull.get(gid) || { x: 0, y: 0 };
+      tb.ox = tb.x; tb.oy = tb.y; tb.x += d.dx + to.x + pu.x; tb.y += d.dy + to.y + pu.y; tb.rot = d.rot;
+    }
     for (const p of pos) {
       const gid = p.gid != null ? p.gid : p.seatTable;
       const tb = gid != null ? tables.get(gid) : null;
-      if (!tb) continue;
-      const rx = p.x - tb.ox, ry = p.y - tb.oy, c = Math.cos(tb.rot), s = Math.sin(tb.rot);
-      p.x = tb.x + rx * c - ry * s; p.y = tb.y + rx * s + ry * c;
+      if (tb) {
+        const rx = p.x - tb.ox, ry = p.y - tb.oy, c = Math.cos(tb.rot), s = Math.sin(tb.rot);
+        p.x = tb.x + rx * c - ry * s; p.y = tb.y + rx * s + ry * c;
+      }
+      const o = off.get("p" + p.id);
+      if (o) { p.x += o.x; p.y += o.y; }
     }
+    drawn.people = pos.map((p) => ({ id: p.id, x: p.x, y: p.y, r: p.r }));
+    drawn.tables = [...tables].map(([id, tb]) => ({ id, x: tb.x, y: tb.y, R: tb.R }));
     const byId = new Map(pos.map((p) => [p.id, p]));
     const m = cur && t < cur.until ? cur : null;
     const hiGroup = m && m.group != null ? m.group : null;
@@ -334,7 +380,7 @@
     for (const [, tb] of tables) {                                   // inside a table: a necklace round the seats
       const ms = pos.filter((p) => p.gid === tb.id).sort((a, b) => a.ang - b.ang);
       if (ms.length < 2) continue;
-      ctx.globalAlpha = 0.4; ctx.strokeStyle = C.green; ctx.lineWidth = 1.3 * K;
+      ctx.globalAlpha = 0.8; ctx.strokeStyle = C.deep; ctx.lineWidth = 1.4 * K;
       ctx.beginPath();
       ms.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
       if (ms.length > 2) ctx.closePath();
@@ -368,9 +414,9 @@
       if (!A || !B) continue;
       const dx = B.x - A.x, dy = B.y - A.y, d = Math.hypot(dx, dy) || 1, ra = A.R + 34 * K, rb = B.R + 34 * K;
       if (d <= ra + rb) continue;
-      curve(A.x + (dx / d) * ra, A.y + (dy / d) * ra, B.x - (dx / d) * rb, B.y - (dy / d) * rb, C.muted, 0.14 + 0.05 * Math.min(c, 4), (1 + 0.3 * Math.min(c, 4)) * K);
+      curve(A.x + (dx / d) * ra, A.y + (dy / d) * ra, B.x - (dx / d) * rb, B.y - (dy / d) * rb, C.deep, 0.18 + 0.05 * Math.min(c, 4), (1 + 0.3 * Math.min(c, 4)) * K);
     }
-    for (const x of bridge.values()) line(x.a.x, x.a.y, x.b.x, x.b.y, C.green, x.own ? 0.6 : 0.2, (x.own ? 1.5 : 1) * K);   // strong to its own table, faint to the others
+    for (const x of bridge.values()) line(x.a.x, x.a.y, x.b.x, x.b.y, C.deep, x.own ? 0.85 : 0.4, (x.own ? 1.5 : 1) * K);   // strong to its own table, faint to the others
     ctx.globalAlpha = 1;
     if (m && m.kind === "checkin") {                                 // the moment: lines from the newest person to those they know
       const me = byId.get(m.person);
@@ -391,7 +437,7 @@
       ctx.lineWidth = (hi ? 2.2 : 1.5) * K;
       ctx.setLineDash(hi ? [10 * K, 8 * K] : [3 * K, 9 * K]);
       ctx.lineDashOffset = -(t / (hi ? 30 : 140)) * (gid % 2 ? 1 : -1);   // neighbouring rings turn opposite ways
-      ctx.strokeStyle = hi ? hiColor : quiet ? C.dim : C.forest;
+      ctx.strokeStyle = hi ? hiColor : quiet ? C.dim : C.deep;
       ctx.globalAlpha = hi ? 0.75 + 0.25 * Math.sin(t / 380) : quiet ? 0.55 : 0.95;
       ctx.beginPath();                                                // not a circle: an outline that slowly breathes out of round
       for (let k = 0; k <= 72; k++) {
@@ -487,7 +533,7 @@
     requestAnimationFrame(frame);
     pump(t);
     if (t - lastFume > 90) { lastFume = t; drawFume(t); }               // the fume steps about 11 times a second, which is part of the look
-    const moving = layout && !layout.isSettled();
+    const moving = (layout && !layout.isSettled()) || drag || off.size > 0;
     if (!moving && t - last < 33) return;            // at rest: about 30 redraws a second, for the turning rings and the drift
     last = t;
     if (moving) layout.step();
@@ -525,6 +571,33 @@
   const wake = () => { document.body.classList.remove("idle"); clearTimeout(idleTimer); idleTimer = setTimeout(() => document.body.classList.add("idle"), 3000); };
   addEventListener("pointermove", (e) => { mouse.x = e.clientX; mouse.y = e.clientY; mouse.t = performance.now(); wake(); });
   wake();
+
+  // ------------------------------------------------------------ dragging, like Obsidian: grab a person to pull them (their table follows a little),
+  // or grab a table's ring to move the whole table. Let go and it all eases back to its seats after a few seconds.
+  const toLocal = (e) => { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+  function hit(pt) {
+    let best = null, bd = Infinity;
+    for (const p of drawn.people) { const d = Math.hypot(p.x - pt.x, p.y - pt.y); if (d < p.r + 14 * K && d < bd) { bd = d; best = "p" + p.id; } }
+    if (best) return best;
+    for (const tb of drawn.tables) if (Math.hypot(tb.x - pt.x, tb.y - pt.y) < tb.R + 34 * K) return "t" + tb.id;
+    return null;
+  }
+  canvas.addEventListener("pointerdown", (e) => {
+    const k = hit(toLocal(e));
+    if (!k) return;
+    canvas.setPointerCapture(e.pointerId);
+    const o = off.get(k) || { x: 0, y: 0, rel: null };
+    o.rel = null; off.set(k, o);
+    drag = { k, o, x: e.clientX, y: e.clientY };
+    canvas.classList.add("grabbing");
+  });
+  canvas.addEventListener("pointermove", (e) => {
+    if (drag) { drag.o.x += e.clientX - drag.x; drag.o.y += e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY; }
+    else canvas.classList.toggle("grab", !!hit(toLocal(e)));
+  });
+  const endDrag = () => { if (drag) { drag.o.rel = performance.now(); drag = null; canvas.classList.remove("grabbing"); } };
+  canvas.addEventListener("pointerup", endDrag);
+  canvas.addEventListener("pointercancel", endDrag);
 
   // ------------------------------------------------------------ boot
   if (qs.has("silent")) $("start").classList.add("gone");

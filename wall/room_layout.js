@@ -93,6 +93,15 @@ const RoomLayout = (() => {
         taken.add(free);
       }
 
+      // Looser than a grid: odd rows slide over a little, the last row is centred, and every table gets a small steady nudge
+      // of its own (from its id), so the tables do not read as a rectangle.
+      const orgCell = (gid, i, j) => {
+        let [x, y] = cell(i, j);
+        const nLast = n - cols * (rows - 1);
+        if (rows > 1 && j === rows - 1) x += ((cols - nLast) * cw) / 2; else if (cols > 1) x += (j % 2 ? 0.12 : -0.12) * cw;
+        const h1 = Math.sin(gid * 12.9898) * 43758.5453, h2 = Math.sin(gid * 78.233 + 1.7) * 12543.321;
+        return [x + ((h1 - Math.floor(h1)) - 0.5) * 0.2 * cw, y + ((h2 - Math.floor(h2)) - 0.5) * 0.2 * ch];
+      };
       const keepNodes = new Set(), keepTables = new Set();
       const bulk = nodes.size === 0;
       const [ex, ey] = spot(o.stationSpots[1]);
@@ -110,7 +119,7 @@ const RoomLayout = (() => {
 
       for (const gid of gids) {
         const members = byGroup.get(gid).sort((a, b) => a.id - b.id);
-        const [ci, cj] = place.get(gid), [cx, cy] = cell(ci, cj);
+        const [ci, cj] = place.get(gid), [cx, cy] = orgCell(gid, ci, cj);
         const R = ringRadius(members.length, o.seat * S);
         let t = tableObjs.get(gid);
         if (!t) { t = { id: gid, x: bulk ? cx : cx, y: cy }; tableObjs.set(gid, t); }

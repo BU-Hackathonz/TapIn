@@ -20,7 +20,7 @@
 /* Sand (the default): a real sand ground for the room plan, with the right column and the bottom strip kept in the cool dark. */
 :root[data-palette="sand"] {
   --bg: #d9cba8; --side: #222120; --line: #b9aa85; --fg: #26241c; --muted: #6a624c; --dim: #948a6b;
-  --pink: #e0367f; --green: #2f6d4e; --forest: #9f9c70; --sand: #3a372b; --fume: 0.75; --scan: 0.05; --vig: 0.12;
+  --pink: #e0367f; --green: #2f6d4e; --forest: #9f9c70; --deep: #1b4a33; --sand: #3a372b; --fume: 0.75; --scan: 0.05; --vig: 0.12;
 }
 :root[data-palette="sand"] #side, :root[data-palette="sand"] #moment, :root[data-palette="sand"] #brand {
   --bg: #292826; --side: #222120; --line: #3a3835; --fg: #ece6da; --muted: #9f9b92; --dim: #66645e;
@@ -54,7 +54,9 @@ body {
   overflow: hidden; user-select: none; -webkit-user-select: none;
 }
 #stage { grid-area: stage; position: relative; min-width: 0; min-height: 0; z-index: 1; }
-#room { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
+#room { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+body:not(.idle) #room.grab { cursor: grab; }
+body:not(.idle) #room.grabbing { cursor: grabbing; }
 .conn { position: absolute; left: 2.5%; bottom: 3%; margin: 0; font: 500 var(--u)/1 var(--mono); color: var(--pink); }
 .mono { font-family: var(--mono); }
 
@@ -73,7 +75,7 @@ body::before {
    reads as a hologram. The dot of the i is a Wi-Fi mark. */
 #brand { position: fixed; z-index: 3; display: flex; align-items: baseline; gap: 0.7em; pointer-events: none; }
 .wm {
-  position: relative; display: inline-block; padding: 0.46em 0.1em 0.08em; margin: -0.46em -0.1em -0.08em; font: italic 400 calc(var(--u) * 2.9)/1 var(--serif); letter-spacing: -0.01em; color: transparent;
+  position: relative; display: inline-block; padding: 0.46em 0.1em 0.08em; margin: -0.46em -0.1em -0.08em; font: italic 400 calc(var(--u) * 2.3)/1 var(--serif); letter-spacing: -0.01em; color: transparent;
   background: var(--sand);
   -webkit-background-clip: text; background-clip: text;
   -webkit-mask-image: repeating-linear-gradient(to bottom, #000 0 2px, rgba(0, 0, 0, 0.5) 2px 3px);
@@ -84,7 +86,7 @@ body::before {
 .wifi { position: absolute; left: 50%; bottom: 0.66em; width: 0.62em; height: 0.52em; transform: translateX(-52%) skewX(-8deg); overflow: visible; color: var(--sand); fill: none; stroke: currentColor; stroke-width: 2.3; stroke-linecap: round; }
 .wifi circle { fill: currentColor; stroke: none; }
 #venue { font: 400 var(--u)/1 var(--mono); color: var(--muted); }
-:root:not([data-logo]) #brand, :root[data-logo="strip"] #brand { right: calc(var(--side-w) + 2.2vw); bottom: calc(var(--strip-h) / 2 - 1.1em); }
+:root:not([data-logo]) #brand, :root[data-logo="strip"] #brand { right: calc(var(--side-w) + 2.2vw); bottom: 0; height: var(--strip-h); align-items: center; }
 :root[data-logo="ghost"] #brand { left: calc((100vw - var(--side-w)) / 2); top: 47%; transform: translate(-50%, -50%); opacity: 0.1; }
 :root[data-logo="ghost"] .wm { font-size: calc(var(--u) * 11); }
 :root[data-logo="side"] #brand { left: 1.1vw; top: 50%; transform: translateY(-50%) rotate(-90deg); transform-origin: left center; left: 2.2vw; top: 62%; }
