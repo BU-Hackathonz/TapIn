@@ -1,0 +1,46 @@
+1
+00:00:00,000 --> 00:00:05,000
+Boston is America's college city.
+But walking into a room doesn't tell you who to sit with.
+
+2
+00:00:05,000 --> 00:00:10,000
+So you tap in when you arrive.
+
+3
+00:00:10,000 --> 00:00:15,000
+Your phone shows who you already know here,
+
+4
+00:00:15,000 --> 00:00:20,000
+and which table needs you: Table 2 needs firmware.
+
+5
+00:00:20,000 --> 00:00:27,000
+Walk over and tap in together.
+A join only counts when the whole group is at the station.
+
+6
+00:00:27,000 --> 00:00:29,000
+[plucks play]
+
+7
+00:00:29,000 --> 00:00:35,000
+That's how a stranger becomes a teammate. Everyone earns points.
+
+8
+00:00:35,000 --> 00:00:42,000
+Last night [N] hackers checked in and formed [G] groups.
+
+9
+00:00:42,000 --> 00:00:50,000
+Mentors see which tables are waiting for help,
+and every help scan crosses a need off the board.
+
+10
+00:00:50,000 --> 00:00:56,000
+ESP32 stations, a FastAPI server, Tiger Data, and Gemini icebreakers.
+
+11
+00:00:56,000 --> 00:01:00,000
+Walk in. Tap in. Find your people. tapin.boston
