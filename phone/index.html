@@ -41,8 +41,11 @@
     <label class="field" for="working">Working on today <small>(optional)</small></label>
     <input type="text" id="working" name="working_on" maxlength="80" placeholder="a robot arm, a study-room finder...">
 
+    <label class="field" for="contact">How should people reach you after tonight? <small>(Instagram or LinkedIn, optional)</small></label>
+    <input type="text" id="contact" name="contact" maxlength="80" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="@yourname or linkedin.com/in/...">
+
     <button type="submit" id="go">Get my badge</button>
-    <p class="note">First name only. Ask us and we'll delete it.</p>
+    <p class="note">First name, plus a contact only if you add one. Ask us and we'll delete it.</p>
     <p class="error" id="error" role="alert"></p>
   </form>
 </main>
@@ -58,6 +61,7 @@
   document.getElementById("looking").append(looking);
   if (saved.name) document.getElementById("name").value = saved.name;
   if (saved.working_on) document.getElementById("working").value = saved.working_on;
+  if (saved.contact) document.getElementById("contact").value = saved.contact;
   if (saved.role) document.querySelector(`input[name=role][value="${saved.role}"]`).checked = true;
 
   const me = store.get("tapin_person");
@@ -76,6 +80,7 @@
       skills: picked(skills),
       looking_for: picked(looking),
       working_on: document.getElementById("working").value.trim(),
+      contact: document.getElementById("contact").value.trim(),  // needs the server to accept "contact" before this ships
     };
     if (!body.name) { err.textContent = "Add your first name."; document.getElementById("name").focus(); return; }
     store.set("tapin_form", body, sessionStorage);  // kept so "Try again" on the claim page needs no retyping
