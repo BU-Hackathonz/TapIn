@@ -32,6 +32,7 @@ class Window:
 windows: dict = {}      # station_id -> open Window
 last_seen: dict = {}    # (station_id, uid) -> monotonic time of the last tap
 results: dict = {}      # station_id -> (state, expires_at)
+resolving: dict = {}    # station_id -> badge count of a closed window still being written to the DB
 resolve_lock = asyncio.Lock()  # scan database writes happen one at a time
 
 
@@ -43,6 +44,8 @@ def current_state(station_id: int) -> dict:
     w = windows.get(station_id)
     if w:
         return station_state(station_id, "collecting", len(w.person_ids))
+    if station_id in resolving:  # window closed, result not set yet: keep showing collecting, not idle
+        return station_state(station_id, "collecting", resolving[station_id])
     r = results.get(station_id)
     if r and r[1] > time.monotonic():
         return station_state(station_id, r[0])
@@ -117,7 +120,11 @@ async def close_after(station_id: int, delay: float) -> None:
     await asyncio.sleep(delay)
     w = windows.pop(station_id, None)  # pop FIRST: a tap during resolve opens a fresh window
     if w:
-        await resolve_scan(station_id, w.person_ids)
+        resolving[station_id] = len(w.person_ids)
+        try:
+            await resolve_scan(station_id, w.person_ids)
+        finally:
+            resolving.pop(station_id, None)
 
 
 async def resolve_scan(station_id: int, person_ids: list) -> None:
