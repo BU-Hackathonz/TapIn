@@ -42,10 +42,11 @@
     <input type="text" id="working" name="working_on" maxlength="80" placeholder="a robot arm, a study-room finder...">
 
     <label class="field" for="contact">How should people reach you after tonight? <small>(Instagram or LinkedIn, optional)</small></label>
-    <input type="text" id="contact" name="contact" maxlength="80" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="@yourname or linkedin.com/in/...">
+    <input type="text" id="contact" name="contact" maxlength="80" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="@yourname or linkedin.com/in/..." aria-describedby="contact-help">
+    <p class="note" id="contact-help">Nobody sees it tonight. After the event we share it only with people you connected with here.</p>
 
     <button type="submit" id="go">Get my badge</button>
-    <p class="note">First name, plus a contact only if you add one. Ask us and we'll delete it.</p>
+    <p class="note">Only your first name shows on screen. Ask us and we'll delete your profile.</p>
     <p class="error" id="error" role="alert"></p>
   </form>
 </main>
@@ -80,7 +81,7 @@
       skills: picked(skills),
       looking_for: picked(looking),
       working_on: document.getElementById("working").value.trim(),
-      contact: document.getElementById("contact").value.trim(),  // needs the server to accept "contact" before this ships
+      contact: document.getElementById("contact").value.trim(),  // stored only; never shown tonight (shared after the event with connections)
     };
     if (!body.name) { err.textContent = "Add your first name."; document.getElementById("name").focus(); return; }
     store.set("tapin_form", body, sessionStorage);  // kept so "Try again" on the claim page needs no retyping
