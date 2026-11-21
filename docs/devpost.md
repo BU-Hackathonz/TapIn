@@ -1,6 +1,6 @@
 # Devpost draft: Tap In
 
-Draft for the BostonHacks 2026 submission. Replace every `[NUMBER]` with the output of `python tools/count.py`, and every `[QUOTE]` with a real quote you have permission to use (first name only). Anything marked `[CHECK]` must be confirmed before submitting; never describe a feature as working unless it worked at judging.
+Draft for the BostonHacks 2026 submission. `[CHECK]` also marks every claim Yaovi's side has not seen working with our own eyes (teammates' test reports included): confirm each one or cut it. Replace every `[NUMBER]` with the output of `python tools/count.py`, and every `[QUOTE]` with a real quote you have permission to use (first name only). Anything marked `[CHECK]` must be confirmed before submitting; never describe a feature as working unless it worked at judging.
 
 ## Submission checklist
 
@@ -31,30 +31,30 @@ Tap In turns walking into a room into a way to find your people. Tap your badge 
 
 ## What it does
 
-- **Check in:** tap your badge alone. You light up on the wall as "here now", with lines to people you already know and the open tables that fit you.
+- **Check in:** tap your badge alone. You light up on the wall as "here now", with lines to people you already know and the open tables that fit you. [CHECK: wall]
 - **Where you stand:** your phone shows people you know who are here, your top 3 tables with the reason ("needs firmware", "you know Sam"), people to meet, and your points.
-- **Join a group:** walk over and scan in together. You're linked to every member and everyone earns points.
-- **Help:** when a mentor scans in with a table, its need is marked handled on the needs board.
+- **Join a group:** walk over and scan in together. You're linked to every member and everyone earns points. [CHECK: seen with real badges]
+- **Help:** when a mentor scans in with a table, its need is marked handled on the needs board. [CHECK: seen with real badges]
 - **Open or heads-down:** tables that want to focus never show up as a suggestion, and neither do people on focus mode.
-- **Sound:** the wall plays a bell when someone arrives and a pluck for every new connection.
+- **Sound:** the wall plays a bell when someone arrives and a pluck for every new connection. [CHECK: wall sound]
 
 ## How we built it
 
-ESP32 stations with RC522 readers send each badge tap to a Python FastAPI server. The server groups taps that land on the same station within 6 seconds into one scan, decides what it means (check-in, new group, join, help or repeat), stores it in Tiger Data, and pushes it over a WebSocket to the wall display (d3 and Tone.js) and to the phone site. From tap to wall takes [CHECK: measured time].
+ESP32 stations with RC522 readers send each badge tap to a Python FastAPI server. The server groups taps that land on the same station within 6 seconds into one scan, decides what it means (check-in, new group, join, help or repeat), stores it in Tiger Data, and pushes it over a WebSocket to the wall display (d3 and Tone.js) [CHECK: wall]. The phone site asks the server for your page every 5 seconds. From tap to station reply takes about a quarter of a second [CHECK: Avery measured 155 to 345 ms, median about 260 ms, on both real stations Saturday 1:45 PM; tap to wall not measured yet].
 
 We split the work by layer and agreed on the JSON shapes first, so four people could build in parallel. Every teammate's coding agent posted to one pinned GitHub issue, so one person's agent could hand work to another's.
 
 ## The stations
 
-[CHECK: a sentence on the enclosures and a photo caption.] Each station is an ESP32, an RC522 reader and 5 LEDs, about $15 of parts. The LEDs light one by one as each badge joins a scan, so a group arriving lights up together.
+[CHECK: a sentence on the enclosures and a photo caption.] Each station is just an ESP32 and an RC522 reader [CHECK: real cost]. We cut the LED strip to keep the stations simple and reliable; the board's own blue light blinks a different rhythm for each state, and the wall carries the big moment with animation and sound. [CHECK: firmware on real hardware]
 
 ## Built on Tiger Data
 
-Taps are time-series, so every raw tap and every resolved scan goes into a hypertable (`taps`, `scan_events`). The live stats chart reads a continuous aggregate (`scans_per_10min`) instead of scanning raw rows, so it stays fast and live. [CHECK: confirm the continuous aggregate and chart worked at judging; add a screenshot.] `connections` is a regular table on purpose: a unique index on a hypertable has to include the time column, and we need exactly one row per pair of people.
+Taps are time-series, so every raw tap and every resolved scan goes into a hypertable (`taps`, `scan_events`). The live stats chart reads a continuous aggregate (`scans_per_10min`) instead of scanning raw rows, so it stays fast and live. Taps land in a hypertable and roll up into 10-minute and hourly continuous aggregates, the second built on the first, which also feeds a busiest-hour view for Spark staff. [CHECK: the hourly view goes live after Avery's next server restart] [CHECK: confirm the continuous aggregate and chart worked at judging; add a screenshot.] `connections` is a regular table on purpose: a unique index on a hypertable has to include the time column, and we need exactly one row per pair of people.
 
 ## Gemini icebreakers
 
-When someone checks in, the wall shows a template line for their top table right away. In the background, Gemini writes one icebreaker under 20 words from the person's skills and the table's project. If it doesn't answer within 2 seconds, the template line stays, so a slow network never breaks a tap. A real one from last night: "[CHECK: paste a real icebreaker Gemini wrote]".
+When someone checks in, the wall shows a template line for their top table right away. In the background, Gemini writes one icebreaker under 20 words from the person's skills and the table's project. If it doesn't answer within 2 seconds, the template line stays, so a slow network never breaks a tap. We use gemini-3.5-flash-lite, which answered in 0.6 to 1.1 s with our real prompt [CHECK: Avery's measurement Saturday afternoon; confirm the wall shows the icebreaker at judging]. A real one, from a real check-in at 2:48 PM Saturday, reached the wall 0.9 s later: "Avery, your firmware and pitch skills fit Connection Map's design needs well." [CHECK: Avery's report; swap in a better one from tonight if you get it]
 
 ## Domain
 
@@ -73,21 +73,33 @@ These numbers count real people only: our fake test badges and the judge badges 
 
 ## Challenges we ran into
 
-[CHECK: from the team chat's "what broke and how we fixed it" lines.] Taps arrive milliseconds apart, sometimes at two stations at once, so grouping them into scans without corrupting one another was the hardest part of the server.
+- **Scan windows.** Taps arrive milliseconds apart, sometimes at two stations at once. Each station keeps one open window with a 6 second timer that restarts on every tap, and the window is removed before it is resolved, so a tap that lands mid-resolve starts a fresh scan instead of corrupting the old one.
+- **The judges didn't match each other at first.** With our test room loaded, Judge 1's top match was a test person, not Judge 2: both scored the same and the tie went to whoever was created first. Ties now go to the person with fewer connections, which is also fairer to newcomers. [CHECK: found and fixed by David; we haven't rerun it ourselves]
+- **One badge claim at a time.** The station can't tell whose phone a blank badge belongs to, so only one sign-up can wait for a badge at once; a second phone is asked to try again in a few seconds.
+- [CHECK: add what broke tonight from the team chat, e.g. hardware or Wi-Fi.]
 
 ## Accomplishments that we're proud of
 
-[CHECK]
+- All 9 of our tap test scenarios (check-in, new group, join, repeat, mentor help, two stations at once, unknown badge, badge claim) pass against the real Tiger Data database. [CHECK: David's run, not ours; rerun before quoting]
+- The full phone flow, from sign-up to a claimed badge to "where you stand", passed 29 of 29 checks against the real server. [CHECK: David's run, not ours; rerun before quoting]
+- Four people built four layers in parallel without waiting on each other: we agreed on the JSON shapes first, and each person's coding agent coordinated through one pinned GitHub issue.
+- [CHECK: the real numbers from tonight belong here too.]
 
 ## What didn't work
 
-[CHECK: be honest; judges read candor as confidence. Never describe a cut feature as working.]
+- **Self-service delete.** We planned a "delete my profile" button, then dropped it: without logins, anyone could delete anyone by guessing a number. Profiles are deleted on request at our table instead.
+- **Gemini was silently off for a few hours.** Our first model (gemini-2.5-flash) answered our new key with "no longer available to new users", and because the wall falls back to a template line, nothing looked broken. We switched to gemini-3.5-flash-lite Saturday afternoon; two newer models were too busy or too slow for our 2 s limit. Lesson: a fallback that hides failures needs a log line someone actually reads. [CHECK: Avery found and fixed this]
+- [CHECK: anything else that was cut or broke. Never describe a cut feature as working.]
 
 ## What we learned
 
-[CHECK]
+- Agree on the data shapes before anyone writes code, and build fake versions of every other layer first, so nobody waits.
+- A feature that sounds friendly (delete your own profile) can be a security hole when there are no accounts. We chose the safe version.
+- [CHECK: one line from each teammate.]
 
 ## What's next for Tap In
+
+**Richer profiles and table chat (prototype only).** Jun built a clickable prototype of where Tap In could go: a 5-step onboarding with a photo, school, major and year, optional social links, and a simple chat for each table. It runs entirely in the browser with sample data and is not connected to the live system; none of these features were part of tonight's build. Before real use it would need an opt-in privacy model, since tonight's system asks only for a first name. [CHECK: link to the prototype only if the team agrees, and only after any real person's handle is removed from it]
 
 A permanent install in the Spark! lab: a station at the entrance, the couches and the workbenches, points tied to real perks in the lab, and data on how the space connects people. Then any library or dorm lounge in Boston.
 
