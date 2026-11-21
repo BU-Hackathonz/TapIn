@@ -45,7 +45,7 @@ static void onboardLed(bool on) {
 // t = ms since the state started. Rhythms are picked to be told apart without color.
 static bool onboardPattern(StationState s, unsigned long t) {
   switch (s) {
-    case ST_IDLE:       return t % 3000 < 60;                 // short heartbeat blip every 3 s: alive
+    case ST_IDLE:       return t % 3000 < 150;                // heartbeat blip every 3 s: alive
     case ST_COLLECTING: return true;                          // solid: badge read, window open
     case ST_CHECKED_IN: return blinkOn(t, 333);               // 3 Hz blink
     case ST_JOINED:     return blinkOn(t, 100);               // 10 Hz flicker: the big moment
@@ -62,6 +62,12 @@ static bool onboardPattern(StationState s, unsigned long t) {
 void ledsBegin() {
   if (PIN_ONBOARD_LED >= 0) {
     pinMode(PIN_ONBOARD_LED, OUTPUT);
+    // Hello at boot: 3 clear blinks (about 1 s) so you can find the LED and see the board started.
+    // delay() is fine here: this runs once from setup(), before loop() and before any tap can arrive.
+    for (int i = 0; i < 3; i++) {
+      digitalWrite(PIN_ONBOARD_LED, HIGH); delay(180);
+      digitalWrite(PIN_ONBOARD_LED, LOW);  delay(180);
+    }
     onboardLed(false);
   }
   strip.begin();
