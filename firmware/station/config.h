@@ -25,6 +25,12 @@
 #define NUM_LEDS       5
 #define LED_BRIGHTNESS 64                  // out of 255, keeps USB power happy
 
+// Fallback feedback with no LED strip wired: the dev board's own blue LED. GPIO 2 on ESP32-WROOM dev
+// boards. It blinks a different rhythm per state (see leds.h). Set to -1 to turn it off.
+#ifndef PIN_ONBOARD_LED
+#define PIN_ONBOARD_LED 2
+#endif
+
 // Timing
 #define HTTP_TIMEOUT_MS   800              // POST and poll; a slow server must never stall reading
 #define POLL_MS           500              // GET /api/station/{id}
