@@ -40,7 +40,7 @@ Tap In turns walking into a room into a way to find your people. Tap your badge 
 
 ## How we built it
 
-ESP32 stations with RC522 readers send each badge tap to a Python FastAPI server. The server groups taps that land on the same station within 6 seconds into one scan, decides what it means (check-in, new group, join, help or repeat), stores it in Tiger Data, and pushes it over a WebSocket to the wall display (d3 and Tone.js) [CHECK: wall]. The phone site asks the server for your page every 5 seconds. From tap to wall takes [CHECK: measured time].
+ESP32 stations with RC522 readers send each badge tap to a Python FastAPI server. The server groups taps that land on the same station within 6 seconds into one scan, decides what it means (check-in, new group, join, help or repeat), stores it in Tiger Data, and pushes it over a WebSocket to the wall display (d3 and Tone.js) [CHECK: wall]. The phone site asks the server for your page every 5 seconds. From tap to station reply takes about a quarter of a second [CHECK: Avery measured 155 to 345 ms, median about 260 ms, on both real stations Saturday 1:45 PM; tap to wall not measured yet].
 
 We split the work by layer and agreed on the JSON shapes first, so four people could build in parallel. Every teammate's coding agent posted to one pinned GitHub issue, so one person's agent could hand work to another's.
 
