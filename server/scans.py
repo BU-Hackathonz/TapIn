@@ -10,7 +10,7 @@ import os
 import time
 from dataclasses import dataclass, field
 
-from . import db, groups
+from . import claims, db, groups
 from .hub import hub
 
 log = logging.getLogger("tapin.scans")
@@ -46,6 +46,8 @@ def current_state(station_id: int) -> dict:
     r = results.get(station_id)
     if r and r[1] > time.monotonic():
         return station_state(station_id, r[0])
+    if claims.waiting():
+        return station_state(station_id, "claim")  # every station pulses white while a sign-up waits
     return station_state(station_id)
 
 
@@ -67,6 +69,15 @@ async def on_tap(station_id: int, uid: str) -> dict:
         return current_state(station_id)
 
     person = await db.pool.fetchrow("SELECT id FROM people WHERE uid=$1", uid)
+
+    claim = claims.waiting()
+    if claim:
+        if person is not None:  # already-owned badge is refused; the claim keeps waiting
+            log.info("tap station=%s uid=%s outcome=claim_refused_owned", station_id, uid)
+            await db.log_tap(station_id, uid, "unknown")
+            return set_result(station_id, "unknown")
+        return await finish_claim(station_id, uid, claim)
+
     if person is None:
         log.info("tap station=%s uid=%s outcome=unknown", station_id, uid)
         await db.log_tap(station_id, uid, "unknown")
@@ -82,6 +93,24 @@ async def on_tap(station_id: int, uid: str) -> dict:
     log.info("tap station=%s uid=%s outcome=collecting count=%d", station_id, uid, len(w.person_ids))
     await db.log_tap(station_id, uid, "collecting")
     return station_state(station_id, "collecting", len(w.person_ids))
+
+
+async def finish_claim(station_id: int, uid: str, claim: claims.Claim) -> dict:
+    try:
+        row = await db.pool.fetchrow(
+            "UPDATE people SET uid=$1 WHERE id=$2 AND uid IS NULL RETURNING id, name, role", uid, claim.person_id
+        )
+    except Exception:  # unique violation: someone linked this badge a moment ago
+        row = None
+    if row is None:
+        log.warning("tap station=%s uid=%s outcome=claim_failed person=%s", station_id, uid, claim.person_id)
+        await db.log_tap(station_id, uid, "unknown")
+        return set_result(station_id, "unknown")
+    claims.finish(claim)
+    log.info("tap station=%s uid=%s outcome=claimed person=%s", station_id, uid, row["id"])
+    await db.log_tap(station_id, uid, "claimed")
+    await hub.broadcast("person_created", {"person_id": row["id"], "name": row["name"], "role": row["role"]})
+    return set_result(station_id, "claimed")
 
 
 async def close_after(station_id: int, delay: float) -> None:
