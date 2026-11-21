@@ -231,6 +231,14 @@
   $("prev").addEventListener("click", () => show(step - 1));
   document.addEventListener("keydown", (e) => { if (e.key === "Enter" && e.target.id === "name") { e.preventDefault(); next(); } });
 
+  // Front page art: the name is the logo. ?art=trio|tap|circle|table and ?logo=classic|twotone|dot|stacked|colours
+  // preview the other mockups (see mockups/brand.html).
+  {
+    const q = new URLSearchParams(location.search);
+    const art = TapArt.scenes[q.get("art")] || TapArt.scenes.trio, logo = TapArt.logos[q.get("logo")] || TapArt.logos.twotone;
+    $("hero").innerHTML = art();     // drawn by art.js from fixed shapes, no user text
+    $("brand").innerHTML = logo();
+  }
   $("name").value = me.name;
   $("bio").value = me.bio || "";
   $("school").value = me.school;
