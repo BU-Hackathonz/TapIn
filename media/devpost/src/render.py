@@ -14,11 +14,10 @@ OUT.mkdir(exist_ok=True)
 def all_diagrams():
     from diagrams import DIAGRAMS
     d = dict(DIAGRAMS)
-    try:
-        from drawings import DRAWINGS
-        d.update(DRAWINGS)
-    except ImportError:
-        pass
+    from drawings import DRAWINGS
+    from charts import CHARTS
+    d.update(DRAWINGS)
+    d.update(CHARTS)
     return d
 
 
