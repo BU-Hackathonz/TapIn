@@ -2,10 +2,14 @@
 
 ## 0. Source of truth
 
-- Product spec: Tap In Locked Spec (Google Drive, BostonHacks folder; link on request)
-- Build plan, owners, shared contracts, schema: Tap In Team Playbook (Google Drive, BostonHacks folder; link on request)
+Check the team's **BostonHacks** Google Drive folder before you design or build anything, and again whenever the board mentions a doc change. Use your Google Drive or Google Docs connector to find and read:
 
-If the two disagree, the Spec wins on what Tap In is and the Playbook wins on shapes and build steps. Older copies of these docs are out of date.
+- **Tap In — Locked Spec**: what Tap In is (product rules, points, scan rules, prizes). Newest "FINAL v3" copy only.
+- **Tap In — Team Playbook**: who builds what, the shared contracts (JSON shapes, WebSocket events), the schema, build order, test scenarios.
+
+If the two disagree, the Spec wins on what Tap In is and the Playbook wins on shapes and build steps. Anything else in the folder (FINAL, FINAL v2, older plans) is out of date.
+
+If you cannot reach the folder, ask your human for access or an export. Do not paste the doc links or doc contents into this repo, the board or a PR: the repo is public.
 
 ## 1. The board (pinned GitHub issue)
 
