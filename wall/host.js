@@ -355,6 +355,9 @@
     });
   }
 
+  // The room a table may move about in: its whole ring and label stay on the plan.
+  const tableBox = (R) => { const r = R + 34 * K; return { x0: r + 14 * K, x1: W - r - 14 * K, y0: r + 52 * K, y1: H - r - 14 * K }; };
+
   function draw(t) {
     ctx.clearRect(0, 0, W, H);
     const pos = layout.positions();
@@ -388,23 +391,38 @@
       const d = drift(gid), to = off.get("t" + gid) || { x: 0, y: 0 }, pu = pull.get(gid) || { x: 0, y: 0 };
       tb.ox = tb.x; tb.oy = tb.y; tb.x += d.dx + to.x + pu.x; tb.y += d.dy + to.y + pu.y; tb.rot = d.rot; tb.sc = d.sc;
     }
-    if (drag) {
-      const list = [...tables], dragged = drag.k[0] === "t" ? +drag.k.slice(1) : null, m0 = 40 * K;
+    {
+      // Keep a decent gap between groups. While a group is held, the ones it meets are shoved aside and stay shoved; at rest the
+      // same rule only keeps drifting groups apart.
+      const list = [...tables], dragged = drag && drag.k[0] === "t" ? +drag.k.slice(1) : null, persist = !!drag;
       const shove = (gid, tb, dx, dy) => {
-        if (tb.x + dx < m0 || tb.x + dx > W - m0) dx = 0;
-        if (tb.y + dy < m0 || tb.y + dy > H - m0) dy = 0;
         tb.x += dx; tb.y += dy;
+        if (!persist) return;
         const o = off.get("t" + gid) || { x: 0, y: 0, rel: null };
         o.x += dx; o.y += dy; off.set("t" + gid, o);
       };
       for (let pass = 0; pass < 6; pass++) {
         for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) {
           const [ga, A] = list[i], [gb, B] = list[j];
-          const dx = B.x - A.x, dy = B.y - A.y, d = Math.hypot(dx, dy) || 1, need = A.R + B.R + 68 * K;
+          const dx = B.x - A.x, dy = B.y - A.y, d = Math.hypot(dx, dy) || 1, need = A.R + B.R + 100 * K;
           if (d >= need) continue;
           const push = need - d, ux = dx / d, uy = dy / d, wa = ga === dragged ? 0 : gb === dragged ? 1 : 0.5, wb = 1 - wa;   // the held group does not give way
           shove(ga, A, -ux * push * wa, -uy * push * wa); shove(gb, B, ux * push * wb, uy * push * wb);
         }
+      }
+      // The edges: a group that strays past them is pulled back by a spring, so it bounces back onto the plan.
+      for (const [gid, tb] of list) {
+        if (gid === dragged) continue;
+        const bx = tableBox(tb.R);
+        const ox = tb.x < bx.x0 ? bx.x0 - tb.x : tb.x > bx.x1 ? bx.x1 - tb.x : 0, oy = tb.y < bx.y0 ? bx.y0 - tb.y : tb.y > bx.y1 ? bx.y1 - tb.y : 0;
+        const o = off.get("t" + gid);
+        if (!ox && !oy && !(o && (o.vx || o.vy))) continue;
+        const q = o || { x: 0, y: 0, rel: null }, dt = Math.min(0.05, dtm / 1000);
+        q.vx = q.vx || 0; q.vy = q.vy || 0;
+        if (ox || oy) { q.vx += (ox * 90 - 12 * q.vx) * dt; q.vy += (oy * 90 - 12 * q.vy) * dt; }
+        else { q.vx *= 0.85; q.vy *= 0.85; if (Math.hypot(q.vx, q.vy) < 1) q.vx = q.vy = 0; }
+        q.x += q.vx * dt; q.y += q.vy * dt; tb.x += q.vx * dt; tb.y += q.vy * dt;
+        off.set("t" + gid, q);
       }
     }
     for (const p of pos) {
@@ -656,9 +674,13 @@
   canvas.addEventListener("pointermove", (e) => {
     if (drag) {
       let dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-      if (drag.k[0] === "t") {                                        // a table cannot be pushed off the plan
-        const tb = drawn.tables.find((q) => "t" + q.id === drag.k), m = 50 * K;
-        if (tb) { if (tb.x + dx < m || tb.x + dx > W - m) dx = 0; if (tb.y + dy < m || tb.y + dy > H - m) dy = 0; }
+      if (drag.k[0] === "t") {                                        // a held group can be pulled a little past the edge
+        const tb = drawn.tables.find((q) => "t" + q.id === drag.k);
+        if (tb) {                                                     // past the edge it gets stiff, like a rubber band, and bounces back on release
+          const bx = tableBox(tb.R);
+          if (tb.x + dx < bx.x0 || tb.x + dx > bx.x1) dx *= 0.25;
+          if (tb.y + dy < bx.y0 || tb.y + dy > bx.y1) dy *= 0.25;
+        }
       }
       drag.o.x += dx; drag.o.y += dy; drag.x = e.clientX; drag.y = e.clientY;
       if (drag.k[0] === "t") {                                        // groups linked to the held one are tugged along a little
