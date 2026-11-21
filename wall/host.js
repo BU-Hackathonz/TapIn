@@ -1,12 +1,15 @@
-// Host screen: a static, flat room plan for the wall. Display only. Loads the same snapshots as the wall (/api/graph,
+// Host screen: a static, calm room plan for the wall. Display only. Loads the same snapshots as the wall (/api/graph,
 // /api/needs, /api/stats, /api/leaderboard), follows /ws, and never shows demo data: if the server is gone it says so and
-// keeps retrying. Needs: vendor/d3-force.min.js, room_layout.js, sound.js (Tone).
+// keeps retrying. Needs room_layout.js and sound.js (Tone).
 //   ?server=host:port   point at another server (testing against tools/fake_taps.py --events)
 //   ?silent             skip the Start screen (no sound)
 //   ?venue=Name         small text next to the wordmark
+//   ?palette=moss|sand|cool   ground palette to compare      ?logo=strip|ghost|side   wordmark placement
 (() => {
   "use strict";
   const qs = new URLSearchParams(location.search);
+  if (qs.get("palette")) document.documentElement.dataset.palette = qs.get("palette");
+  if (qs.get("logo")) document.documentElement.dataset.logo = qs.get("logo");
   const HOST = qs.get("server") || location.host;
   const HTTP = `${location.protocol}//${HOST}`;
   const WSURL = `${location.protocol === "https:" ? "wss" : "ws"}://${HOST}/ws`;
@@ -14,7 +17,7 @@
   const canvas = $("room"), ctx = canvas.getContext("2d");
   const css = getComputedStyle(document.documentElement);
   const v = (name) => css.getPropertyValue(name).trim();
-  const C = { bg: v("--bg"), fg: v("--fg"), muted: v("--muted"), dim: v("--dim"), pink: v("--pink"), green: v("--green"), forest: v("--forest") };
+  const C = { bg: v("--bg"), fg: v("--fg"), muted: v("--muted"), dim: v("--dim"), pink: v("--pink"), green: v("--green"), forest: v("--forest"), sand: v("--sand") };
   const SANS = v("--sans"), MONO = v("--mono");
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const low = (s) => String(s ?? "").toLowerCase();
@@ -25,13 +28,10 @@
 
   // ------------------------------------------------------------ state
   const S = { people: new Map(), groups: new Map(), links: [], needs: [], stats: null, board: null };
-  let graphRaw = null, layout = null, W = 0, H = 0, K = 1, TOP = 0, BOT = 0;   // TOP and BOT keep the plan clear of the wordmark and the strip
+  let graphRaw = null, layout = null, W = 0, H = 0, K = 1;
   const born = new Map();          // person id -> time first seen live (fade-in)
   const activity = [];
   const ice = new Map();           // person id -> Gemini line (kept briefly)
-
-  const fs = (px) => Math.max(18, Math.round(px * K));   // nothing under 18 px
-  const font = (px, weight = 400, mono = false) => `${weight} ${fs(px)}px ${mono ? MONO : SANS}`;
 
   function buildLayout() {
     const r = canvas.getBoundingClientRect();
@@ -40,8 +40,7 @@
     canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     K = Math.max(0.8, H / 1000);
-    TOP = 96 * K; BOT = 40 * K;
-    layout = RoomLayout.create(d3, { width: W, height: H - TOP - BOT, seed: 7, radiusScale: K * 1.15, labelPxPerChar: 12 * K, collidePad: 28 * K, boxX: 70 * K, boxTop: 100 * K, boxBottom: 74 * K });
+    layout = RoomLayout.create({ width: W, height: H, scale: K, margin: { x: 96 * K, top: 120 * K, bottom: 150 * K } });
     if (graphRaw) layout.setData(graphRaw);
   }
 
@@ -141,7 +140,7 @@
   // ------------------------------------------------------------ events
   const on = {
     async checked_in(d) {
-      await syncGraph().catch((e) => console.error("sync", e));       // they are "here" now; the layout spawns them at the Entrance
+      await syncGraph().catch((e) => console.error("sync", e));       // they are "here" now; they walk in from the Entrance
       const p = S.people.get(d.person_id);
       if (!p) return;
       const known = first(d.known_here || []);
@@ -187,63 +186,24 @@
   };
 
   // ------------------------------------------------------------ drawing
-  function clusters(pos) {
-    const by = new Map();
-    for (const p of pos) if (p.gid != null) (by.get(p.gid) ?? by.set(p.gid, []).get(p.gid)).push(p);
-    const out = new Map();
-    for (const [gid, ms] of by) {
-      const x = ms.reduce((s, p) => s + p.x, 0) / ms.length, y = ms.reduce((s, p) => s + p.y, 0) / ms.length;
-      out.set(gid, { x, y, r: Math.max(...ms.map((p) => Math.hypot(p.x - x, p.y - y) + p.r)), n: ms.length });
-    }
-    return out;
-  }
-
-  // Which links to draw. The physics uses every link; the picture does not need them all.
-  //  - inside a table: a minimum spanning tree (n - 1 lines), plus any link that has been scanned again and again
-  //  - a mentor or staff member: one line per table helped, to the nearest member (a bridge, not a fan)
-  //  - everything else (between tables, solo people): drawn faintly
-  function visibleLinks(byId) {
-    const out = [], sameBy = new Map(), bridge = new Map();
-    const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
-    for (const l of S.links) {
-      const a = byId.get(l.a), b = byId.get(l.b);
-      if (!a || !b) continue;
-      const ha = a.role !== "student", hb = b.role !== "student";
-      if (ha && hb) { out.push({ a, b, kind: "helper", strength: l.strength }); continue; }
-      if (ha || hb) {
-        const h = ha ? a : b, p = ha ? b : a;
-        if (p.gid == null) { out.push({ a: h, b: p, kind: "helper", strength: l.strength }); continue; }
-        const key = `${h.id}:${p.gid}`, d = dist(h, p), best = bridge.get(key);
-        if (!best || d < best.d) bridge.set(key, { a: h, b: p, d, strength: l.strength });
-        continue;
-      }
-      if (a.gid != null && a.gid === b.gid) { (sameBy.get(a.gid) ?? sameBy.set(a.gid, []).get(a.gid)).push({ a, b, strength: l.strength }); continue; }
-      out.push({ a, b, kind: "cross", strength: l.strength });
-    }
-    for (const x of bridge.values()) out.push({ a: x.a, b: x.b, kind: "helper", strength: x.strength });
-    for (const ls of sameBy.values()) {
-      const parent = new Map();
-      for (const l of ls) { parent.set(l.a.id, l.a.id); parent.set(l.b.id, l.b.id); }
-      const find = (x) => { while (parent.get(x) !== x) { parent.set(x, parent.get(parent.get(x))); x = parent.get(x); } return x; };
-      for (const l of ls.sort((p, q) => dist(p.a, p.b) - dist(q.a, q.b))) {
-        const ra = find(l.a.id), rb = find(l.b.id);
-        if (ra !== rb) { parent.set(ra, rb); out.push({ ...l, kind: "same" }); }
-        else if ((l.strength || 1) >= 3) out.push({ ...l, kind: "same" });
-      }
-    }
-    return out;
+  const trunc = (s, n) => (s.length > n ? s.slice(0, n - 1).trimEnd() + "…" : s);
+  function halo(text, x, y, fill) {      // text with a thin ground-colored outline, so lines never hide it
+    ctx.lineJoin = "round"; ctx.lineWidth = 5 * K; ctx.strokeStyle = C.bg;
+    ctx.strokeText(text, x, y);
+    ctx.fillStyle = fill;
+    ctx.fillText(text, x, y);
   }
 
   // A quiet grid of small square dots behind the plan. It never reacts to a mouse (this screen is display only); instead
-  // the grid lights up where something just happened: pink under the person who just checked in, green under a table
-  // that just formed, grew or got help. The glow fades in and out over the moment.
-  function drawGrid(t, m, byId, cl) {
+  // the grid lights up where something just happened: pink under the person who just checked in, green under a table that
+  // just formed, grew or got help. The glow fades in and out over the moment.
+  function drawGrid(t, m, byId, tables) {
     const step = Math.max(22, 28 * K), s = Math.max(2, 2.2 * K);
     let spot = null;
     if (m) {
       const k = Math.min(1, (t - m.start) / 450) * Math.max(0, Math.min(1, (m.until - t) / 1400));
-      const target = m.kind === "checkin" ? byId.get(m.person) : cl.get(m.group);
-      if (target && k > 0) spot = { x: target.x, y: target.y + TOP, k, color: m.kind === "checkin" ? C.pink : C.green };
+      const target = m.kind === "checkin" ? byId.get(m.person) : tables.get(m.group);
+      if (target && k > 0) spot = { x: target.x, y: target.y, k, color: m.kind === "checkin" ? C.pink : C.green };
     }
     const R = 260 * K;
     for (let y = step / 2; y < H; y += step) {
@@ -263,80 +223,109 @@
     ctx.globalAlpha = 1;
   }
 
-  const trunc = (s, n) => (s.length > n ? s.slice(0, n - 1).trimEnd() + "…" : s);
-  function halo(text, x, y, fill) {      // text with a thin background-colored outline, so lines never hide it
-    ctx.lineJoin = "round"; ctx.lineWidth = 5 * K; ctx.strokeStyle = C.bg;
-    ctx.strokeText(text, x, y);
-    ctx.fillStyle = fill;
-    ctx.fillText(text, x, y);
+  function line(x1, y1, x2, y2, color, alpha, width) {
+    ctx.globalAlpha = alpha; ctx.strokeStyle = color; ctx.lineWidth = width;
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+  }
+
+  function curve(x1, y1, x2, y2, color, alpha, width) {    // a gentle arc, so a line between tables does not cut straight through a third one
+    const dx = x2 - x1, dy = y2 - y1, d = Math.hypot(dx, dy) || 1;
+    ctx.globalAlpha = alpha; ctx.strokeStyle = color; ctx.lineWidth = width;
+    ctx.beginPath(); ctx.moveTo(x1, y1);
+    ctx.quadraticCurveTo((x1 + x2) / 2 - (dy / d) * d * 0.16, (y1 + y2) / 2 + (dx / d) * d * 0.16, x2, y2);
+    ctx.stroke();
   }
 
   function draw(t) {
     ctx.clearRect(0, 0, W, H);
     const pos = layout.positions();
     if (!pos.length) {
-      ctx.fillStyle = C.dim; ctx.font = font(28); ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillStyle = C.dim; ctx.font = `400 ${Math.round(28 * K)}px ${SANS}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
       ctx.fillText("Waiting for people to tap in", W / 2, H / 2);
       return;
     }
+    const tables = layout.tables();
     const byId = new Map(pos.map((p) => [p.id, p]));
-    const cl = clusters(pos);
     const m = cur && t < cur.until ? cur : null;
-    drawGrid(t, m, byId, cl);
-    ctx.save();
-    ctx.translate(0, TOP);                         // the plan sits below the wordmark and above the strip
     const hiGroup = m && m.group != null ? m.group : null;
     const hiColor = m && m.kind === "checkin" ? C.pink : C.green;
+    const lab = Math.max(14, Math.round(16 * K)), nameSz = Math.max(16, Math.round(17 * K));
+    drawGrid(t, m, byId, tables);
 
-    // links
+    // ---- links, drawn quietly under everything else
     ctx.lineCap = "round";
-    for (const l of visibleLinks(byId)) {
-      ctx.globalAlpha = l.kind === "same" ? 0.55 : l.kind === "helper" ? 0.6 : 0.28;
-      ctx.strokeStyle = l.kind === "cross" ? C.muted : C.green;
-      ctx.lineWidth = 1.5 * K + Math.min(3, Math.max(0, (l.strength || 1) - 1)) * 0.5;
-      ctx.beginPath(); ctx.moveTo(l.a.x, l.a.y); ctx.lineTo(l.b.x, l.b.y); ctx.stroke();
+    for (const [, tb] of tables) {                                   // inside a table: a necklace round the seats
+      const ms = pos.filter((p) => p.gid === tb.id).sort((a, b) => a.ang - b.ang);
+      if (ms.length < 2) continue;
+      ctx.globalAlpha = 0.4; ctx.strokeStyle = C.green; ctx.lineWidth = 1.3 * K;
+      ctx.beginPath();
+      ms.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+      if (ms.length > 2) ctx.closePath();
+      ctx.stroke();
     }
-    ctx.globalAlpha = 1;
-    // the moment: lines from the newest person to the people they know
-    if (m && m.kind === "checkin") {
-      const me = byId.get(m.person);
-      if (me) {
-        ctx.strokeStyle = C.pink; ctx.lineWidth = 2.6 * K;
-        for (const id of m.known) {
-          const o = byId.get(id);
-          if (o) { ctx.beginPath(); ctx.moveTo(me.x, me.y); ctx.lineTo(o.x, o.y); ctx.stroke(); }
-        }
+    const between = new Map(), bridge = new Map();
+    for (const l of S.links) {
+      const a = byId.get(l.a), b = byId.get(l.b);
+      if (!a || !b) continue;
+      const ha = a.role !== "student", hb = b.role !== "student";
+      if (ha || hb) {                                                // a mentor: one line per table helped, to the nearest seat
+        const h = ha ? a : b, o = ha ? b : a;
+        if (hb && ha) continue;
+        const key = `${h.id}:${o.gid ?? "x" + o.id}`, d = Math.hypot(h.x - o.x, h.y - o.y), best = bridge.get(key);
+        if (!best || d < best.d) bridge.set(key, { a: h, b: o, d, own: o.gid != null && o.gid === h.seatTable });
+        continue;
+      }
+      if (a.gid != null && b.gid != null && a.gid !== b.gid) {       // between tables: one faint line per pair of tables
+        const k = a.gid < b.gid ? `${a.gid}-${b.gid}` : `${b.gid}-${a.gid}`;
+        between.set(k, (between.get(k) || 0) + 1);
       }
     }
+    for (const [k, c] of between) {
+      const [g1, g2] = k.split("-").map(Number), A = tables.get(g1), B = tables.get(g2);
+      if (!A || !B) continue;
+      const dx = B.x - A.x, dy = B.y - A.y, d = Math.hypot(dx, dy) || 1, ra = A.R + 34 * K, rb = B.R + 34 * K;
+      if (d <= ra + rb) continue;
+      curve(A.x + (dx / d) * ra, A.y + (dy / d) * ra, B.x - (dx / d) * rb, B.y - (dy / d) * rb, C.muted, 0.14 + 0.05 * Math.min(c, 4), (1 + 0.3 * Math.min(c, 4)) * K);
+    }
+    for (const x of bridge.values()) line(x.a.x, x.a.y, x.b.x, x.b.y, C.green, x.own ? 0.6 : 0.2, (x.own ? 1.5 : 1) * K);   // strong to its own table, faint to the others
+    ctx.globalAlpha = 1;
+    if (m && m.kind === "checkin") {                                 // the moment: lines from the newest person to those they know
+      const me = byId.get(m.person);
+      if (me) for (const id of m.known) {
+        const o = byId.get(id);
+        if (o) line(me.x, me.y, o.x, o.y, C.pink, 0.9, 2.2 * K);
+      }
+      ctx.globalAlpha = 1;
+    }
 
-    // table labels, and the dashed ring around the table the moment is about
+    // ---- table rings (slowly turning) and labels above them
     ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
-    for (const [gid, c] of cl) {
+    for (const [gid, tb] of tables) {
       const g = S.groups.get(gid);
       if (!g) continue;
-      const needs = S.needs.filter((n) => n.group_id === gid && n.handled_by == null).map((n) => n.need);
-      // Two short lines above the cluster: "table 2 · robot arm" and "needs firmware" (or "heads-down").
-      const l1 = trunc(low(g.name) + (g.working_on ? " · " + low(g.working_on) : ""), 30);
-      const l2 = g.mode === "heads_down" ? "heads-down" : needs.length ? trunc("needs " + low(needs.join(", ")), 32) : "";
-      const hi = gid === hiGroup;
-      ctx.font = font(18, hi ? 600 : 500, true);
-      const half = Math.max(ctx.measureText(l1).width, ctx.measureText(l2).width) / 2;
-      const x = Math.min(W - half - 12, Math.max(half + 12, c.x));
-      const lineH = fs(18) * 1.3;
-      const bottom = Math.max(lineH * 2 + 4, c.y - c.r - (hi ? 44 : 20) * K);   // above the ring when there is one
-      const col = g.mode === "heads_down" ? C.dim : hi ? hiColor : C.green;
-      if (l2) halo(l2, x, bottom, col);
-      halo(l1, x, bottom - (l2 ? lineH : 0), col);
-      if (hi) {
-        ctx.save();
-        ctx.setLineDash([7 * K, 7 * K]); ctx.strokeStyle = hiColor; ctx.lineWidth = 2 * K;
-        ctx.globalAlpha = 0.65 + 0.35 * Math.sin(t / 380);
-        ctx.beginPath(); ctx.arc(c.x, c.y, c.r + 16 * K, 0, Math.PI * 2); ctx.stroke();
-        ctx.restore();
-      }
-    }
+      const ringR = tb.R + 34 * K, hi = gid === hiGroup, quiet = g.mode === "heads_down";
+      ctx.save();
+      ctx.lineWidth = (hi ? 2.2 : 1.5) * K;
+      ctx.setLineDash(hi ? [10 * K, 8 * K] : [3 * K, 9 * K]);
+      ctx.lineDashOffset = -(t / (hi ? 30 : 140)) * (gid % 2 ? 1 : -1);   // neighbouring rings turn opposite ways
+      ctx.strokeStyle = hi ? hiColor : quiet ? C.dim : C.forest;
+      ctx.globalAlpha = hi ? 0.75 + 0.25 * Math.sin(t / 380) : quiet ? 0.55 : 0.95;
+      ctx.beginPath(); ctx.arc(tb.x, tb.y, ringR, 0, Math.PI * 2); ctx.stroke();
+      ctx.restore();
 
-    // people
+      const needs = S.needs.filter((n) => n.group_id === gid && n.handled_by == null).map((n) => n.need);
+      const l1 = trunc(low(g.name) + (g.working_on ? " · " + low(g.working_on) : ""), 30);
+      const l2 = quiet ? "heads-down" : needs.length ? trunc("needs " + low(needs.join(", ")), 32) : "";
+      ctx.font = `${hi ? 600 : 500} ${lab}px ${MONO}`;
+      const half = Math.max(ctx.measureText(l1).width, ctx.measureText(l2).width) / 2;
+      const x = Math.min(W - half - 10, Math.max(half + 10, tb.x));
+      const lineH = lab * 1.35, y2 = tb.y - ringR - 10 * K;
+      if (l2) halo(l2, x, y2, quiet ? C.dim : hi ? hiColor : C.muted);
+      halo(l1, x, y2 - (l2 ? lineH : 0), quiet ? C.dim : hi ? hiColor : C.green);
+    }
+    ctx.globalAlpha = 1;
+
+    // ---- people
     const order = [...pos].sort((p, q) => (m && p.id === m.person ? 1 : 0) - (m && q.id === m.person ? 1 : 0));
     for (const p of order) {
       const g = p.gid != null ? S.groups.get(p.gid) : null;
@@ -344,11 +333,11 @@
       const newest = m && m.kind === "checkin" && m.person === p.id;
       const known = m && m.kind === "checkin" && m.known.includes(p.id);
       const helper = p.role !== "student";
-      const age = born.has(p.id) ? Math.min(1, (t - born.get(p.id)) / 700) : 1;
+      const age = born.has(p.id) ? Math.min(1, (t - born.get(p.id)) / 900) : 1;
       ctx.globalAlpha = 0.2 + 0.8 * age;
-      const r = p.r * (newest ? 1.6 : 1) * (0.6 + 0.4 * age);
+      const r = p.r * (newest ? 1.9 : 1);
       const col = newest ? C.pink : quiet ? C.dim : C.green;
-      ctx.lineWidth = 2 * K;
+      ctx.lineWidth = 1.8 * K;
       if (helper) {
         ctx.strokeStyle = col; ctx.fillStyle = C.bg;
         ctx.beginPath(); ctx.rect(p.x - r, p.y - r, r * 2, r * 2); ctx.fill(); ctx.stroke();
@@ -360,20 +349,34 @@
         ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.fill();
       }
       if (newest) {                                          // the ring means "newest" without relying on color alone
-        ctx.strokeStyle = C.pink; ctx.lineWidth = 2.4 * K;
+        ctx.strokeStyle = C.pink; ctx.lineWidth = 2.2 * K;
         ctx.globalAlpha = 0.6 + 0.4 * Math.sin(t / 300);
-        ctx.beginPath(); ctx.arc(p.x, p.y, r + 9 * K, 0, Math.PI * 2); ctx.stroke();
+        ctx.beginPath(); ctx.arc(p.x, p.y, r + 8 * K, 0, Math.PI * 2); ctx.stroke();
       }
       ctx.globalAlpha = 0.2 + 0.8 * age;
-      ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+
+      // Names sit outward from the table, like a seating chart; solo people get theirs underneath.
       const label = labelOf({ name: p.name, role: p.role, focus: p.focus });
-      ctx.font = newest ? font(24, 600) : font(20, known || helper ? 500 : 400);
-      const lw = ctx.measureText(label).width / 2;
-      const lx = Math.min(W - lw - 8, Math.max(lw + 8, p.x));                  // keep names inside the plan
-      halo(label, lx, p.y + r + fs(newest ? 24 : 20) + 2, newest || known ? C.fg : quiet ? C.dim : "#d4cebf");
+      const size = newest ? Math.round(nameSz * 1.3) : nameSz;
+      ctx.font = `${newest || known || helper ? 600 : 400} ${size}px ${SANS}`;
+      const fill = newest ? C.fg : known ? C.fg : quiet ? C.dim : C.sand;
+      const w = ctx.measureText(label).width, gap = r + 8 * K;
+      const seated = p.cx != null || p.seatTable != null;
+      let align = "center", x = p.x, y = p.y + r + size + 2 * K, base = "alphabetic";
+      if (seated && !p.solo) {
+        const c = Math.cos(p.ang), sn = Math.sin(p.ang);
+        if (c > 0.3) { align = "left"; x = p.x + gap; y = p.y; base = "middle"; }
+        else if (c < -0.3) { align = "right"; x = p.x - gap; y = p.y; base = "middle"; }
+        else if (sn < 0) { x = p.x; y = p.y - gap; }
+      }
+      if (align === "left" && x + w > W - 8) { align = "right"; x = p.x - gap; }
+      if (align === "right" && x - w < 8) { align = "left"; x = p.x + gap; }
+      if (align === "center") x = Math.min(W - w / 2 - 8, Math.max(w / 2 + 8, x));
+      ctx.textAlign = align; ctx.textBaseline = base;
+      halo(label, x, y, fill);
     }
     ctx.globalAlpha = 1;
-    ctx.restore();
+    ctx.textBaseline = "alphabetic";
   }
 
   let last = 0;
@@ -381,9 +384,9 @@
     requestAnimationFrame(frame);
     pump(t);
     const moving = layout && !layout.isSettled();
-    if (!moving && !(cur && t < cur.until) && t - last < 500) return;     // idle: two redraws a second
+    if (!moving && t - last < 48) return;            // at rest: about 20 redraws a second, enough for the turning rings
     last = t;
-    if (moving) layout.step(1);
+    if (moving) layout.step();
     draw(t);
   }
 

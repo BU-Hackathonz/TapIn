@@ -11,11 +11,17 @@
 </head>
 <body>
 <!-- Host screen: the room plan for the wall. Display only: nothing on this page reacts to the mouse, touch or keyboard. -->
+<div id="fume" aria-hidden="true"><i></i><i></i><i></i></div>
+
 <main id="stage">
   <canvas id="room" aria-label="Room plan: who is here and which table they are at"></canvas>
-  <header id="brand"><b>Tap In</b><span id="venue"></span></header>
   <p id="conn" class="conn" hidden>Reconnecting…</p>
 </main>
+
+<div id="brand" role="img" aria-label="Tap In">
+  <span class="wm" aria-hidden="true">Tap <span class="ii">&#305;<svg class="wifi" viewBox="0 0 24 20" aria-hidden="true"><circle cx="12" cy="16.6" r="2.3"/><path d="M6.6 11.6a7.6 7.6 0 0 1 10.8 0"/><path d="M2.9 7.4a12.8 12.8 0 0 1 18.2 0"/></svg></span>n</span>
+  <span id="venue"></span>
+</div>
 
 <aside id="side" aria-label="Room numbers">
   <p id="statline" class="mono"></p>
@@ -49,7 +55,6 @@
 </div>
 
 <script src="vendor/Tone.js"></script>
-<script src="vendor/d3-force.min.js"></script>
 <script src="sound.js"></script>
 <script src="room_layout.js"></script>
 <script src="host.js"></script>
