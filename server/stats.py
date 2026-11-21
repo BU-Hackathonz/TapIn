@@ -81,6 +81,55 @@ async def leaderboard():
     return {"groups": [dict(r) for r in grps], "people": [dict(r) for r in people]}
 
 
+# The last 24 hours, one row per hour oldest first, zero-filled, from the hourly continuous aggregate.
+HOURS_24 = """
+    WITH h AS (
+      SELECT generate_series(time_bucket(INTERVAL '1 hour', now()) - INTERVAL '23 hours',
+                             time_bucket(INTERVAL '1 hour', now()), INTERVAL '1 hour') AS hour)
+    SELECT h.hour, v.station_id, COALESCE(v.n, 0)::int AS n
+    FROM h LEFT JOIN (
+      SELECT hour, station_id, sum(n) AS n FROM scans_per_hour
+      WHERE hour >= time_bucket(INTERVAL '1 hour', now()) - INTERVAL '23 hours'
+      GROUP BY hour, station_id
+    ) v ON v.hour = h.hour
+    ORDER BY h.hour, v.station_id"""
+
+KINDS = ("checkin", "join", "new_group", "repeat", "help")
+
+
+@router.get("/analytics")
+async def analytics():
+    """Spark view (P3): busiest station by hour over the last 24 h, today's scan kinds, and needs open or met.
+
+    {hours: [{hour, by_station: {"1": n, ...}, total, busiest_station}], by_kind_today: {checkin, join,
+    new_group, repeat, help}, needs: {open, met}}. Read-only, from the scans_per_hour continuous aggregate."""
+    p = pool()
+    async with p.acquire() as conn:
+        rows = await conn.fetch(HOURS_24)
+        kinds = await conn.fetch(
+            """SELECT kind, sum(n)::int AS n FROM scans_per_hour
+               WHERE hour >= date_trunc('day', now() AT TIME ZONE $1) AT TIME ZONE $1 GROUP BY kind""",
+            P.TIMEZONE,
+        )
+        needs_open = await conn.fetchval("SELECT count(*) FROM needs WHERE handled_by IS NULL")
+        needs_met = await conn.fetchval("SELECT count(*) FROM needs WHERE handled_by IS NOT NULL")
+    hours: dict = {}
+    for r in rows:
+        h = hours.setdefault(r["hour"], {})
+        if r["station_id"] is not None:
+            h[str(r["station_id"])] = r["n"]
+    out = []
+    for hour, by in hours.items():
+        busiest = max(by, key=lambda s: (by[s], -int(s))) if any(by.values()) else None
+        out.append({"hour": hour.isoformat(), "by_station": by, "total": sum(by.values()),
+                    "busiest_station": int(busiest) if busiest else None})
+    by_kind = {k: 0 for k in KINDS}
+    for r in kinds:
+        if r["kind"] in by_kind:
+            by_kind[r["kind"]] = r["n"]
+    return {"hours": out, "by_kind_today": by_kind, "needs": {"open": int(needs_open), "met": int(needs_met)}}
+
+
 async def broadcast_loop() -> None:
     """Every TAPIN_STATS_EVERY seconds (default 30) send stats_updated to the wall.
 
