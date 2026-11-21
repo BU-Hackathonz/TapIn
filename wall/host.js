@@ -214,7 +214,7 @@
   const mouse = { x: -1, y: -1, t: -1e9 };
   const drawn = { people: [], tables: [] };       // where things were last drawn (room-canvas pixels), for the fume and for picking
   const off = new Map();                          // "p<id>" / "t<gid>" -> { x, y, rel }: how far the user has dragged a person or a table
-  let drag = null;
+  let drag = null, springing = false;
   const lvBuf = new Float32Array(FW * FH);
   const pushX = new Float32Array(FW * FH), pushY = new Float32Array(FW * FH), pushK = new Float32Array(FW * FH);
   const PINK = rgbOf(C.pink), GLINT = [Math.min(255, PINK[0] + 70), Math.min(255, PINK[1] + 90), Math.min(255, PINK[2] + 60)];
@@ -359,6 +359,29 @@
     ctx.stroke();
   }
 
+  // Shapes drawn between the people at one table, by head count. Seat indexes run round the table; -1 is the middle.
+  // The variant is picked from the table's rank, so tables with the same head count still differ.
+  function shapeEdges(n, v) {
+    const e = [], add = (i, j) => { if (i !== j && !e.some(([a, b]) => (a === i && b === j) || (a === j && b === i))) e.push([i, j]); };
+    const spokes = () => { for (let i = 0; i < n; i++) add(-1, i); };
+    const zig = () => { const seq = []; for (let lo = 0, hi = n - 1; lo <= hi; lo++, hi--) { seq.push(lo); if (hi !== lo) seq.push(hi); } for (let i = 1; i < seq.length; i++) add(seq[i - 1], seq[i]); };
+    const path = () => { for (let i = 1; i < n; i++) add(i - 1, i); };
+    const skip = (k) => { for (let i = 0; i < n; i++) add(i, (i + k) % n); };
+    if (n === 2) add(0, 1);                                                                      // a line
+    else if (n === 3) [() => { add(0, 1); add(1, 2); add(2, 0); }, spokes, path][v % 3]();      // a triangle, a Y, a bent line
+    else if (n === 4) [() => { add(0, 2); add(1, 3); }, () => { add(0, 1); add(1, 2); add(2, 3); add(3, 0); }, spokes, zig][v % 4]();   // an X, a square, a +, a Z
+    else [
+      () => skip(Math.floor(n / 2)),                                                              // a star through the middle
+      () => skip(2),                                                                              // points joined two apart
+      spokes,                                                                                     // a sun
+      () => { for (let i = 0; i < Math.floor(n / 2); i++) add(i, n - 1 - i); },                   // parallel bars, like an =
+      zig,                                                                                        // a zigzag
+      () => { for (let j = 1; j < n; j++) add(0, j); },                                           // a fan from one seat
+      () => skip(n >= 7 ? 3 : 2) || path(),                                                       // a wider star over a path
+    ][v % 7]();
+    return e;
+  }
+
   function draw(t) {
     ctx.clearRect(0, 0, W, H);
     const pos = layout.positions();
@@ -373,8 +396,10 @@
     // What the user has dragged lets go after a few seconds and eases home. A table moves as a whole; a person moves alone
     // and tugs the rest of their table a third of the way along.
     const dtm = Math.min(100, t - (draw.lt || t)); draw.lt = t;
+    springing = false;
     for (const [k, o] of off) {
-      if (o.rel == null) continue;                                    // still held
+      if (k[0] === "p") springing = true;
+      if (o.rel == null || k[0] === "t") continue;                    // still held, or a table: a table stays where it was put
       const dt = dtm / 1000, vx = o.vx || 0, vy = o.vy || 0;          // let go: spring home quickly, with a little overshoot
       o.vx = vx + (-90 * o.x - 11 * vx) * dt; o.vy = vy + (-90 * o.y - 11 * vy) * dt;
       o.x += o.vx * dt; o.y += o.vy * dt;
@@ -418,18 +443,10 @@
     for (const [, tb] of tables) {                                   // inside a table: a simple shape that depends on how many sit there
       const ms = pos.filter((p) => p.gid === tb.id).sort((a, b) => a.ang - b.ang), n = ms.length;
       if (n < 2) continue;
-      const edges = [];
-      const add = (i, j) => { if (i !== j && !edges.some(([a, b]) => (a === i && b === j) || (a === j && b === i))) edges.push([i, j]); };
-      let hub = false;
-      if (n === 2) add(0, 1);                                         // a line
-      else if (n === 3) { add(0, 1); add(1, 2); add(2, 0); }          // a triangle
-      else if (n === 4) { add(0, 2); add(1, 3); }                     // an X
-      else {
-        const kind = tb.id % 3;
-        if (kind === 2) hub = true;                                   // spokes to the middle, like a +
-        else for (let i = 0; i < n; i++) add(i, (i + (kind === 0 ? Math.floor(n / 2) : 2)) % n);   // a star through the middle, or points joined two apart
-      }
-      const segs = hub ? ms.map((p) => [{ x: tb.x, y: tb.y }, p]) : edges.map(([i, j]) => [ms[i], ms[j]]);
+      const rank = [...tables.keys()].sort((a, b) => a - b).indexOf(tb.id);
+      const edges = shapeEdges(n, (rank * 5 + n) % 7);
+      const pt = (i) => (i < 0 ? { x: tb.x, y: tb.y } : ms[i]);
+      const segs = edges.map(([i, j]) => [pt(i), pt(j)]);
       ctx.globalAlpha = 0.8; ctx.strokeStyle = C.deep; ctx.lineWidth = 1.4 * K;
       ctx.beginPath();
       for (const [a, b] of segs) { ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); }
@@ -575,7 +592,7 @@
     requestAnimationFrame(frame);
     pump(t);
     if (t - lastFume > 90) { lastFume = t; drawFume(t); }               // the fume steps about 11 times a second, which is part of the look
-    const moving = (layout && !layout.isSettled()) || drag || off.size > 0;
+    const moving = (layout && !layout.isSettled()) || drag || springing;
     if (!moving && t - last < 33) return;            // at rest: about 30 redraws a second, for the turning rings and the drift
     last = t;
     if (moving) layout.step();
@@ -614,8 +631,8 @@
   addEventListener("pointermove", (e) => { mouse.x = e.clientX; mouse.y = e.clientY; mouse.t = performance.now(); wake(); });
   wake();
 
-  // ------------------------------------------------------------ dragging, like Obsidian: grab a person to pull them (their table follows a little),
-  // or grab a table's ring to move the whole table. Let go and it all eases back to its seats after a few seconds.
+  // ------------------------------------------------------------ dragging, like Obsidian: grab a person to pull them out (their table follows a
+  // little) and they spring back to the group when let go; grab a table's ring to move the whole group, and it stays where it is put.
   const toLocal = (e) => { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
   function hit(pt) {
     let best = null, bd = Infinity;
@@ -634,7 +651,14 @@
     canvas.classList.add("grabbing");
   });
   canvas.addEventListener("pointermove", (e) => {
-    if (drag) { drag.o.x += e.clientX - drag.x; drag.o.y += e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY; }
+    if (drag) {
+      let dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+      if (drag.k[0] === "t") {                                        // a table cannot be pushed off the plan
+        const tb = drawn.tables.find((q) => "t" + q.id === drag.k), m = 50 * K;
+        if (tb) { if (tb.x + dx < m || tb.x + dx > W - m) dx = 0; if (tb.y + dy < m || tb.y + dy > H - m) dy = 0; }
+      }
+      drag.o.x += dx; drag.o.y += dy; drag.x = e.clientX; drag.y = e.clientY;
+    }
     else canvas.classList.toggle("grab", !!hit(toLocal(e)));
   });
   const endDrag = () => { if (drag) { drag.o.rel = performance.now(); drag = null; canvas.classList.remove("grabbing"); } };
