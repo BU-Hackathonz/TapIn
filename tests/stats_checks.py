@@ -120,8 +120,14 @@ def main() -> int:
                   f"before {before['groups']}, after {stats['groups']}")
             check("links_today goes up after a group forms", stats["links_today"] > before["links_today"],
                   f"before {before['links_today']}, after {stats['links_today']}")
-            check("busiest_station is the station scanned at", stats["busiest_station"] == 2,
-                  str(stats["busiest_station"]))
+            # Compare with the DB rather than assume station 2: other suites (e.g. a claim, which is also a
+            # check-in) can leave scans at other stations, and a tie would make a fixed answer flaky.
+            counts = {r["station_id"]: r["n"] for r in run(db.pool.fetch,
+                      "SELECT station_id, count(*) AS n FROM scan_events WHERE ts > now() - interval '1 hour' GROUP BY 1")}
+            top = max(counts.values()) if counts else 0
+            check("busiest_station is a station with the most scans in the last hour",
+                  stats["busiest_station"] in {s for s, n in counts.items() if n == top}, f"{stats['busiest_station']} vs {counts}")
+            check("station 2 counts the scan just made", counts.get(2, 0) >= 1, str(counts))
 
             # scans_10min: 12 buckets, oldest first, 10 minutes apart; the new scan shows at once (real-time
             # aggregate, not materialized only). Compared per bucket, so a 10-minute boundary in between is fine.
