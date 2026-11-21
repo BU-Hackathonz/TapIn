@@ -202,13 +202,18 @@ uv run --no-project --with pyserial python firmware/serial_monitor.py COM5 COM7 
 
 All of these must be true before the stations are boxed:
 
-- [ ] 20 out of 20 taps read through the lid (reader taped under the lid, antenna up).
+- [ ] 20 out of 20 taps read through the lid (reader taped under the lid, antenna up). Count them with
+      `uv run --no-project --with pyserial python firmware/read_test.py COM5 COM7`: tap each lid 20 times,
+      about 3 s apart; it prints reads per station and PASS/FAIL.
 - [ ] Every light state from the table shows on the real server or the mock.
 - [ ] Reader keeps reading during every LED animation.
-- [ ] Unplug the router for 10 s: station shows amber, then recovers with no reboot.
-- [ ] Both stations at once, no crosstalk.
-- [ ] 30-minute soak with both stations: no reboot, no stuck offline state.
+- [ ] Unplug the router for 10 s: station shows offline, then recovers with no reboot.
+- [x] Both stations at once, no crosstalk. (2026-11-21: the same badge on both, handled separately.)
+- [x] 30-minute soak with both stations: no reboot, no stuck offline state. (2026-11-21: both PASS, 0 reboots, 0 offline.)
 - [ ] Tug test on the USB cable: moving the cable moves nothing inside the box.
+
+The soak summary also shows each station's signal (`rssi`, in dBm; -40 to -48 measured, anything above
+-67 is good) and poll latency from the `LINK` lines. About 200 ms per request is normal for these boards.
 
 ## Enclosure
 
