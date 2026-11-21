@@ -31,3 +31,16 @@ CREATE TABLE IF NOT EXISTS scan_events (
   kind TEXT, size INT, group_id INT
 );
 SELECT create_hypertable('scan_events', 'ts', if_not_exists => TRUE);
+
+-- Avery: scans per station and kind in 10-minute buckets, read by /api/stats. Continuous aggregate on scan_events.
+-- Safe to re-run on every start: IF NOT EXISTS, WITH NO DATA (allowed inside the startup transaction) and
+-- if_not_exists on the policy. materialized_only = false adds the newest minutes live, so the chart never lags.
+CREATE MATERIALIZED VIEW IF NOT EXISTS scans_per_10min
+WITH (timescaledb.continuous, timescaledb.materialized_only = false) AS
+SELECT time_bucket(INTERVAL '10 minutes', ts) AS bucket, station_id, kind, count(*) AS n
+FROM scan_events GROUP BY bucket, station_id, kind WITH NO DATA;
+
+SELECT add_continuous_aggregate_policy('scans_per_10min',
+  start_offset => INTERVAL '3 hours', end_offset => INTERVAL '1 minute',
+  schedule_interval => INTERVAL '1 minute', if_not_exists => true);
+
