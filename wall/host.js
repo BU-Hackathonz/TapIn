@@ -345,7 +345,14 @@
       () => { for (let j = 1; j < n; j++) add(0, j); },                                           // a fan from one seat
       () => skip(n >= 7 ? 3 : 2) || path(),                                                       // a wider star over a path
     ][v % 7]();
-    return e;
+    const deg = new Map();                                                                       // no seat gets more than three lines
+    return e.filter(([i, j]) => {
+      const di = i < 0 ? 0 : deg.get(i) || 0, dj = j < 0 ? 0 : deg.get(j) || 0;
+      if (di >= 3 || dj >= 3) return false;
+      if (i >= 0) deg.set(i, di + 1);
+      if (j >= 0) deg.set(j, dj + 1);
+      return true;
+    });
   }
 
   function draw(t) {
@@ -380,6 +387,25 @@
     for (const [gid, tb] of tables) {
       const d = drift(gid), to = off.get("t" + gid) || { x: 0, y: 0 }, pu = pull.get(gid) || { x: 0, y: 0 };
       tb.ox = tb.x; tb.oy = tb.y; tb.x += d.dx + to.x + pu.x; tb.y += d.dy + to.y + pu.y; tb.rot = d.rot; tb.sc = d.sc;
+    }
+    if (drag) {
+      const list = [...tables], dragged = drag.k[0] === "t" ? +drag.k.slice(1) : null, m0 = 40 * K;
+      const shove = (gid, tb, dx, dy) => {
+        if (tb.x + dx < m0 || tb.x + dx > W - m0) dx = 0;
+        if (tb.y + dy < m0 || tb.y + dy > H - m0) dy = 0;
+        tb.x += dx; tb.y += dy;
+        const o = off.get("t" + gid) || { x: 0, y: 0, rel: null };
+        o.x += dx; o.y += dy; off.set("t" + gid, o);
+      };
+      for (let pass = 0; pass < 6; pass++) {
+        for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) {
+          const [ga, A] = list[i], [gb, B] = list[j];
+          const dx = B.x - A.x, dy = B.y - A.y, d = Math.hypot(dx, dy) || 1, need = A.R + B.R + 68 * K;
+          if (d >= need) continue;
+          const push = need - d, ux = dx / d, uy = dy / d, wa = ga === dragged ? 0 : gb === dragged ? 1 : 0.5, wb = 1 - wa;   // the held group does not give way
+          shove(ga, A, -ux * push * wa, -uy * push * wa); shove(gb, B, ux * push * wb, uy * push * wb);
+        }
+      }
     }
     for (const p of pos) {
       const gid = p.gid != null ? p.gid : p.seatTable;
@@ -447,11 +473,16 @@
       if (d <= ra + rb) continue;
       curve(A.x + (dx / d) * ra, A.y + (dy / d) * ra, B.x - (dx / d) * rb, B.y - (dy / d) * rb, C.deep, 0.18 + 0.05 * Math.min(c, 4), (1 + 0.3 * Math.min(c, 4)) * K);
     }
-    for (const x of bridge.values()) line(x.a.x, x.a.y, x.b.x, x.b.y, C.deep, x.own ? 0.85 : 0.4, (x.own ? 1.5 : 1) * K);   // strong to its own table, faint to the others
+    const byMentor = new Map();                                      // a mentor keeps at most three lines: their own table first, then the nearest
+    for (const x of bridge.values()) (byMentor.get(x.a.id) ?? byMentor.set(x.a.id, []).get(x.a.id)).push(x);
+    for (const list of byMentor.values()) {
+      list.sort((p, q) => (q.own ? 1 : 0) - (p.own ? 1 : 0) || p.d - q.d);
+      for (const x of list.slice(0, 3)) line(x.a.x, x.a.y, x.b.x, x.b.y, C.deep, x.own ? 0.85 : 0.4, (x.own ? 1.5 : 1) * K);
+    }   // strong to its own table, faint to the others
     ctx.globalAlpha = 1;
     if (m && m.kind === "checkin") {                                 // the moment: lines from the newest person to those they know
       const me = byId.get(m.person);
-      if (me) for (const id of m.known) {
+      if (me) for (const id of m.known.slice(0, 3)) {
         const o = byId.get(id);
         if (o) line(me.x, me.y, o.x, o.y, C.pink, 0.9, 2.2 * K);
       }
@@ -470,7 +501,13 @@
       ctx.lineDashOffset = -(t / (hi ? 30 : 140)) * (gid % 2 ? 1 : -1);   // neighbouring rings turn opposite ways
       ctx.strokeStyle = hi ? hiColor : quiet ? C.dim : C.deep;
       ctx.globalAlpha = hi ? 0.75 + 0.25 * Math.sin(t / 380) : quiet ? 0.55 : 0.95;
-      ctx.beginPath(); ctx.arc(tb.x, tb.y, ringR * tb.sc, 0, Math.PI * 2); ctx.stroke();   // a true circle, breathing in and out with its table
+      ctx.beginPath();                                                // not a circle: an outline that slowly breathes out of round
+      for (let k = 0; k <= 72; k++) {
+        const a = (k / 72) * Math.PI * 2, rr = ringR * tb.sc * (1 + 0.1 * Math.sin(2 * a + t / 2600 + gid * 1.9) + 0.07 * Math.sin(3 * a - t / 3300 + gid * 0.8));
+        const px = tb.x + Math.cos(a) * rr, py = tb.y + Math.sin(a) * rr;
+        k ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+      }
+      ctx.closePath(); ctx.stroke();
       ctx.restore();
 
       const needs = S.needs.filter((n) => n.group_id === gid && n.handled_by == null).map((n) => n.need);
@@ -624,6 +661,15 @@
         if (tb) { if (tb.x + dx < m || tb.x + dx > W - m) dx = 0; if (tb.y + dy < m || tb.y + dy > H - m) dy = 0; }
       }
       drag.o.x += dx; drag.o.y += dy; drag.x = e.clientX; drag.y = e.clientY;
+      if (drag.k[0] === "t") {                                        // groups linked to the held one are tugged along a little
+        const g0 = +drag.k.slice(1), linked = new Set();
+        for (const l of S.links) {
+          const a = S.people.get(l.a)?.group_id, b = S.people.get(l.b)?.group_id;
+          if (a == null || b == null || a === b) continue;
+          if (a === g0) linked.add(b); else if (b === g0) linked.add(a);
+        }
+        for (const g of linked) { const o = off.get("t" + g) || { x: 0, y: 0, rel: null }; o.x += dx * 0.2; o.y += dy * 0.2; off.set("t" + g, o); }
+      }
     }
     else canvas.classList.toggle("grab", !!hit(toLocal(e)));
   });
