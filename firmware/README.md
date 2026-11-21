@@ -18,9 +18,12 @@ The sketch never calls `delay()` in `loop()`. Every LED animation is computed fr
 
 - ESP32 dev board (USB powered)
 - RC522 RFID reader with 3.3 V logic
-- 5 addressable WS2812 / NeoPixel LEDs in a chain
-- 1 plain diode (drops the LED supply to about 4.2 V)
-- 1 resistor, 330 Ω (on the LED data line)
+- Optional: 5 addressable WS2812 / NeoPixel LEDs in a chain, plus 1 plain diode (drops the LED supply to
+  about 4.2 V) and 1 resistor, 330 Ω (on the LED data line)
+
+**What we built:** ESP32 + RC522 only, no LED strip, diode or resistor. The board's built-in blue LED
+(GPIO 2) gives the feedback instead; see [Built-in LED](#built-in-led-what-we-ship). The strip wiring
+below still works with no code change if someone wires it later.
 - Half-size breadboard, jumper wires (F-F, M-F, M-M)
 - Non-metal lid, 3 mm or thinner, white paper for a diffuser, tape
 
@@ -47,6 +50,26 @@ Per station. No buzzer.
 - GPIO 17 stays empty. It was the buzzer pin and nothing uses it now.
 - LED brightness is 64 out of 255. This keeps USB power happy.
 - Common ground matters. The ESP32 GND, the LED ground rail and the RC522 GND must all be connected.
+
+## Built-in LED (what we ship)
+
+One blue LED, so each state is a different rhythm. It runs alongside the strip, so with a strip wired
+both show the state.
+
+| State | Blue LED |
+| :- | :- |
+| idle | Short blip every 3 s (it is alive) |
+| collecting | Solid on |
+| checked_in | 3 Hz blink |
+| joined | 10 Hz flicker |
+| repeat | One 0.4 s blink |
+| claim | Slow 1 Hz blink |
+| claimed | Solid on |
+| unknown | Double blink, repeating |
+| offline | Brief blink every 2 s |
+
+GPIO 2 is the LED on ESP32-WROOM dev boards. For a board with it elsewhere, set `PIN_ONBOARD_LED` in
+`config.h`; `-1` turns it off.
 
 ## Light states
 
