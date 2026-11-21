@@ -144,7 +144,7 @@ The stats panel reads `scans_per_10min` instead of scanning raw rows. The view i
 
 ## Gemini icebreakers
 
-When someone checks in, the wall shows their top suggested group right away with a template line. In the background, the server asks the [Gemini API](https://ai.google.dev) (`gemini-2.5-flash`) for one icebreaker under 20 words, written from the person's name and skills and the group's project and needs.
+When someone checks in, the wall shows their top suggested group right away with a template line. In the background, the server asks the [Gemini API](https://ai.google.dev) (`gemini-3.5-flash-lite`, set by `GEMINI_MODEL`) for one icebreaker under 20 words, written from the person's name and skills and the group's project and needs.
 
 - **Never blocks a tap.** The call runs in a background task with a 2 second timeout.
 - **Always has a fallback.** On a timeout, an error or a missing key, the wall keeps the template line.
