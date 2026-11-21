@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import db, scans
+from . import api, db, scans
 from .hub import hub
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
@@ -26,6 +26,7 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(title="Tap In", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+app.include_router(api.router)
 
 
 class Tap(BaseModel):
