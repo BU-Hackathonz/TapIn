@@ -64,6 +64,14 @@ docs/       Images for this README, the printable station sign
 <!-- docs/needs-board.png: the needs board with a handled need crossed out -->
 <!-- docs/stations-boxed.jpg: both stations in their enclosures -->
 
+## From the build
+
+| The wall, demo mode | Building on Saturday |
+|---|---|
+| ![The wall in demo mode: tables as clusters with their needs, a check-in ring, and the template suggestion line](docs/media/wall-demo.gif) | ![Two teammates building at the table, with the RC522 reader kits and the breadboard kit](docs/media/team-building.jpg) |
+
+The wall recording is in demo mode with sample people, not real sign-ups. Full 29 s clip: [docs/media/wall-demo.mov](docs/media/wall-demo.mov).
+
 ## Station wiring
 
 Each station is an ESP32 dev board, an RC522 reader and 5 NeoPixel LEDs on breadboards. No soldering, except the RC522 header pins if they came loose.

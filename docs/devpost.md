@@ -99,11 +99,11 @@ python, fastapi, tiger-data, timescaledb, postgresql, websockets, gemini, esp32,
 
 1. Both stations on the table
 2. A badge tap, close up
-3. The wall mid check-in, with lines and a suggested table
+3. The wall mid check-in, with lines and a suggested table (have: docs/media/wall-demo.gif, demo mode with sample data; replace with a real one if you get it)
 4. A group forming on the wall
 5. The phone sign-up page
 6. The "where you stand" page
 7. The needs board with a handled need crossed out
 8. The live scans chart (Tiger Data)
 9. The station wiring
-10. The team building
+10. The team building (have: docs/media/team-building.jpg)
