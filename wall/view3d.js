@@ -19,7 +19,7 @@ const View3D = (() => {
   // Mockup profile picture: initials on a colour from the name, drawn in the active theme's style. Cached.
   const avatars = new Map();
   function avatar(person) {
-    const style = Theme.c.avatar, key = `${style}:${person.id}:${person.name}`;
+    const style = Theme.c.avatar, key = `${style}:${person.id}:${person.name}:${person.face || ""}`;
     if (avatars.has(key)) return avatars.get(key);
     const c = document.createElement("canvas");
     c.width = c.height = 128;
@@ -73,7 +73,7 @@ const View3D = (() => {
   const HAIR = ["#2a1b12", "#4b2e1c", "#7b4a27", "#c79a5b", "#151515", "#9b3a24", "#8a8a8a", "#e0c48a"];
   function drawFace(g, person) {
     let s = 7;
-    for (const ch of `${person.id}:${person.name}`) s = Math.imul(s ^ ch.charCodeAt(0), 16777619) >>> 0;
+    for (const ch of person.face || `${person.id}:${person.name}`) s = Math.imul(s ^ ch.charCodeAt(0), 16777619) >>> 0;
     const r = (n) => { s = Math.imul(s ^ (s >>> 13), 1274126177) >>> 0; return s % n; };
     const bgHue = r(360), skin = SKIN[r(SKIN.length)], hair = HAIR[r(HAIR.length)];
     const shirt = `hsl(${r(360)} 45% ${38 + r(20)}%)`, style = r(5);
@@ -510,6 +510,12 @@ const View3D = (() => {
       bio: BIOS[Math.floor(r() * BIOS.length)],
       // everyone shows LinkedIn and GitHub; Instagram and a website only for some, so profiles differ
       socials: ["linkedin", "github", ...(r() < 0.5 ? ["instagram"] : []), ...(r() < 0.6 ? ["web"] : [])],
+      // a profile filled in on the sign-in page overrides the made-up parts
+      ...(person.major ? { major: person.major } : {}),
+      ...(person.year ? { year: person.year } : {}),
+      ...(person.bio ? { bio: person.bio } : {}),
+      school: person.school || "",
+      ...(person.socials ? { socials: person.socials } : {}),
     };
   }
 
@@ -571,7 +577,7 @@ const View3D = (() => {
     const tags = el("div", "p-tags");
     tags.append(el("span", `p-role ${person.role}`, person.role));
     tags.append(el("span", `p-state${person.here ? " here" : ""}`, person.focus ? "focus mode" : person.here ? "here now" : "away"));
-    who.append(tags, el("p", "p-sub", `${m.major} · '${String(m.year).slice(2)}`));
+    who.append(tags, el("p", "p-sub", `${m.school ? m.school + " · " : ""}${m.major} · '${String(m.year).slice(2)}`));
     head.append(img, who);
 
     const table = el("section", "p-sec");
@@ -614,5 +620,5 @@ const View3D = (() => {
   const setOption = (k, v) => { opts[k] = v; };
 
   return { init, setActive, relayout, pulse, avatar, buildProfile, setOption, focusPerson,
-           onTable: (fn) => { onGroup = fn; }, PHONE };
+           onTable: (fn) => { onGroup = fn; }, socialIcon: (k) => SOCIAL[k], PHONE };
 })();

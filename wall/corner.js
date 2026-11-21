@@ -16,7 +16,13 @@ const Corner = (() => {
     return e;
   };
 
+  // The profile saved by login.html, if this browser has one; otherwise the first person in the room.
+  function saved() {
+    try { return JSON.parse(localStorage.getItem("wall.me") || "null"); } catch { return null; }
+  }
   function me() {
+    const p = saved();
+    if (p) return { id: -1, role: "student", points: 0, here: true, group_id: null, ...p };
     const S = getS();
     const people = S ? [...S.people.values()].filter((p) => p.role === "student") : [];
     return people.sort((a, b) => a.id - b.id)[0] || { id: 0, name: "You", role: "student", points: 0, here: true, group_id: null };
@@ -49,7 +55,10 @@ const Corner = (() => {
     for (const b of document.querySelectorAll(".me-tabs button")) b.classList.toggle("on", b.dataset.tab === tab);
     if (tab === "you") {
       const p = me();
-      body.replaceChildren(el("p", "me-note", "Signed in as " + p.name + " (mock)"), ...View3D.buildProfile(p));
+      const link = el("a", "me-edit", saved() ? "Edit your profile" : "Set up your profile");
+      link.href = "login.html";
+      body.replaceChildren(el("p", "me-note", saved() ? `Signed in as ${p.name}` : `Signed in as ${p.name} (mock)`), link,
+                           ...View3D.buildProfile(p));
       return;
     }
     const styles = el("div", "set-styles");

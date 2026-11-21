@@ -147,6 +147,11 @@ body[data-theme="minimal"] .h-bubble { background: #f3f3f3; }
 .me-tabs button.on { color: var(--text); background: var(--tile); }
 body[data-theme="minimal"] .me-tabs button.on { background: #f2f2f2; }
 .me-note { font: 12px var(--mono); color: var(--faint); margin: 6px 0 12px; }
+.me-edit {
+  display: inline-block; margin: -4px 0 14px; padding: 6px 14px; border: var(--border); border-radius: 999px;
+  font: 600 13px var(--font); color: var(--text); text-decoration: none;
+}
+.me-edit:hover, .me-edit:focus-visible { border-color: var(--text); outline: none; }
 .set-h { font: 600 11px var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin: 16px 0 8px; }
 .set-styles { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .set-style {
