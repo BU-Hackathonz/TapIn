@@ -30,25 +30,29 @@ System architecture: two ESP32 stations, one FastAPI server, Tiger Data, Gemini,
 
 Each station is an ESP32 and an RC522 reader on a breadboard, in a box with the reader taped under the lid. The station is deliberately dumb: it sends the badge's UID to the server and shows whatever state the server returns, polling every 500 ms. It shows "collecting" the moment a card is read, before the server answers, so a tap feels instant. Every request times out after 800 ms, Wi-Fi rejoins by itself, and nothing in the main loop ever waits, so a slow network can't freeze a reader. The board's blue LED shows each of the nine states as its own rhythm.
 
-![One station: wiring and LED states](https://github.com/BU-Hackathonz/TapIn/blob/main/media/devpost/station.png?raw=true)
+![Station enclosure](https://github.com/BU-Hackathonz/TapIn/blob/main/media/devpost/enclosure.png?raw=true)
 
-One station: seven jumper wires, no soldering, and one LED rhythm per state.
+The station enclosure: side view, the lid, the boards to scale, and reading through the lid (planned sizes).
 
 ### Server
 
 Python FastAPI on one laptop. The hard part is the scan window: taps that land on the same station within 6 seconds of each other are one scan, every new tap restarts the 6 seconds, and two stations never share a window. When the window closes, one database transaction decides what the scan means (check-in, new group, join, help, or repeat), writes it, and the server pushes the result to every screen over one WebSocket.
 
-![From a tap to the wall](https://github.com/BU-Hackathonz/TapIn/blob/main/media/devpost/tap-to-wall.png?raw=true)
+![One scan, end to end](https://github.com/BU-Hackathonz/TapIn/blob/main/media/devpost/scan-pipeline.png?raw=true)
 
-From a tap to the wall, with the times we measured on the venue network.
+One scan, from the window closing to the wall, with the rules kept in code and the reads and writes to Tiger Data.
 
 ### Wall and phone
 
 The wall is a 3D room map, not a network graph: each group is a cluster at its table, people who just checked in glow, lines reach the people they know, and the tables that fit them pulse. A right column shows live stats, a scans-per-10-minutes chart, top tables, the needs board and recent activity, and Tone.js plays a bell for a new person and a run of plucks for a group forming. The phone site handles sign-up, the badge claim, and "where you stand"; mentors and staff get the needs board with wait times.
 
+![Where you stand, on the phone](https://github.com/BU-Hackathonz/TapIn/blob/main/media/devpost/phone-where-you-stand.png?raw=true)
+
+The phone's "where you stand" page, live from our server: who you know here, the tables that fit you, and your table's open or heads-down switch.
+
 ![From first touch to a seat at a table](https://github.com/BU-Hackathonz/TapIn/blob/main/media/devpost/user-journey.png?raw=true)
 
-The user journey, with the two opt-outs and the privacy rules.
+The user journey, from first touch to a seat at a table.
 
 ### How four people (and their coding agents) built it in parallel
 
@@ -82,9 +86,9 @@ Two hypertables feed two continuous aggregates, the second built on the first.
 
 Gemini writes each person's icebreaker for the table that fits them best, without ever making a tap wait.
 
-![Gemini icebreakers](https://github.com/BU-Hackathonz/TapIn/blob/main/media/devpost/gemini.png?raw=true)
+![Two taps, end to end](https://github.com/BU-Hackathonz/TapIn/blob/main/media/devpost/tap-sequence.png?raw=true)
 
-The icebreaker path: a template line at once, Gemini in the background, and a hard 2-second budget.
+Two taps, end to end: a check-in with its Gemini icebreaker inside a 2-second budget, then a join inside the 6-second scan window.
 
 **Where it runs.** When someone checks in, the wall shows their top suggested table right away with a template line ("{name} ({skill}): {table} needs {need}"). In the background, the server asks Gemini for one icebreaker under 20 words, from the person's name and skills and the table's project and needs, with no emojis and no exclamation marks.
 
@@ -144,16 +148,16 @@ We planned five LEDs per station and cut them for time, so a station's only feed
 
 ## Gallery (captions)
 
-1. `cover.png`: Tap In: walk into a room, tap in, find your people.
-2. [CHECK: photo] Both stations, boxed, at the Entrance and Table 2.
-3. [CHECK: photo] A badge tap close-up, with the blue LED going solid.
-4. [CHECK: screenshot after clicking Start] The wall mid check-in: the person glows and their best table pulses.
-5. [CHECK: screenshot] A group forming on the wall, with the leaderboard ticking up.
-6. [CHECK: screenshot] The phone: sign-up, then "where you stand".
+1. `cover.png`: Tap In: walk in, tap in, find your people.
+2. `wall.png`: The live wall: the room map, stats, top tables and the needs board. [CHECK: retake after recruiting, mid check-in, with a full room.]
+3. `phone-signup.png`: Sign-up on the phone: a first name, three skills, two looking-for tags.
+4. `phone-where-you-stand.png`: Where you stand: who you know here and the tables that fit you.
+5. [CHECK: photo] Both stations, boxed, at the Entrance and Table 2.
+6. [CHECK: photo] A badge tap close-up, with the blue LED going solid.
 7. `architecture.png`: System architecture.
-8. `tiger-data.png`: Two hypertables, two continuous aggregates, the second built on the first.
-9. `gemini.png`: Gemini icebreakers with a 2-second budget and a template fallback.
-10. `station.png`: One station: wiring and the blue LED's rhythm per state.
+8. `scan-pipeline.png`: One scan, end to end.
+9. `tap-sequence.png`: A check-in with its Gemini icebreaker, then a join.
+10. `enclosure.png`: The station enclosure (planned sizes).
 
 Label any clip from the demo wall or Jun's prototype as "demo" or "prototype", never as real data.
 
