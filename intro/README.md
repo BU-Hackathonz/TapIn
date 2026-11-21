@@ -8,11 +8,11 @@ when someone arrives, a pluck for each new line, and a quick rising run when a g
 
 | Intro | Where | What happens | Length |
 |---|---|---|---|
-| `TapInIntro.signIn(container)` | Phone, before the sign-up form | A calm screen (wordmark, "Tap in. Find the table that needs you.", a faint room, a **Tap in** button). Pressing it puts you at the entrance and sends out three tap ripples. As the ripples pass, one person at each table turns mint and draws a line back to you. Then the screen slides up to the form. | ~1.5 s after the press |
-| `TapInIntro.map(container)` | Wall, right after its Start click | The tables draw in and their labels type out. People walk in from the door and settle (one bell each), each group's lines draw with a rising run of plucks, and it fades into the live map underneath. | ~3–4 s |
+| `TapInIntro.signIn(container)` | Phone, before the sign-up form | A landing that is alive before you touch it: the dot floor breathes from the door, people tap in at the Entrance reader and walk to a seat, tables turn, links flicker, and the button pulses. Pressing **Tap in** folds the raspberry button into you and walks you in through the door. Three ripples light the floor and knock the tables, three people turn mint and line up to you (+1, +2, +3), and the table that needs you locks on. Then the camera pushes in and the screen lifts away to the form. | ~1.9 s after the press |
+| `TapInIntro.map(container)` | Wall, right after its Start click | The floor lights up from the door, and the room, the Entrance reader and the tables draw in with typed labels. Every arrival is a tap: the reader flashes, then the person walks in with a trail and lands with a ping. Each group wires up with a rising run of plucks and locks, and links reach across tables. The big "here now" number and the TABLES, LINKS and TAPS counters count what actually happened. Then the plan tilts back into the 3D map and hands over. | ~4 s |
 
-Open `intro/demo.html` straight from disk to see both, with switches for sound, the wall's quiet mode and reduced
-motion.
+Open `intro/demo.html` straight from disk to see both, with switches for sound, the wall's quiet mode, reduced motion
+and the wall theme.
 
 ## Hooking it in (one line for the page owner)
 
@@ -55,9 +55,10 @@ The server must also serve `intro/` (for example a `StaticFiles` mount at `/intr
   - The quiet option (`{ quiet: true }`, or the wall's `Sound.muted`) turns sound off.
   - `{ sound: false }` also turns it off.
   - Both intros look the same with sound off.
-- **Look:** near-black `#121212`, raspberry `#B0446E` for you, mint `#7FE0BD` for groups and tables, and grey for
-  everyone else. IBM Plex Sans and Plex Mono if they're installed, system fonts otherwise. Flat, with hairline
-  lines and square corners: no glows, gradients, blur or glass.
+- **Look:** each intro wears the theme of the page it plays on.
+  - **Phone:** the phone site's own colours (`phone/style.css` variables when present: `#121212`, raspberry `#b8466f` for you, mint `#7fe0bd` for groups, grey for everyone else) and its header layout. The mint mono TAP IN and 28 px headline sit where the form's do, and the raspberry button is the phone's own.
+  - **Wall:** whatever `wall/themes.js` has selected right now: Minimal (the default: white, black ink), Night, White, Sketch or Blueprint. It reads `Theme.c` and the body's CSS variables.
+  - **Style:** flat, with hairline lines and square corners: no glows, gradients, blur or glass. "You" always has a ring as well as a colour.
 - **Light:**
   - Plain canvas and Web Audio, with no libraries and nothing from a CDN, so it works offline.
   - `devicePixelRatio` is capped at 2, and it targets 60 fps.

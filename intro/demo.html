@@ -5,43 +5,51 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tap In intros</title>
 <style>
-  :root { --bg: #121212; --panel: #1A1A1A; --line: #2E2E2E; --text: #EDEDED; --dim: #9A9A9A;
-          --you: #B0446E; --mint: #7FE0BD;
+  :root { --bg: #121212; --panel: #1a1a1a; --line: #2c2c2c; --text: #f2f2f2; --dim: #a0a0a0;
+          --you: #b8466f; --mint: #7fe0bd;
           --sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
           --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 var(--sans); padding: 24px 16px 48px; }
-  h1 { font: 600 13px var(--mono); letter-spacing: .3em; margin: 0 0 4px; }
+  .title { font: 500 14px var(--mono); letter-spacing: .08em; color: var(--mint); margin: 0 0 4px; }
   p.lead { color: var(--dim); margin: 0 0 20px; max-width: 70ch; }
   .row { display: flex; gap: 28px; flex-wrap: wrap; align-items: flex-start; }
   .col { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
   .label { font: 500 12px var(--mono); color: var(--dim); letter-spacing: .08em; }
-  .phone { width: 360px; max-width: 100%; height: 720px; border: 1px solid var(--line); position: relative; overflow: hidden; background: var(--bg); }
-  .wall  { width: min(880px, calc(100vw - 32px)); aspect-ratio: 16 / 9; border: 1px solid var(--line); position: relative; overflow: hidden; background: var(--bg); }
+  .phone { width: 390px; max-width: 100%; height: 780px; border: 1px solid var(--line); position: relative; overflow: hidden; background: var(--bg); }
+  .wall  { width: min(960px, calc(100vw - 32px)); aspect-ratio: 16 / 9; border: 1px solid var(--line); position: relative; overflow: hidden; }
   .controls { display: flex; gap: 8px; flex-wrap: wrap; }
-  button.c { min-height: 44px; padding: 0 16px; border: 1px solid var(--line); border-radius: 0; background: var(--panel); color: var(--text); font: 500 14px var(--sans); cursor: pointer; }
+  button.c, select { min-height: 44px; padding: 0 16px; border: 1px solid var(--line); border-radius: 0; background: var(--panel); color: var(--text); font: 500 14px var(--sans); cursor: pointer; }
   button.c:hover { border-color: var(--mint); }
-  .opts { display: flex; gap: 18px; flex-wrap: wrap; margin: 0 0 22px; font-size: 14px; color: var(--dim); }
+  .opts { display: flex; gap: 18px; flex-wrap: wrap; margin: 0 0 22px; font-size: 14px; color: var(--dim); align-items: center; }
   .opts label { display: flex; gap: 8px; align-items: center; min-height: 32px; cursor: pointer; }
-  input[type=text] { background: var(--panel); border: 1px solid var(--line); color: var(--text); font: 13px var(--mono); padding: 6px 8px; width: 300px; max-width: 100%; border-radius: 0; }
+  input[type=text] { background: var(--panel); border: 1px solid var(--line); color: var(--text); font: 13px var(--mono); padding: 6px 8px; width: 280px; max-width: 100%; border-radius: 0; }
   .log { font: 12px var(--mono); color: var(--dim); min-height: 1.4em; }
-  /* stand-ins for the pages underneath */
-  .form { padding: 48px 24px; display: flex; flex-direction: column; gap: 14px; }
-  .form h2 { font: 600 22px var(--sans); margin: 0 0 6px; }
-  .form .f { border: 1px solid var(--line); height: 48px; padding: 0 12px; display: flex; align-items: center; color: var(--dim); }
-  .form .go { background: var(--mint); color: var(--bg); height: 52px; display: flex; align-items: center; justify-content: center; font-weight: 600; }
-  .start { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 60; background: var(--bg); }
+  /* stand-in for the phone's sign-up form (phone/index.html) */
+  .form { padding: 20px 16px; font: 17px/1.45 var(--sans); }
+  .form .brand { font: 500 14px var(--mono); color: var(--mint); letter-spacing: .08em; }
+  .form h1 { font: 700 28px/1.25 var(--sans); margin: 4px 0; letter-spacing: -.01em; }
+  .form .muted { color: var(--dim); }
+  .form .lbl { font-weight: 600; margin: 18px 0 6px; }
+  .form .f { border: 1px solid var(--line); background: var(--panel); height: 48px; }
+  .form .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .form .chip { min-height: 44px; padding: 0 14px; border: 1px solid #4a4a4a; background: #202020; display: flex; align-items: center; }
+  .form .chip.on { background: var(--mint); border-color: var(--mint); color: #0d0d0d; font-weight: 600; }
+  /* stand-in for the wall's live map */
   canvas.live { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .start { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 60; }
+  .start button { min-height: 52px; min-width: 180px; border-radius: 0; font: 600 17px var(--sans); cursor: pointer; }
 </style>
 </head>
 <body>
-  <h1>TAP IN · INTROS</h1>
-  <p class="lead">Both intros against stand-in pages. Tap or press any key during an intro to skip it. The sign-in one normally plays once per session; the Replay buttons reset that here.</p>
+  <div class="title">TAP IN · INTROS</div>
+  <p class="lead">Both intros against stand-ins for the real pages. Tap or press any key during an intro to skip it. The phone one normally plays once per session; Replay resets that here. The wall one follows the wall's theme (Minimal is what the wall uses now).</p>
 
   <div class="opts">
     <label><input type="checkbox" id="sound" checked> Sound</label>
     <label><input type="checkbox" id="quiet"> Wall quiet mode</label>
     <label><input type="checkbox" id="reduced"> Reduced motion</label>
+    <label>Wall theme <select id="theme"></select></label>
     <label>Room from <input type="text" id="graph" placeholder="none: a small generic room" spellcheck="false"></label>
   </div>
 
@@ -49,7 +57,16 @@
     <div class="col">
       <div class="label">1 · PHONE · SIGN-IN LANDING</div>
       <div class="phone" id="phone">
-        <div class="form"><h2>Make your badge</h2><div class="f">Name</div><div class="f">What are you building?</div><div class="f">Skills</div><div class="go">Save</div></div>
+        <div class="form">
+          <div class="brand">TAP IN</div>
+          <h1>Find the table that needs you</h1>
+          <div class="muted">Make a profile, tap a badge, and see who you already know here.</div>
+          <div class="lbl">First name</div><div class="f"></div>
+          <div class="lbl">I'm a</div>
+          <div class="chips"><div class="chip on">student</div><div class="chip">mentor</div><div class="chip">staff</div></div>
+          <div class="lbl">What I'm good at</div>
+          <div class="chips"><div class="chip">hardware</div><div class="chip">firmware</div><div class="chip">frontend</div><div class="chip">design</div></div>
+        </div>
       </div>
       <div class="controls"><button class="c" id="playSignIn">Replay sign-in</button></div>
       <div class="log" id="logSignIn"></div>
@@ -62,9 +79,11 @@
     </div>
   </div>
 
+<script src="../wall/themes.js"></script>
 <script src="intro.js"></script>
 <script>
   const $ = (id) => document.getElementById(id);
+  const BG = { night: "#121212", white: "#fafafa", sketch: "#f6f1e4", minimal: "#ffffff", blueprint: "#123a6b" };
   const opts = () => ({
     sound: $("sound").checked,
     quiet: $("quiet").checked,
@@ -72,23 +91,30 @@
     graphUrl: $("graph").value.trim() || null,
   });
 
-  // A still "live map" for the wall stand-in, so the fade has something to land on.
+  // The wall's own theme list; the demo page keeps its dark look, only the wall panel changes.
+  for (const t of Theme.list()) $("theme").insertAdjacentHTML("beforeend", `<option value="${t.id}">${t.label}</option>`);
+  function setTheme(name) {
+    Theme.set(name); delete document.body.dataset.theme;      // the intro reads Theme.c; the demo body stays dark
+    $("theme").value = name; $("wall").style.background = BG[name] || "#121212"; drawLive();
+  }
+
+  // A still stand-in for the 3D map, in the theme's colours, so the hand-over has something to land on.
   function drawLive() {
-    const c = $("live"), r = c.getBoundingClientRect(), d = Math.min(2, devicePixelRatio || 1);
+    const c = $("live"), r = c.getBoundingClientRect(), d = Math.min(2, devicePixelRatio || 1), k = Theme.c;
     c.width = r.width * d; c.height = r.height * d;
     const g = c.getContext("2d"); g.scale(d, d);
-    g.fillStyle = "#121212"; g.fillRect(0, 0, r.width, r.height);
-    g.font = "500 11px 'IBM Plex Mono', ui-monospace, monospace"; g.fillStyle = "#9A9A9A";
-    g.fillText("LIVE MAP (stand-in)", 14, 22);
-    [[.3,.4,4],[.55,.35,3],[.72,.6,3],[.42,.65,2]].forEach(([fx, fy, n], i) => {
+    g.fillStyle = BG[Theme.name] || "#121212"; g.fillRect(0, 0, r.width, r.height);
+    g.font = "500 11px 'IBM Plex Mono', ui-monospace, monospace"; g.fillStyle = k.dim;
+    g.fillText("3D MAP (stand-in)", 14, 22);
+    [[.25,.42,4],[.45,.33,3],[.62,.55,3],[.36,.66,2]].forEach(([fx, fy, n]) => {
       const x = r.width * fx, y = r.height * fy;
-      g.strokeStyle = "#7FE0BD"; g.globalAlpha = .6; g.beginPath(); g.arc(x, y, 30, 0, 7); g.stroke();
-      for (let k = 0; k < n; k++) { const a = k / n * 6.283; g.globalAlpha = 1; g.fillStyle = "#7FE0BD";
-        g.beginPath(); g.arc(x + Math.cos(a) * 44, y + Math.sin(a) * 44, 4, 0, 7); g.fill(); }
+      g.strokeStyle = k.region; g.beginPath(); g.ellipse(x, y, 46, 26, 0, 0, 7); g.stroke();
+      for (let i = 0; i < n; i++) { const a = i / n * 6.283; g.fillStyle = k.student;
+        g.beginPath(); g.arc(x + Math.cos(a) * 30, y + Math.sin(a) * 15, 4, 0, 7); g.fill(); }
     });
-    g.globalAlpha = 1;
   }
-  drawLive();
+  $("theme").addEventListener("change", (e) => setTheme(e.target.value));
+  setTheme(new URLSearchParams(location.search).get("theme") || "minimal");
 
   async function playSignIn() {
     TapInIntro._reset();
@@ -101,9 +127,11 @@
   // The wall plays its intro right after its own Start click, which is also what unlocks audio.
   function playMap() {
     TapInIntro._reset();
-    const s = document.createElement("div");
+    $("wall").querySelectorAll(".start").forEach((n) => n.remove());
+    const k = Theme.c, s = document.createElement("div");
     s.className = "start";
-    s.innerHTML = '<button class="c" style="min-width:160px">Start</button>';
+    s.style.background = BG[Theme.name] || "#121212";
+    s.innerHTML = `<button style="background:${k.title};color:${BG[Theme.name]};border:0">Start</button>`;
     $("wall").appendChild(s);
     s.querySelector("button").addEventListener("click", async (e) => {
       e.stopPropagation();
