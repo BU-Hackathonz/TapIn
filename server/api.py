@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from . import claims, db, groups, matching
+from .hub import hub
 from . import points as P
 
 router = APIRouter(prefix="/api")
@@ -137,9 +138,15 @@ class Mode(BaseModel):
 
 @router.post("/groups/{group_id}/mode")
 async def set_mode(group_id: int, body: Mode):
-    row = await pool().fetchrow(
-        "UPDATE groups SET mode=$2, looking_for=$3 WHERE id=$1 RETURNING id", group_id, body.mode, list(body.looking_for)
-    )
-    if row is None:
-        raise HTTPException(404, "unknown group")
+    async with pool().acquire() as conn:
+        async with conn.transaction():
+            row = await conn.fetchrow(
+                "UPDATE groups SET mode=$2, looking_for=$3 WHERE id=$1 RETURNING id",
+                group_id, body.mode, list(body.looking_for),
+            )
+            if row is None:
+                raise HTTPException(404, "unknown group")
+            await groups.sync_needs(conn, group_id, body.looking_for)
+        needs_now = await groups.list_needs(conn)
+    await hub.broadcast("needs_updated", {"needs": needs_now})
     return {"ok": True}
