@@ -289,10 +289,9 @@ const View3D = (() => {
   function coast(dt, now) {
     if (pointers > 0) return;
     if (Math.abs(spinX) < STOP && Math.abs(spinY) < STOP) { spinX = spinY = 0; return; }
+    // No tilt limit: a vertical flick rolls over the top and keeps going.
     rotY += spinY * dt;
-    const nx = rotX + spinX * dt;
-    rotX = Math.max(-1.3, Math.min(1.3, nx));
-    if (rotX !== nx) spinX = 0;              // hit the top or bottom: stop tilting, keep turning
+    rotX = (rotX + spinX * dt) % (Math.PI * 2);
     const k = Math.exp(-dt / FRICTION);
     spinX *= k; spinY *= k;
     lastTouch = now;                         // no idle auto-spin until the coast has died down
@@ -316,9 +315,11 @@ const View3D = (() => {
       pts.set(e.pointerId, cur);
       lastTouch = now;
       if (pts.size === 1) {
-        const dy = (cur.x - prev.x) * 0.006, dx = (cur.y - prev.y) * 0.006, dt = Math.max(8, now - lastMove);
+        // Upside down (rolled past the top), a sideways drag must turn the other way to follow the finger.
+        const flip = Math.cos(rotX) < 0 ? -1 : 1;
+        const dy = (cur.x - prev.x) * 0.006 * flip, dx = (cur.y - prev.y) * 0.006, dt = Math.max(8, now - lastMove);
         rotY += dy;
-        rotX = Math.max(-1.3, Math.min(1.3, rotX + dx));
+        rotX = (rotX + dx) % (Math.PI * 2);
         // Smoothed velocity over the last few moves, so one jittery event doesn't decide the flick.
         spinY = spinY * 0.5 + (dy / dt) * 0.5;
         spinX = spinX * 0.5 + (dx / dt) * 0.5;
