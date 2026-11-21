@@ -47,6 +47,7 @@
     applyGraph(g);
     S.needs = needs;
     render();
+    Corner.refresh();
   }
 
   // ------------------------------------------------------------ room state for the 3D view
@@ -99,14 +100,16 @@
   // Just text, no box: "Hana joined" fades in on the left when someone arrives or claims a badge, then fades out.
   const TOAST_MS = 4000, TOAST_MAX = 5;
   function toast(name) {
-    if (!name) return;
-    const box = $("toasts"), line = document.createElement("p"), b = document.createElement("b");
+    if (!name || !Corner.joins) return;
+    const box = $("toasts"), line = document.createElement("p"), inner = document.createElement("span");
+    const b = document.createElement("b");
     line.className = "toast";
     b.textContent = name;
-    line.append(b, " joined");
+    inner.append(b, " joined");
+    line.append(inner);
     box.prepend(line);
     while (box.children.length > TOAST_MAX) box.lastChild.remove();
-    setTimeout(() => { line.classList.add("out"); setTimeout(() => line.remove(), 450); }, TOAST_MS);
+    setTimeout(() => { line.classList.add("out"); setTimeout(() => line.remove(), 650); }, TOAST_MS);
   }
 
   // ------------------------------------------------------------ events
@@ -205,6 +208,7 @@
     try { await Sound.start(); } catch (e) { console.error("sound", e); }
   });
   Theme.set(Theme.initial());
+  Corner.mount(() => S);
   View3D.init(() => ({ visible, shownGroups, S, radius, needLine }));
   View3D.setActive(true);
 

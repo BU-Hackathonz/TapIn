@@ -1,7 +1,7 @@
 // Bell on arrival, pluck per new link. Silent until Start is clicked (browsers block audio before a gesture).
 const Sound = (() => {
   const PENTA = ["C5", "D5", "E5", "G5", "A5", "C6"];
-  let bell, pluck, on = false, lastPluck = 0;
+  let bell, pluck, on = false, muted = false, lastPluck = 0;
 
   async function start() {
     if (on || typeof Tone === "undefined") return;
@@ -20,13 +20,13 @@ const Sound = (() => {
   const pick = () => PENTA[Math.floor(Math.random() * PENTA.length)];
 
   function arrive() {
-    if (!on) return;
+    if (!on || muted) return;
     bell.triggerAttackRelease(pick(), "2n");
   }
 
   // Several links land at once on a join: stagger them so they read as a little run, not a clash.
   function links(n) {
-    if (!on || n <= 0) return;
+    if (!on || muted || n <= 0) return;
     const t0 = Math.max(Tone.now(), lastPluck + 0.09);
     for (let i = 0; i < Math.min(n, 8); i++) {
       lastPluck = t0 + i * 0.09;
@@ -34,5 +34,5 @@ const Sound = (() => {
     }
   }
 
-  return { start, arrive, links };
+  return { start, arrive, links, setMuted: (m) => { muted = m; }, get muted() { return muted; }, get started() { return on; } };
 })();

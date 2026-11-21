@@ -55,6 +55,7 @@ const Theme = (() => {
     get c() { return THEMES[current].c; },
     get name() { return current; },
     set, initial,
+    list: () => Object.entries(THEMES).map(([id, t]) => ({ id, label: t.label, swatch: t.swatch })),
     onChange: (fn) => listeners.push(fn),
   };
 })();

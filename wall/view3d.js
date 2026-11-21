@@ -216,7 +216,7 @@ const View3D = (() => {
     const dt = Math.min(64, t - lastFrame);
     lastFrame = t;
     coast(dt, t);
-    if (t - lastTouch > 5000) rotY += 0.00018 * dt;   // idle spin
+    if (opts.spin && t - lastTouch > 5000) rotY += 0.00018 * dt;   // idle spin
     for (const q of pos.values()) {
       q.x += (q.tx - q.x) * 0.08; q.y += (q.ty - q.y) * 0.08; q.z += (q.tz - q.z) * 0.08;
     }
@@ -337,7 +337,7 @@ const View3D = (() => {
       ctx.fillText(need, lx, top);
     }
     ctx.font = `${small}px ${T.font}`;
-    const near = order.slice(-PRESET.labels).map(([id]) => id).reverse();
+    const near = opts.names ? order.slice(-PRESET.labels).map(([id]) => id).reverse() : [];
     if (focusLinks) near.unshift(focusLinks);
     for (const id of near) {
       const p = P.get(id), person = S.people.get(id);
@@ -527,7 +527,8 @@ const View3D = (() => {
     return row;
   }
 
-  function showProfile(person) {
+  // Builds the profile's content; used by the corner card (someone you tapped) and by the You tab.
+  function buildProfile(person) {
     const { S, needLine } = scene();
     const m = mock(person), g = S.groups.get(person.group_id);
     const el = (tag, cls, text) => {
@@ -582,11 +583,17 @@ const View3D = (() => {
     knows.append(known.length ? chips(known.slice(0, 6).map((p) => p.name), "p-chip person")
                               : el("p", "p-muted", "No connections yet"));
 
-    const body = document.getElementById("profile-body");
-    body.replaceChildren(head, el("p", "p-bio", m.bio), socials(m.socials), stats, table, skills, looking, knows,
-                         el("p", "p-foot", "Mock profile · skills, major, bio and links are sample data"));
+    return [head, el("p", "p-bio", m.bio), socials(m.socials), stats, table, skills, looking, knows,
+            el("p", "p-foot", "Mock profile · skills, major, bio and links are sample data")];
+  }
+  function showProfile(person) {
+    document.getElementById("profile-body").replaceChildren(...buildProfile(person));
     document.getElementById("profile").hidden = false;
   }
 
-  return { init, setActive, relayout, pulse, avatar, PHONE };
+  // Viewer settings from the corner tab.
+  const opts = { names: true, spin: true };
+  const setOption = (k, v) => { opts[k] = v; };
+
+  return { init, setActive, relayout, pulse, avatar, buildProfile, setOption, PHONE };
 })();
