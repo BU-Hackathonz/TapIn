@@ -77,7 +77,8 @@ def suggested_people(s: State, pid: int, limit: int = 5) -> list:
             continue
         score, reason = person_score(s, pid, other)
         out.append({"person_id": other, "name": s.people[other]["name"], "score": score, "reason": reason})
-    out.sort(key=lambda x: (-x["score"], x["person_id"]))
+    # Ties go to the person with fewer connections (newcomers first), then the lower id.
+    out.sort(key=lambda x: (-x["score"], len(s.nbrs[x["person_id"]]), x["person_id"]))
     return out[:limit]
 
 
