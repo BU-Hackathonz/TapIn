@@ -50,11 +50,11 @@ We split the work by layer and agreed on the JSON shapes first, so four people c
 
 ## Built on Tiger Data
 
-Taps are time-series, so every raw tap and every resolved scan goes into a hypertable (`taps`, `scan_events`). The live stats chart reads a continuous aggregate (`scans_per_10min`) instead of scanning raw rows, so it stays fast and live. [CHECK: confirm the continuous aggregate and chart worked at judging; add a screenshot.] `connections` is a regular table on purpose: a unique index on a hypertable has to include the time column, and we need exactly one row per pair of people.
+Taps are time-series, so every raw tap and every resolved scan goes into a hypertable (`taps`, `scan_events`). The live stats chart reads a continuous aggregate (`scans_per_10min`) instead of scanning raw rows, so it stays fast and live. Taps land in a hypertable and roll up into 10-minute and hourly continuous aggregates, the second built on the first, which also feeds a busiest-hour view for Spark staff. [CHECK: the hourly view goes live after Avery's next server restart] [CHECK: confirm the continuous aggregate and chart worked at judging; add a screenshot.] `connections` is a regular table on purpose: a unique index on a hypertable has to include the time column, and we need exactly one row per pair of people.
 
 ## Gemini icebreakers
 
-When someone checks in, the wall shows a template line for their top table right away. In the background, Gemini writes one icebreaker under 20 words from the person's skills and the table's project. If it doesn't answer within 2 seconds, the template line stays, so a slow network never breaks a tap. We use gemini-3.5-flash-lite, which answered in 0.6 to 1.1 s with our real prompt [CHECK: Avery's measurement Saturday afternoon; confirm the wall shows the icebreaker at judging]. A real one from last night: "[CHECK: paste a real icebreaker Gemini wrote]".
+When someone checks in, the wall shows a template line for their top table right away. In the background, Gemini writes one icebreaker under 20 words from the person's skills and the table's project. If it doesn't answer within 2 seconds, the template line stays, so a slow network never breaks a tap. We use gemini-3.5-flash-lite, which answered in 0.6 to 1.1 s with our real prompt [CHECK: Avery's measurement Saturday afternoon; confirm the wall shows the icebreaker at judging]. A real one, from a real check-in at 2:48 PM Saturday, reached the wall 0.9 s later: "Avery, your firmware and pitch skills fit Connection Map's design needs well." [CHECK: Avery's report; swap in a better one from tonight if you get it]
 
 ## Domain
 
