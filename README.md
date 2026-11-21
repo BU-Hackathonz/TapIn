@@ -51,10 +51,18 @@ server/     FastAPI app: tap API, scan windows, groups, points, matching, claims
 firmware/   station.ino (one sketch, STATION_ID set at the top)
 wall/       Wall display: room view, panels, sound
 phone/      Sign-up, claim, and "where you stand" pages
-tools/      fake_taps.py, check_db.py, and the agent board script (tools/board)
+tools/      fake_taps.py, seed.py, count.py, check_db.py, and the agent board script (tools/board)
 tests/      Scan scenarios, API, matching and Gemini checks
-docs/       Images for this README
+docs/       Images for this README, the printable station sign
 ```
+
+## Screenshots
+
+<!-- docs/wall-checkin.png: the wall mid check-in, with lines and a suggested group -->
+<!-- docs/group-forming.png: a group forming on the wall -->
+<!-- docs/phone-signup.png: the phone sign-up page -->
+<!-- docs/needs-board.png: the needs board with a handled need crossed out -->
+<!-- docs/stations-boxed.jpg: both stations in their enclosures -->
 
 ## Station wiring
 
@@ -104,7 +112,13 @@ uvicorn server.main:app --host 0.0.0.0 --port 8000
 ```bash
 python tools/fake_taps.py --events                              # fake room for the wall, no server or DB needed
 python tools/fake_taps.py --taps --server http://localhost:8000 # runs the tap test scenarios against a real server
+python tools/fake_taps.py --cleanup                             # deletes the Test people the scenarios leave behind
+python tools/seed.py                                            # adds a fake room: 20 people with 5EED badges, 4 groups
+python tools/seed.py --judge1 <UID> --judge2 <UID>              # registers two spare cards as Judge 1 and Judge 2
+python tools/count.py                                           # real people, groups, help scans and links (no fakes)
 ```
+
+Fake badges always start with `5EED`, so `count.py` reports only real people. Never run `tools/seed.py --reset` after recruiting starts: it deletes every real sign-up.
 
 **Stations:** open `firmware/station.ino` in the Arduino IDE with ESP32 support installed, set `STATION_ID` (1 or 2) at the top, and upload. Stations join the private 2.4 GHz `TapIn` network and talk to the server at `192.168.8.100:8000`.
 
