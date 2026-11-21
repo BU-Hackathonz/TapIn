@@ -81,7 +81,7 @@ const View3D = (() => {
     const { visible, shownGroups } = scene();
     centers.clear();
     // Stretch the sphere toward the screen's long side: tall on portrait phones, wide on the projector.
-    const xs = W > H ? Math.min(1.8, W / H) : 1, ys = H > W ? 1.7 : 0.8;
+    const xs = W > H ? Math.min(1.8, W / H) : 0.5, ys = H > W ? 1.7 : 0.8;
     shownGroups.forEach((g, i) => {
       const [x, y, z] = fib(i, shownGroups.length);
       const n = visible.filter((p) => p.group_id === g.id).length;
@@ -238,13 +238,14 @@ const View3D = (() => {
       const g = S.groups.get(gid), need = scene().needLine(g), top = c.y - c.r * c.s - 10;
       ctx.font = `700 ${big}px "IBM Plex Sans", sans-serif`;
       const w = Math.max(ctx.measureText(g?.name || "").width, need.length * small * 0.5);
-      if (!fits(c.x, top, w, big + small + 8)) continue;
+      const lx = Math.max(w / 2 + 8, Math.min(W - w / 2 - 8, c.x));   // keep the label on screen
+      if (!fits(lx, top, w, big + small + 8)) continue;
       ctx.globalAlpha = Math.max(0.5, depthAlpha(c.z));
       ctx.fillStyle = "#f2f2f2";
-      ctx.fillText(g?.name || "", c.x, top - small - 4);
+      ctx.fillText(g?.name || "", lx, top - small - 4);
       ctx.fillStyle = g?.mode === "heads_down" ? "#8a8a8a" : COLOR.mint;
       ctx.font = `${small}px "IBM Plex Sans", sans-serif`;
-      ctx.fillText(need, c.x, top);
+      ctx.fillText(need, lx, top);
     }
     ctx.font = `${small}px "IBM Plex Sans", sans-serif`;
     const near = order.slice(-PRESET.labels).map(([id]) => id).reverse();

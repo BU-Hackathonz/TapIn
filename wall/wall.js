@@ -14,7 +14,9 @@
 
   // ------------------------------------------------------------ data
 
+  let demo = false;   // true: no server, the in-browser Demo room answers instead
   async function getJSON(path) {
+    if (demo) return Demo.snapshot(path);
     const r = await fetch(HTTP + path);
     if (!r.ok) throw new Error(`${path} ${r.status}`);
     return r.json();
@@ -371,5 +373,20 @@
   let saved = null;
   try { saved = localStorage.getItem("tapin.view"); } catch { /* private mode */ }
   setView(qs.get("view") || saved || "3d");
-  connect();
+
+  // ?demo, or no Tap In server behind this page (e.g. hosted on its own): run the built-in demo room.
+  function startDemo() {
+    demo = true;
+    document.body.classList.add("demo");
+    $("conn").className = "conn demo";
+    Demo.build();
+    syncAll().catch((e) => console.error("demo", e));
+    Demo.start(handle);
+  }
+  if (qs.has("demo")) startDemo();
+  else {
+    fetch(HTTP + "/api/graph")
+      .then((r) => (r.ok && (r.headers.get("content-type") || "").includes("json") ? connect() : startDemo()))
+      .catch(startDemo);
+  }
 })();

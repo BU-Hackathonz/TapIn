@@ -16,6 +16,12 @@ body { background: var(--bg); color: var(--text); overflow: hidden; font: 18px/1
 .conn { position: fixed; right: 28px; bottom: 22px; width: 10px; height: 10px; border-radius: 50%; background: var(--line); }
 .conn.live { background: var(--mint); }
 .conn.down { background: var(--amber); }
+.conn.demo { background: var(--raspberry); }
+.demo-tag {
+  display: none; font: 600 11px "IBM Plex Mono", monospace; letter-spacing: 0.1em; color: var(--raspberry-text);
+  border: 1px solid var(--raspberry); padding: 3px 6px;
+}
+body.demo .demo-tag { display: inline-block; }
 
 .arrival {
   position: fixed; left: 0; right: 0; bottom: 34px; text-align: center; font-size: 34px;
