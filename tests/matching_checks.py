@@ -122,6 +122,23 @@ def main() -> int:
             check("mode: bad mode rejected", c.post(f"/api/groups/{g2}/mode", json={"mode": "loud"}).status_code == 422)
             check("mode: unknown group 404", c.post("/api/groups/999999/mode", json={"mode": "open"}).status_code == 404)
 
+            # needs follow the group's looking_for tags, and only open groups are on the board
+            def needs_of(gid):
+                return sorted(n["need"] for n in c.get("/api/needs").json() if n["group_id"] == gid)
+
+            c.post(f"/api/groups/{g3}/mode", json={"mode": "open", "looking_for": ["design"]})
+            check("needs: one row per tag", needs_of(g3) == ["design"], str(needs_of(g3)))
+            c.post(f"/api/groups/{g3}/mode", json={"mode": "open", "looking_for": ["data", "ml"]})
+            check("needs: changed tags replace open needs", needs_of(g3) == ["data", "ml"], str(needs_of(g3)))
+            c.post(f"/api/groups/{g3}/mode", json={"mode": "heads_down", "looking_for": ["data", "ml"]})
+            check("needs: heads-down group is off the board", needs_of(g3) == [])
+            c.post(f"/api/groups/{g3}/mode", json={"mode": "open", "looking_for": []})
+            check("needs: no tags, no needs", needs_of(g3) == [])
+            events.clear()
+            c.post(f"/api/groups/{g3}/mode", json={"mode": "open", "looking_for": ["pitch"]})
+            ne = [e["data"] for e in events if e["type"] == "needs_updated"]
+            check("needs: mode change broadcasts needs_updated", len(ne) == 1 and any(n["need"] == "pitch" for n in ne[0]["needs"]))
+
             # after meeting Sam, the reason on his table changes to "you know Sam" only if no need matches
             run(db.pool.execute, "UPDATE groups SET looking_for='{}' WHERE id=$1", g2)
             run(db.pool.execute, "INSERT INTO connections (person_a, person_b) VALUES ($1,$2)", min(maya, sam), max(maya, sam))
