@@ -53,7 +53,7 @@ body {
 .count span { color: var(--muted); display: block; }
 
 /* demo builds (no live server) say so in the top-right corner, for everyone */
-body.demo .demo-tag { display: inline-block; position: fixed; right: 24px; bottom: 18px; z-index: 3; }
+body.demo .demo-tag { display: inline-block; position: fixed; left: 50%; transform: translateX(-50%); bottom: 14px; z-index: 5; background: var(--panel); }
 .demo-tag {
   display: none; font: 600 11px var(--mono); letter-spacing: 0.1em; color: var(--accent-text);
   border: 1px solid var(--accent); padding: 3px 6px; border-radius: 999px;
@@ -441,4 +441,4 @@ body:not(.host):not(.kiosk) #room-insights { display: none; }
   body:not(.host):not(.kiosk) #map3d { width: 100%; }
   body:not(.host):not(.kiosk) .profile { right: 24px; }
 }
-@media (max-width: 700px) { body.demo .demo-tag { right: 12px; bottom: 10px; font-size: 10px; } }
+@media (max-width: 700px) { body.demo .demo-tag { bottom: 8px; font-size: 10px; } }

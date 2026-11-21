@@ -90,3 +90,4 @@ body[data-theme="minimal"] .room-option-icon { background: #f2f2f2; }
 .room-inline.choose { align-items: stretch; text-align: left; gap: 10px; }
 .room-inline .room-title.big { font-size: 20px; }
 .room-inline .tap-art { width: 230px; height: 126px; }
+#room-slot.room-inline.choose { border: 0; padding: 0; margin-top: 8px; }   /* the sign-in card is already the frame */

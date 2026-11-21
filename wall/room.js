@@ -2,7 +2,7 @@
 // Room.chooser() shows two options, Join a room and Host an event, either inside a card you pass in (the sign-in
 // page's All set step) or as a window over the page (Settings on the wall):
 //   Join a room: a hand taps a badge on a station (tap the picture to "scan"), then "You can join <event>" and Join room.
-//   Host an event: a short form (name, place, start time), then you're hosting with a 4-letter code.
+//   Host an event: a short form (name, place, start time), then you're hosting. No join codes: people get in by scanning a card.
 // opts.into: element to draw in (no window); opts.onDone(room): called once you've joined or are hosting.
 const Room = (() => {
   const EVENT = { name: "BostonHacks 2026", place: "GSU Metcalf Ballroom" };
@@ -86,7 +86,8 @@ const Room = (() => {
     const chooseStep = () => {
       cls("choose");
       const name = opts.name ? `, ${opts.name}` : "";
-      win.replaceChildren(x(), el("h2", "room-title big", opts.title || `Welcome${name}`), el("span", "room-sub", "What would you like to do?"),
+      const heading = opts.bare ? [] : [el("h2", "room-title big", opts.title || `Welcome${name}`), el("span", "room-sub", "What would you like to do?")];
+      win.replaceChildren(x(), ...heading,
         option(JOIN_ICON, "Join a room", "Tap your badge at a station", tapStep),
         option(HOST_ICON, "Host an event", "Start a room others can join", makeStep),
         room.status === "in" ? el("span", "room-sub small", `You're in ${room.name} now`) : el("span"));
@@ -130,8 +131,7 @@ const Room = (() => {
       form.addEventListener("submit", (e) => {
         e.preventDefault();
         const f = form.elements;
-        done({ status: "in", name: f.name.value.trim() || "My event", place: f.place.value.trim(), time: f.time.value, host: true,
-               code: Math.random().toString(36).slice(2, 6).toUpperCase() });
+        done({ status: "in", name: f.name.value.trim() || "My event", place: f.place.value.trim(), time: f.time.value, host: true });
       });
       win.replaceChildren(x(), form);
       form.elements.name.focus();

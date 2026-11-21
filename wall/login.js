@@ -1,4 +1,4 @@
-// Sign-in prototype: five short steps, then a preview. Saves to localStorage("wall.me") so the wall's
+// Sign-in prototype: five short steps, then Join a room / Host an event. Saves to localStorage("wall.me") so the wall's
 // You tab shows this profile. Nothing leaves the browser.
 (() => {
   const SKILLS = ["hardware", "firmware", "frontend", "backend", "design", "ml", "data", "mobile", "pitch", "research"];
@@ -213,33 +213,9 @@
     const profile = { name: me.name, role: me.role, bio: me.bio || undefined, school: me.school, major: me.major,
                       year: me.year, skills: me.skills, looking_for: me.looking_for, face: me.face, photo: me.photo,
                       links: me.links, socials: Object.keys(me.links) };
-    try { localStorage.setItem("wall.me", JSON.stringify(profile)); } catch { /* private mode or full: still show the preview */ }
-    const card = $("preview");
-    const pic = el("img", "face");
-    pic.src = me.photo || View3D.avatar(person()).toDataURL();
-    pic.alt = "";
-    const text = el("div");
-    text.append(el("b", "", me.name));
-    // the year only makes sense next to a school or major; on its own ("'27") it reads like a typo
-    const study = [me.school, me.major].filter(Boolean);
-    if (study.length && me.year) study.push(`'${String(me.year).slice(2)}`);
-    text.append(el("span", "", study.join(" · ") || (me.role === "student" ? "Student" : me.role === "mentor" ? "Mentor" : "Staff")));
-    const chips = el("div", "chips small");
-    for (const s of me.skills) chips.append(el("span", "chip on", s));
-    for (const s of me.looking_for) chips.append(el("span", "chip want", `wants ${s}`));
-    const apps = el("div", "mini-apps");
-    for (const k of Object.keys(me.links)) {
-      const icon = View3D.socialIcon(k), s = el("span", "logo sm");
-      s.style.background = icon.bg;
-      s.title = `${me.links[k]}`;
-      s.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">${icon.svg}</svg>`;   // static icon markup
-      apps.append(s);
-    }
-    const head = el("div", "pv-head");
-    head.append(pic, text);
-    card.replaceChildren(head, ...[chips, apps].filter((x) => x.children.length));   // skipped steps leave no gap
+    try { localStorage.setItem("wall.me", JSON.stringify(profile)); } catch { /* private mode or full: carry on without saving */ }
     // Last thing before the room: join one (badge tap) or host your own. Either one leads into the room.
-    Room.chooser({ into: $("room-slot"), title: "Join a room or host an event", onDone: () => { location.href = "index.html"; } });
+    Room.chooser({ into: $("room-slot"), bare: true, onDone: () => { location.href = "index.html"; } });
   }
 
   // ---------------------------------------------------------- wire up

@@ -258,9 +258,19 @@
   Theme.set(Theme.initial());
   Corner.mount(() => S);
   Hub.mount(() => S);
-  View3D.init(() => ({ visible, shownGroups, S, radius, needLine, me: Corner.signedIn() ? Corner.me() : null, known: Corner.known() }));
+  // The host's screen (and the projector, ?kiosk) is the room's main display: a flat, minimal 2D map with no
+  // personal layer (no "You" in the middle, no green known-people lines).
+  let mainScreen = false;
+  const applyMainScreen = () => {
+    mainScreen = qs.has("kiosk") || (Room.current.status === "in" && !!Room.current.host);
+    document.body.classList.toggle("main-screen", mainScreen);
+    View3D.setOption("flat", mainScreen);
+  };
+  View3D.init(() => ({ visible, shownGroups, S, radius, needLine,
+                       me: Corner.signedIn() && !mainScreen ? Corner.me() : null, known: mainScreen ? new Set() : Corner.known() }));
+  applyMainScreen();
   View3D.onMe(() => Corner.show("you"));
-  Room.onChange(() => Corner.refresh());
+  Room.onChange(() => { Corner.refresh(); applyMainScreen(); });
   View3D.setActive(true);
 
   // ?demo, or no Tap In server behind this page (e.g. hosted on its own): run the built-in demo room.

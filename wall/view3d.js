@@ -743,5 +743,6 @@ const View3D = (() => {
   };
 
   return { init, setActive, relayout, pulse, avatar, buildProfile, setOption, focusPerson,
-           onTable: (fn) => { onGroup = fn; }, onMe: (fn) => { onMe = fn; }, socialIcon: (k) => SOCIAL[k], PHONE };
+           onTable: (fn) => { onGroup = fn; }, onMe: (fn) => { onMe = fn; }, socialIcon: (k) => SOCIAL[k],
+           option: (k) => opts[k], PHONE };
 })();

@@ -109,7 +109,7 @@ const Corner = (() => {
       const link = el("a", "me-edit", saved() ? "Edit your profile" : "Set up your profile");
       link.href = saved() ? "login.html?edit" : "login.html";
       const r = Room.current;
-      const status = el("p", "me-room", r.status === "in" ? `${r.host ? "Hosting" : "In"} ${r.name}${r.host && r.code ? ` · code ${r.code}` : ""}` : "Not in a room");
+      const status = el("p", "me-room", r.status === "in" ? `${r.host ? "Hosting" : "In"} ${r.name}` : "Not in a room");
       body.replaceChildren(status, el("p", "me-note", saved() ? `Signed in as ${p.name}` : `Signed in as ${p.name} (mock)`), link,
                            ...View3D.buildProfile(p));
       return;
@@ -128,7 +128,7 @@ const Corner = (() => {
       el("h3", "set-h", "Profile"), profileForm(),
       el("h3", "set-h", "Style"), styles,
       el("h3", "set-h", "Display"),
-      toggleRow("2D map", state.flat === true, (v) => { state.flat = v; View3D.setOption("flat", v); }),
+      toggleRow("2D map", !!View3D.option("flat"), (v) => View3D.setOption("flat", v)),
       toggleRow("Names on the map", state.names !== false, (v) => { state.names = v; View3D.setOption("names", v); }),
       toggleRow("Spin when idle", state.spin !== false, (v) => { state.spin = v; View3D.setOption("spin", v); }),
       toggleRow("Join messages", state.joins, (v) => { state.joins = v; }),
