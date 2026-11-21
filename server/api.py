@@ -20,6 +20,9 @@ class Signup(BaseModel):
     skills: list[Skill] = Field(default_factory=list, max_length=3)
     looking_for: list[Skill] = Field(default_factory=list, max_length=2)
     working_on: str = Field(default="", max_length=80)
+    # Optional Instagram or LinkedIn. Stored only: no API response includes it during the event. Afterwards it is
+    # exported to the people each person connected with.
+    contact: str = Field(default="", max_length=80)
 
 
 def pool():
@@ -62,8 +65,9 @@ async def signup(body: Signup):
         # One claim at a time: another sign-up is waiting for its badge.
         raise HTTPException(409, detail={"error": "claim_busy", "retry_in": 5})
     person_id = await p.fetchval(
-        "INSERT INTO people (name, role, skills, looking_for, working_on) VALUES ($1,$2,$3,$4,$5) RETURNING id",
+        "INSERT INTO people (name, role, skills, looking_for, working_on, contact) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id",
         body.name.strip(), body.role, list(body.skills), list(body.looking_for), body.working_on.strip(),
+        body.contact.strip() or None,
     )
     claim = claims.start(person_id)
     return {"person_id": person_id, "claim_code": claim.code, "expires_in": int(claims.CLAIM_SECONDS)}
