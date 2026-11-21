@@ -54,7 +54,7 @@ Taps are time-series, so every raw tap and every resolved scan goes into a hyper
 
 ## Gemini icebreakers
 
-When someone checks in, the wall shows a template line for their top table right away. In the background, Gemini writes one icebreaker under 20 words from the person's skills and the table's project. If it doesn't answer within 2 seconds, the template line stays, so a slow network never breaks a tap. [CHECK: so far tested only with the network faked, no real key yet] A real one from last night: "[CHECK: paste a real icebreaker Gemini wrote]".
+When someone checks in, the wall shows a template line for their top table right away. In the background, Gemini writes one icebreaker under 20 words from the person's skills and the table's project. If it doesn't answer within 2 seconds, the template line stays, so a slow network never breaks a tap. We use gemini-3.5-flash-lite, which answered in 0.6 to 1.1 s with our real prompt [CHECK: Avery's measurement Saturday afternoon; confirm the wall shows the icebreaker at judging]. A real one from last night: "[CHECK: paste a real icebreaker Gemini wrote]".
 
 ## Domain
 
@@ -88,7 +88,7 @@ These numbers count real people only: our fake test badges and the judge badges 
 ## What didn't work
 
 - **Self-service delete.** We planned a "delete my profile" button, then dropped it: without logins, anyone could delete anyone by guessing a number. Profiles are deleted on request at our table instead.
-- [CHECK: Gemini icebreakers had not been tested with a real API key as of Saturday noon. Say here whether they worked at judging.]
+- **Gemini was silently off for a few hours.** Our first model (gemini-2.5-flash) answered our new key with "no longer available to new users", and because the wall falls back to a template line, nothing looked broken. We switched to gemini-3.5-flash-lite Saturday afternoon; two newer models were too busy or too slow for our 2 s limit. Lesson: a fallback that hides failures needs a log line someone actually reads. [CHECK: Avery found and fixed this]
 - [CHECK: anything else that was cut or broke. Never describe a cut feature as working.]
 
 ## What we learned
