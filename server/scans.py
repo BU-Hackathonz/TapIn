@@ -10,7 +10,7 @@ import os
 import time
 from dataclasses import dataclass, field
 
-from . import claims, db, groups
+from . import claims, db, gemini, groups
 from .hub import hub
 
 log = logging.getLogger("tapin.scans")
@@ -134,3 +134,5 @@ async def resolve_scan(station_id: int, person_ids: list) -> None:
     log.info("scan station=%s people=%s kind=%s state=%s", station_id, person_ids, kind, state)
     for type_, data in events:
         await hub.broadcast(type_, data)
+        if type_ == "checked_in" and data["suggested_groups"]:
+            gemini.spawn(data["person_id"], data["suggested_groups"][0]["group_id"])  # background, never blocks
