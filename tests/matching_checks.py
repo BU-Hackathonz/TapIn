@@ -104,7 +104,7 @@ def main() -> int:
             check("event: suggestions are {group_id, reason} only", all(set(x) == {"group_id", "reason"} for x in sg))
 
             me = c.get(f"/api/me/{maya}").json()
-            check("me: contract keys", set(me) == {"person", "here", "group", "known_here", "suggested_groups", "suggested_people", "points", "connections"}, str(set(me)))
+            check("me: contract keys", set(me) == {"person", "here", "group", "known_here", "suggested_groups", "suggested_people", "points"}, str(set(me)))
             check("me: here, no group yet", me["here"] is True and me["group"] is None)
             check("me: top group is Table 2", me["suggested_groups"][0]["group"]["id"] == g2 and me["suggested_groups"][0]["reason"] == "needs firmware")
             check("me: group card has size and known_count", me["suggested_groups"][0]["group"]["size"] == 2 and me["suggested_groups"][0]["group"]["known_count"] == 0)

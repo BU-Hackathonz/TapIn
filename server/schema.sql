@@ -44,5 +44,5 @@ SELECT add_continuous_aggregate_policy('scans_per_10min',
   start_offset => INTERVAL '3 hours', end_offset => INTERVAL '1 minute',
   schedule_interval => INTERVAL '1 minute', if_not_exists => true);
 
--- Optional contact (Instagram or LinkedIn) from sign-up. Shown only in /api/me connections, never on the wall.
+-- Optional contact (Instagram or LinkedIn) from sign-up. Stored only; no API returns it during the event.
 ALTER TABLE people ADD COLUMN IF NOT EXISTS contact TEXT;

@@ -1,4 +1,4 @@
-"""Optional contact on sign-up: stored, shown in /api/me only to people you're connected with, nowhere else.
+"""Optional contact on sign-up: stored, and returned by no API during the event (exported afterwards).
 
 Run on a test database only. Refuses if real people exist (ALLOW_LIVE=1 overrides); cleans up by id.
 
@@ -60,7 +60,7 @@ def main() -> int:
             people = [("Test Cora", "CONTACT1", "  @cora.makes  "), ("Test Dev", "CONTACT2", ""), ("Test Eli", "CONTACT3", "linkedin.com/in/eli")]
             for name, uid, contact in people:
                 r = c.post("/api/signup", json={**base, "name": name, "contact": contact})
-                check(f"signup {name} accepted", r.status_code == 200, r.text)
+                check(f"signup {name} accepted, contact not echoed", r.status_code == 200 and "contact" not in r.json(), r.text)
                 ids.append(r.json()["person_id"])
                 c.post("/api/tap", json={"station_id": 99, "uid": uid})
                 time.sleep(0.2)
@@ -69,24 +69,28 @@ def main() -> int:
             check("too long a contact is refused (422)",
                   c.post("/api/signup", json={**base, "name": "Test Long", "contact": "x" * 81}).status_code == 422)
 
-            me = c.get(f"/api/me/{cora}").json()
-            check("own contact is trimmed and shown in person", me["person"]["contact"] == "@cora.makes", str(me["person"]))
-            check("no connections yet", me["connections"] == [], str(me["connections"]))
-            check("empty contact is stored as none", c.get(f"/api/me/{dev}").json()["person"]["contact"] is None)
+            def stored(pid):
+                return run(db.pool.fetchval, "SELECT contact FROM people WHERE id=$1", pid)
+            check("contact is stored, trimmed", stored(cora) == "@cora.makes", str(stored(cora)))
+            check("an empty contact is stored as none", stored(dev) is None)
+            check("a LinkedIn contact is stored", stored(eli) == "linkedin.com/in/eli")
 
             time.sleep(3.2)  # let station 99's claim results clear
             c.post("/api/tap", json={"station_id": 2, "uid": "CONTACT1"})
             c.post("/api/tap", json={"station_id": 2, "uid": "CONTACT2"})
             check("Cora and Dev scan together", wait_state(c, 2, "joined"))
 
-            conns = c.get(f"/api/me/{cora}").json()["connections"]
-            check("Cora sees Dev in connections, with no contact", conns == [{"id": dev, "name": "Test Dev", "contact": None}], str(conns))
-            conns = c.get(f"/api/me/{dev}").json()["connections"]
-            check("Dev sees Cora's contact", conns == [{"id": cora, "name": "Test Cora", "contact": "@cora.makes"}], str(conns))
-            check("Eli, not connected, sees no one", c.get(f"/api/me/{eli}").json()["connections"] == [])
-
-            graph = json.dumps(c.get("/api/graph").json())
-            check("contacts never appear in /api/graph", "cora.makes" not in graph and "linkedin" not in graph)
+            leaks = []
+            for pid in (cora, dev, eli):
+                body = c.get(f"/api/me/{pid}").text
+                if "cora.makes" in body or "linkedin.com/in/eli" in body or '"contact"' in body:
+                    leaks.append(pid)
+            check("no /api/me response includes any contact", not leaks, str(leaks))
+            me = c.get(f"/api/me/{dev}").json()
+            check("/api/me keeps its old keys", set(me) == {"person", "here", "group", "known_here", "suggested_groups",
+                                                            "suggested_people", "points"}, str(set(me)))
+            check("contacts never appear in /api/graph or /api/needs",
+                  not any(x in c.get(u).text for u in ("/api/graph", "/api/needs") for x in ("cora.makes", "linkedin")))
             check("contacts never go out on /ws", not any("cora.makes" in m or "linkedin.com/in/eli" in m for m in sent))
 
             # Last: it leaves a claim waiting, and while one waits owned badges are refused at the stations.
