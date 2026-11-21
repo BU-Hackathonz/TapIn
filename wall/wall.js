@@ -1,5 +1,5 @@
 // Tap In wall: a full-screen 3D map of the room. Rebuilds from /api/graph and /api/needs, then follows /ws events.
-// ?server=host:port points the wall at another server (default: same origin). ?silent skips the Start screen.
+// ?server=host:port points the wall at another server (default: same origin). ?kiosk skips sign-in (projector).
 (() => {
   const qs = new URLSearchParams(location.search);
   // Sign in first. The venue projector has nobody to sign in, so it opens the wall with ?kiosk.
@@ -251,15 +251,10 @@
 
   // ------------------------------------------------------------ boot
 
-  if (qs.has("silent")) $("start").classList.add("gone");
-  $("start-btn").addEventListener("click", async () => {
-    $("start").classList.add("gone");
-    try { await Sound.start(); } catch (e) { console.error("sound", e); }
-  });
   Theme.set(Theme.initial());
   Corner.mount(() => S);
   Hub.mount(() => S);
-  View3D.init(() => ({ visible, shownGroups, S, radius, needLine, me: Corner.signedIn() ? Corner.me() : null }));
+  View3D.init(() => ({ visible, shownGroups, S, radius, needLine, me: Corner.signedIn() ? Corner.me() : null, known: Corner.known() }));
   View3D.onMe(() => Corner.show("you"));
   View3D.setActive(true);
 

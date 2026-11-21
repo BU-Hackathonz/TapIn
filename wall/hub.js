@@ -2,7 +2,8 @@
 // Header (name, project, open/heads-down, needs, member faces), then Chat or Members.
 // The chat is a mock: seeded from the members, messages you type stay on this screen, live events add lines.
 const Hub = (() => {
-  let scene = () => null, gid = null, tab = "chat";
+  let scene = () => null, gid = null, tab = "chat", expanded = false;
+  const PARTY_FACES = 5;   // the party tab shows this many faces, then "+N"
   const chats = new Map();   // table id -> [{ who: person id | "me" | null, text, at }]
 
   const $ = (id) => document.getElementById(id);
@@ -52,11 +53,47 @@ const Hub = (() => {
     return img;
   }
 
+  // Party tab: table name, the faces of who's in it (+N past five), and two buttons. Opens first; small.
+  function party(S, g, ms, needs) {
+    const card = el("div", "party");
+    card.append(el("h2", "", g.name));
+    const line = g.mode === "heads_down" ? "heads-down" : needs.length ? `needs ${needs[0]}${needs.length > 1 ? ` +${needs.length - 1}` : ""}` : "open";
+    card.append(el("p", "h-sub", line));
+    const row = el("div", "party-faces");
+    for (const p of ms.slice(0, PARTY_FACES)) {
+      const b = el("button", "party-face");
+      b.type = "button";
+      b.title = p.name;
+      b.setAttribute("aria-label", p.name);
+      b.append(face(p, ""));
+      b.addEventListener("click", () => View3D.focusPerson(p.id));
+      row.append(b);
+    }
+    if (ms.length > PARTY_FACES) row.append(el("span", "party-more", `+${ms.length - PARTY_FACES}`));
+    if (!ms.length) row.append(el("span", "p-muted", "Nobody here yet"));
+    const actions = el("div", "party-actions");
+    for (const [id, label] of [["chat", "Chat"], ["members", "Members"]]) {
+      const b = el("button", "", label);
+      b.type = "button";
+      b.addEventListener("click", () => { tab = id; expanded = true; render(); });
+      actions.append(b);
+    }
+    card.append(row, actions);
+    return card;
+  }
+
   function render() {
     const S = scene(), g = S && S.groups.get(gid);
     if (!g) return;
     const ms = members(S, g.id);
     const needs = S.needs.filter((n) => n.group_id === g.id && !n.handled_by).map((n) => n.need);
+    if (!expanded) {
+      $("profile-body").replaceChildren(party(S, g, ms, needs));
+      $("profile").hidden = false;
+      $("profile").classList.add("hub", "compact");
+      return;
+    }
+    $("profile").classList.remove("compact");
 
     const head = el("div", "h-head");
     head.append(el("h2", "", g.name));
@@ -140,7 +177,7 @@ const Hub = (() => {
     return list;
   }
 
-  function open(id) { gid = id; tab = "chat"; render(); }
+  function open(id) { gid = id; tab = "chat"; expanded = false; render(); }
 
   // A live event about a table: add a line to its chat, and refresh if that hub is open.
   function note(id, text) {

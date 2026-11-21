@@ -47,7 +47,8 @@
       <input type="email" id="email" placeholder="you@bu.edu" autocomplete="email" aria-label="School email">
       <button type="submit" class="primary">Continue</button>
     </form>
-    <p class="fine">Prototype: nothing is sent anywhere. Your answers stay in this browser.</p>
+    <button type="button" class="skip" id="guest">Skip, try it as a guest</button>
+    <p class="fine">Prototype: nothing is sent anywhere. Your answers stay in this browser. Every step can be skipped.</p>
   </section>
 
   <!-- 1: about you -->
@@ -71,9 +72,8 @@
     </div>
     <p class="err" id="pic-err" hidden>That file couldn't be read as a picture. Try another one.</p>
     <label class="field">First name
-      <input type="text" id="name" maxlength="30" autocomplete="given-name" placeholder="First name only">
+      <input type="text" id="name" maxlength="30" autocomplete="given-name" placeholder="First name (or leave it as Guest)">
     </label>
-    <p class="err" id="name-err" hidden>Add your first name to continue.</p>
     <span class="field">I'm here as</span>
     <div class="seg" id="role" role="radiogroup" aria-label="Role">
       <button type="button" role="radio" data-v="student" aria-checked="true">Student</button>

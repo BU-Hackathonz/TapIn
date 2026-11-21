@@ -327,13 +327,20 @@ const View3D = (() => {
       ctx.setLineDash([]);
     }
 
+    // people you know: green and tied to you while zoomed out, so you can find them at a glance
+    const known = scene().known || new Set(), greenOn = zoom < 1.6;
+    if (meP && !meP.off && greenOn) {
+      ctx.strokeStyle = T.known; ctx.lineWidth = 1.4; ctx.globalAlpha = 0.55;
+      for (const id of known) { const p = P.get(id); if (p) line(meP.x, meP.y, p.x, p.y, id * 31); }
+    }
+
     // people, far first
     const order = [...P].sort((a, b) => b[1].z - a[1].z);
     for (const [id, p] of order) {
       const person = S.people.get(id);
       const r = radius(person) * p.s;
       const base = person.here ? depthAlpha(p.z) : 0.22;
-      const col = person.here ? T[person.role] || T.student : T.away;
+      const col = greenOn && known.has(id) ? T.known : person.here ? T[person.role] || T.student : T.away;
       // Dot below ~14 px on screen, profile picture above ~22 px, cross-fade between.
       const pic = Math.max(0, Math.min(1, (r - 14) / 8));
       if (pic < 1) {
@@ -703,7 +710,7 @@ const View3D = (() => {
   }
   function showProfile(person) {
     document.getElementById("profile-body").replaceChildren(...buildProfile(person));
-    document.getElementById("profile").classList.remove("hub");
+    document.getElementById("profile").classList.remove("hub", "compact");
     document.getElementById("profile").hidden = false;
   }
 

@@ -58,10 +58,9 @@
 
   function next() {
     if (step === 1) {
-      me.name = $("name").value.trim();
+      // nothing is required: an empty name just becomes Guest
+      me.name = $("name").value.trim() || "Guest";
       me.bio = $("bio").value.trim();
-      $("name-err").hidden = !!me.name;
-      if (!me.name) { $("name").focus(); return; }
     }
     if (step === 2) { me.school = $("school").value.trim(); me.major = $("major").value.trim(); }
     if (step === 4) readApps();
@@ -107,7 +106,6 @@
     $("camera-btn").hidden = true;
     $("gallery-label").textContent = "Upload a photo";
   }
-  $("name").addEventListener("input", () => { $("name-err").hidden = true; });
   for (const b of $("role").children) {
     b.addEventListener("click", () => {
       me.role = b.dataset.v;
@@ -251,6 +249,13 @@
   // ---------------------------------------------------------- wire up
 
   for (const b of document.querySelectorAll("[data-next]")) b.addEventListener("click", next);
+  // One tap, no questions: a guest profile with a drawn face, straight into the room.
+  $("guest").addEventListener("click", () => {
+    me.name = me.name || "Guest";
+    finish();
+    clearInterval(timer);
+    location.href = "index.html";
+  });
   $("email-form").addEventListener("submit", (e) => { e.preventDefault(); next(); });
   $("next").addEventListener("click", next);
   $("prev").addEventListener("click", () => show(step - 1));

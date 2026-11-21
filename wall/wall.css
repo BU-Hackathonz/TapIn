@@ -120,6 +120,70 @@ body[data-theme="minimal"] .h-bubble { background: #f3f3f3; }
 .h-member span { flex: 1; }
 .h-member small { color: var(--muted); font: 12px var(--mono); }
 
+/* party tab: the table hub's compact first view */
+.profile.hub.compact { width: 280px; padding: 16px 16px 14px; }
+.party h2 { font-size: 20px; padding-right: 32px; }
+.party-faces { display: flex; align-items: center; margin: 12px 0 14px; padding-left: 8px; min-height: 44px; }
+.party-face {
+  width: 44px; height: 44px; margin-left: -8px; padding: 0; border: 3px solid var(--panel); border-radius: 50%;
+  background: none; cursor: pointer; transition: transform 0.15s;
+}
+.party-face img { width: 100%; height: 100%; border-radius: 50%; display: block; }
+.party-face:hover, .party-face:focus-visible { transform: translateY(-3px); outline: none; z-index: 1; }
+.party-more {
+  margin-left: -8px; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--tile); border: 3px solid var(--panel); font: 600 13px var(--mono); color: var(--text);
+}
+body[data-theme="minimal"] .party-more { background: #f0f0f0; }
+.party-actions { display: flex; gap: 6px; }
+.party-actions button {
+  flex: 1; min-height: 36px; font: 600 14px var(--font); color: var(--text); background: transparent;
+  border: var(--border); border-radius: 999px; cursor: pointer;
+}
+.party-actions button:hover, .party-actions button:focus-visible { border-color: var(--text); outline: none; }
+
+/* room card at the top of the You tab: tap animation, then join or make an event */
+.room-card {
+  display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px;
+  padding: 14px 12px 16px; margin: 4px 0 10px; border: var(--border); border-radius: calc(var(--radius) * 0.8);
+}
+.room-card b { font-size: 16px; }
+.room-sub { color: var(--muted); font-size: 13px; }
+.room-kicker { font: 600 11px var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.room-name { font-size: 20px !important; }
+.room-card.in { align-items: flex-start; text-align: left; }
+.tap-btn { background: none; border: 0; padding: 0; cursor: pointer; color: var(--text); border-radius: 12px; }
+.tap-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.tap-art { width: 190px; height: 104px; display: block; }
+.tap-hand { animation: tap-hand 2.6s ease-in-out infinite; }
+.tap-ring { opacity: 0; transform-origin: 160px 54px; animation: tap-ring 2.6s ease-out infinite; }
+.tap-led { animation: tap-led 2.6s steps(1) infinite; }
+@keyframes tap-hand { 0%, 12% { transform: translateX(0); } 38%, 52% { transform: translateX(34px); } 78%, 100% { transform: translateX(0); } }
+@keyframes tap-ring { 0%, 38% { opacity: 0; transform: scale(0.8); } 44% { opacity: 0.9; transform: scale(1); } 75%, 100% { opacity: 0; transform: scale(2); } }
+@keyframes tap-led { 0%, 40% { opacity: 0.25; } 41%, 70% { opacity: 1; } 71%, 100% { opacity: 0.25; } }
+.done { color: var(--known, #16a35a); }
+body[data-theme="minimal"] .done { color: #16a35a; }
+.done-art { width: 64px; height: 64px; display: block; margin-bottom: 4px; }
+.done-ring { stroke-dasharray: 252; stroke-dashoffset: 252; animation: draw 0.6s ease-out forwards; }
+.done-check { stroke-dasharray: 60; stroke-dashoffset: 60; animation: draw 0.35s 0.45s ease-out forwards; }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+.room-join {
+  margin-top: 10px; min-height: 40px; padding: 0 22px; font: 600 15px var(--font); color: var(--bg); background: var(--text);
+  border: 0; border-radius: 999px; cursor: pointer;
+}
+.room-make { margin-top: 4px; background: none; border: 0; color: var(--muted); font: 13px var(--font); text-decoration: underline; cursor: pointer; padding: 6px; }
+.room-make:hover, .room-make:focus-visible { color: var(--text); outline: none; }
+.room-form { display: flex; flex-direction: column; align-items: stretch; gap: 8px; width: 100%; text-align: left; }
+.room-form label { display: flex; flex-direction: column; gap: 4px; font: 600 12px var(--font); color: var(--muted); }
+.room-form input {
+  min-height: 38px; padding: 6px 12px; font: 15px var(--font); color: var(--text); background: var(--bg);
+  border: var(--border); border-radius: 12px;
+}
+.room-form .room-join { align-self: flex-start; }
+.leave { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+.leave:disabled { opacity: 0.5; cursor: default; }
+.leave-icon { display: grid; }
+
 /* you + settings: one tab in the corner */
 .me { position: fixed; z-index: 6; left: 20px; top: 18px; }
 .me-tab {
@@ -250,19 +314,6 @@ body[data-theme="sketch"] .p-chip { font-size: 15px; border: 1.5px solid #2b2b2b
 .p-chip.person { color: var(--text-soft); }
 .p-foot { margin-top: 16px; font: 11px var(--mono); color: var(--faint); }
 
-.start {
-  position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 12px; background: var(--overlay); z-index: 10;
-}
-.start button {
-  font: 600 28px var(--font); color: var(--bg); background: var(--mint); border: 0; padding: 18px 56px; cursor: pointer;
-  border-radius: var(--radius);
-}
-body[data-theme="minimal"] .start button { background: #111; color: #fff; }
-body[data-theme="blueprint"] .start button { background: var(--accent); color: #123a6b; }
-.start button:focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; }
-.start p { color: var(--muted); }
-.start.gone { display: none; }
 
 @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 
@@ -278,7 +329,6 @@ body[data-theme="blueprint"] .start button { background: var(--accent); color: #
   .me-panel { width: calc(100vw - 24px); max-height: calc(100vh - 90px); }
   body[data-corner="avatar"] .me-panel { width: calc(100vw - 24px); }
   body[data-corner="dock"] .me-panel { width: 86vw; }
-  .start button { font-size: 22px; padding: 14px 40px; }
   .profile { right: 12px; bottom: 12px; width: min(330px, calc(100vw - 24px)); max-height: 58%; padding: 16px 14px 12px; }
   .p-pic { width: 56px; height: 56px; }
   .profile.hub { width: min(360px, calc(100vw - 24px)); }

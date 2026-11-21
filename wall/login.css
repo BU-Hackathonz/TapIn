@@ -134,3 +134,9 @@ label.field input { margin-top: 6px; font-weight: 400; }
 .welcome h1 { margin-bottom: 4px; }
 .split { margin-top: 10px; }
 .split .ghost { flex: 1; }
+
+.skip {
+  display: block; width: 100%; margin-top: 14px; padding: 10px; background: none; border: 0;
+  color: var(--muted); font: 600 14px var(--font); text-decoration: underline; cursor: pointer;
+}
+.skip:hover, .skip:focus-visible { color: var(--text); outline: none; }
