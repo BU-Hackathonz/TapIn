@@ -13,6 +13,7 @@
           seed data and can be run again and again. Each run adds a few "Test ..." people to the database.
 
               python tools/fake_taps.py --taps --server http://localhost:8000
+              python tools/fake_taps.py --cleanup     # afterwards: delete the Test people (needs DATABASE_URL)
 
 Needs: fastapi + uvicorn for --events, httpx for --taps (all in server/requirements.txt).
 """
@@ -422,6 +423,8 @@ def main() -> int:
     mode = ap.add_mutually_exclusive_group(required=True)
     mode.add_argument("--events", action="store_true", help="fake server for the wall")
     mode.add_argument("--taps", action="store_true", help="test scenarios against a real server")
+    mode.add_argument("--cleanup", action="store_true",
+                      help="delete the 'Test ...' people --taps made, with their groups, needs, links and taps (uses DATABASE_URL)")
     ap.add_argument("--port", type=int, default=8000, help="--events: port (default 8000)")
     ap.add_argument("--every", type=float, default=3.0, help="--events: seconds between changes (default 3)")
     ap.add_argument("--seed", type=int, default=None, help="--events: random seed for the same room every time")
@@ -430,7 +433,23 @@ def main() -> int:
     if a.events:
         run_events(a.port, a.every, a.seed)
         return 0
-    return run_taps(a.server)
+    if a.cleanup:
+        return asyncio.run(cleanup())
+    code = run_taps(a.server)
+    print("These Test people now show on the wall. Remove them with: python tools/fake_taps.py --cleanup")
+    return code
+
+
+async def cleanup() -> int:
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from seed import connect, delete_people
+    conn, host = await connect()
+    try:
+        n = await delete_people(conn, "name LIKE 'Test %'")
+        print(f"removed {n} Test people from {host}")
+    finally:
+        await conn.close()
+    return 0
 
 
 if __name__ == "__main__":
