@@ -9,7 +9,7 @@
 (() => {
   "use strict";
   const qs = new URLSearchParams(location.search);
-  document.documentElement.dataset.palette = qs.get("palette") || "cool";
+  document.documentElement.dataset.palette = qs.get("palette") || "sand";
   if (qs.get("logo")) document.documentElement.dataset.logo = qs.get("logo");
   const HOST = qs.get("server") || location.host;
   const HTTP = `${location.protocol}//${HOST}`;
@@ -215,7 +215,6 @@
   const drawn = { people: [], tables: [] };       // where things were last drawn (room-canvas pixels), for the fume and for picking
   const off = new Map();                          // "p<id>" / "t<gid>" -> { x, y, rel }: how far the user has dragged a person or a table
   let drag = null, springing = false;
-  const lvBuf = new Float32Array(FW * FH);
   const pushX = new Float32Array(FW * FH), pushY = new Float32Array(FW * FH), pushK = new Float32Array(FW * FH);
   const PINK = rgbOf(C.pink), GLINT = [Math.min(255, PINK[0] + 70), Math.min(255, PINK[1] + 90), Math.min(255, PINK[2] + 60)];
   const FUME_ALPHA = Math.max(0.15, parseFloat(v("--fume")) || 1);
@@ -252,7 +251,6 @@
         const r1 = Math.exp(-(((u1 - c1) / 0.26) ** 2)), r2 = 0.6 * Math.exp(-(((u2 - c2) / 0.22) ** 2));
         let lv = sm * 0.5 + (r1 + r2) * (0.3 + 0.75 * sm);
         lv *= Math.max(0, 1 - pushK[pi] * 0.9);                                              // and thins out right around it
-        lvBuf[pi] = lv;
         const q = Math.floor(lv * 3.6 + BAYER[(y & 3) * 4 + (x & 3)]);                  // 0..4 steps, ordered dither
         const i = (y * FW + x) * 4;
         if (q <= 1) { d[i + 3] = 0; continue; }
@@ -262,38 +260,6 @@
       }
     }
     fctx.putImageData(fimg, 0, 0);
-    drawDigits(t);
-  }
-
-  // The symbol field, after the Tailord site: a screen full of tiny glyphs (+ x o . - 0 1 ...) that jitter and swap, in sand, drifting
-  // between dense and thin like dunes. Where a wave passes they turn pink and change quickly. People, tables and the mouse
-  // push them out of the way. It sits in front of the smoke and behind the room plan.
-  const dg = $("digits"), dctx = dg.getContext("2d");
-  const GLYPHS = "+x+o.-01*:=+x/o";
-  let DCELL = 13, DCOLS = 0, DROWS = 0;
-  function sizeDigits() {
-    dg.width = innerWidth; dg.height = innerHeight;
-    DCELL = Math.max(11, Math.round(innerHeight / 80)); DCOLS = Math.ceil(innerWidth / DCELL); DROWS = Math.ceil(innerHeight / DCELL);
-  }
-  addEventListener("resize", sizeDigits); sizeDigits();
-  function drawDigits(t) {
-    const tt = t / 1000;
-    dctx.clearRect(0, 0, dg.width, dg.height);
-    dctx.font = `400 ${Math.round(DCELL * 0.8)}px ${MONO}`; dctx.textAlign = "center"; dctx.textBaseline = "middle";
-    for (let r = 0; r < DROWS; r++) {
-      for (let c = 0; c < DCOLS; c++) {
-        const fx = Math.min(FW - 1, Math.floor(((c + 0.5) * DCELL / innerWidth) * FW)), fy = Math.min(FH - 1, Math.floor(((r + 0.5) * DCELL / innerHeight) * FH)), pi = fy * FW + fx;
-        const hot = Math.max(0, Math.min(1, (lvBuf[pi] - 0.28) * 2.4)), pk = pushK[pi];
-        const mass = fbm(c * 0.045 + tt * 0.02, r * 0.06 - tt * 0.015);                  // slow dunes of density
-        const a = (0.07 + Math.pow(mass, 1.6) * 0.75 + hot * 0.35) * Math.max(0, 1 - pk * 0.95);
-        if (a < 0.03) continue;
-        const tick = Math.floor(tt * (0.3 + 3 * hot) + hash(c, r) * 10);
-        const gi = Math.floor(hash(c * 3 + tick, r * 5 + tick * 7) * GLYPHS.length);
-        dctx.globalAlpha = Math.min(0.95, a); dctx.fillStyle = hot > 0.35 ? C.pink : C.sand;
-        dctx.fillText(GLYPHS[gi], (c + 0.5) * DCELL + pushX[pi] * DCELL * 1.6 + (hash(c + 9, r) - 0.5) * 1.5, (r + 0.5) * DCELL + pushY[pi] * DCELL * 1.6 + (hash(c, r + 9) - 0.5) * 1.5);
-      }
-    }
-    dctx.globalAlpha = 1;
   }
 
   // A soft glow under whatever just happened: pink under the person who just checked in, green under a table that
