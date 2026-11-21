@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tap In station sign</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;700&display=swap">
+<style>
+  /* One US Letter page, black on white so it prints cleanly. Open in a browser and print. */
+  @page { size: letter; margin: 0.6in; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #fff; color: #111; font-family: "IBM Plex Sans", system-ui, sans-serif; }
+  .page { max-width: 7.3in; margin: 0 auto; padding: 24px 0; }
+  h1 { font-size: 112px; line-height: 0.95; margin: 0 0 16px; letter-spacing: -0.02em; }
+  .line { font-size: 40px; line-height: 1.15; margin: 0 0 56px; border-left: 14px solid #b8466f; padding-left: 20px; }
+  ol { list-style: none; padding: 0; margin: 0; counter-reset: step; }
+  li { counter-increment: step; display: grid; grid-template-columns: 72px 1fr; align-items: baseline; gap: 12px;
+       padding: 22px 0; border-top: 2px solid #111; font-size: 30px; }
+  li:last-child { border-bottom: 2px solid #111; }
+  li::before { content: counter(step); font-family: "IBM Plex Mono", monospace; font-size: 44px; color: #2a8f6a; }
+  .value { display: block; font-family: "IBM Plex Mono", monospace; font-size: 40px; margin-top: 4px; word-break: break-word; }
+  .foot { margin-top: 40px; font-size: 20px; color: #444; }
+  @media print { .page { padding: 0; } }
+</style>
+</head>
+<body>
+<main class="page">
+  <h1>Tap in.</h1>
+  <p class="line">Find the table that needs you.</p>
+  <ol>
+    <li><span>Join the Wi-Fi <span class="value">TapIn</span></span></li>
+    <!-- Placeholder until David and Yaovi pick TapIn Wi-Fi or tapin.boston -->
+    <li><span>Open on your phone <span class="value">[SITE ADDRESS]</span></span></li>
+    <li><span>Make a profile, then tap a blank badge here</span></li>
+  </ol>
+  <p class="foot">First name only. Ask us and we'll delete it.</p>
+</main>
+</body>
+</html>
