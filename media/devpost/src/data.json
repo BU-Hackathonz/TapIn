@@ -1,0 +1,1547 @@
+{
+"taps": [
+{
+"t": "13:37:39",
+"station": 1,
+"ms": 291
+},
+{
+"t": "13:43:40",
+"station": 2,
+"ms": 324
+},
+{
+"t": "13:43:45",
+"station": 2,
+"ms": 228
+},
+{
+"t": "13:43:50",
+"station": 2,
+"ms": 191
+},
+{
+"t": "13:43:52",
+"station": 1,
+"ms": 247
+},
+{
+"t": "13:43:56",
+"station": 1,
+"ms": 166
+},
+{
+"t": "13:44:00",
+"station": 2,
+"ms": 305
+},
+{
+"t": "13:44:20",
+"station": 2,
+"ms": 273
+},
+{
+"t": "13:44:24",
+"station": 1,
+"ms": 345
+},
+{
+"t": "13:44:26",
+"station": 2,
+"ms": 155
+},
+{
+"t": "13:44:29",
+"station": 2,
+"ms": 286
+},
+{
+"t": "14:00:13",
+"station": 1,
+"ms": 379
+},
+{
+"t": "14:00:14",
+"station": 1,
+"ms": 193
+},
+{
+"t": "14:22:24",
+"station": 2,
+"ms": 332
+},
+{
+"t": "14:22:26",
+"station": 2,
+"ms": 329
+},
+{
+"t": "14:22:31",
+"station": 1,
+"ms": 207
+},
+{
+"t": "14:22:35",
+"station": 2,
+"ms": 283
+},
+{
+"t": "14:26:50",
+"station": 1,
+"ms": 276
+},
+{
+"t": "14:26:51",
+"station": 1,
+"ms": 263
+},
+{
+"t": "14:26:58",
+"station": 1,
+"ms": 153
+},
+{
+"t": "14:26:59",
+"station": 1,
+"ms": 148
+},
+{
+"t": "14:27:01",
+"station": 2,
+"ms": 311
+},
+{
+"t": "14:27:01",
+"station": 2,
+"ms": 244
+},
+{
+"t": "14:27:03",
+"station": 1,
+"ms": 161
+},
+{
+"t": "14:27:04",
+"station": 2,
+"ms": 276
+},
+{
+"t": "14:27:04",
+"station": 2,
+"ms": 216
+},
+{
+"t": "14:27:07",
+"station": 1,
+"ms": 157
+},
+{
+"t": "14:29:06",
+"station": 2,
+"ms": 562
+},
+{
+"t": "14:29:07",
+"station": 2,
+"ms": 169
+},
+{
+"t": "14:29:10",
+"station": 1,
+"ms": 259
+},
+{
+"t": "14:29:10",
+"station": 1,
+"ms": 223
+}
+],
+"link": [
+{
+"t": "15:40:37",
+"station": 1,
+"rssi": -43,
+"polls": 43,
+"fails": 0,
+"avg": 200,
+"max": 288
+},
+{
+"t": "15:40:56",
+"station": 2,
+"rssi": -47,
+"polls": 46,
+"fails": 0,
+"avg": 212,
+"max": 263
+},
+{
+"t": "15:41:08",
+"station": 1,
+"rssi": -43,
+"polls": 45,
+"fails": 0,
+"avg": 179,
+"max": 252
+},
+{
+"t": "15:41:28",
+"station": 2,
+"rssi": -46,
+"polls": 45,
+"fails": 0,
+"avg": 197,
+"max": 263
+},
+{
+"t": "15:41:38",
+"station": 1,
+"rssi": -42,
+"polls": 45,
+"fails": 0,
+"avg": 174,
+"max": 260
+},
+{
+"t": "15:42:00",
+"station": 2,
+"rssi": -45,
+"polls": 45,
+"fails": 0,
+"avg": 202,
+"max": 268
+},
+{
+"t": "15:42:10",
+"station": 1,
+"rssi": -41,
+"polls": 45,
+"fails": 0,
+"avg": 185,
+"max": 285
+},
+{
+"t": "15:42:31",
+"station": 2,
+"rssi": -45,
+"polls": 45,
+"fails": 0,
+"avg": 187,
+"max": 262
+},
+{
+"t": "15:42:40",
+"station": 1,
+"rssi": -42,
+"polls": 44,
+"fails": 0,
+"avg": 189,
+"max": 248
+},
+{
+"t": "15:43:02",
+"station": 2,
+"rssi": -47,
+"polls": 45,
+"fails": 0,
+"avg": 181,
+"max": 247
+},
+{
+"t": "15:43:12",
+"station": 1,
+"rssi": -44,
+"polls": 45,
+"fails": 0,
+"avg": 189,
+"max": 248
+},
+{
+"t": "15:43:33",
+"station": 2,
+"rssi": -45,
+"polls": 45,
+"fails": 0,
+"avg": 189,
+"max": 254
+},
+{
+"t": "15:43:43",
+"station": 1,
+"rssi": -43,
+"polls": 44,
+"fails": 0,
+"avg": 181,
+"max": 241
+},
+{
+"t": "15:44:05",
+"station": 2,
+"rssi": -47,
+"polls": 45,
+"fails": 0,
+"avg": 196,
+"max": 255
+},
+{
+"t": "15:44:14",
+"station": 1,
+"rssi": -44,
+"polls": 45,
+"fails": 0,
+"avg": 178,
+"max": 246
+},
+{
+"t": "15:44:36",
+"station": 2,
+"rssi": -49,
+"polls": 45,
+"fails": 0,
+"avg": 170,
+"max": 322
+},
+{
+"t": "15:44:44",
+"station": 1,
+"rssi": -43,
+"polls": 44,
+"fails": 0,
+"avg": 182,
+"max": 263
+},
+{
+"t": "15:45:07",
+"station": 2,
+"rssi": -46,
+"polls": 45,
+"fails": 0,
+"avg": 185,
+"max": 265
+},
+{
+"t": "15:45:15",
+"station": 1,
+"rssi": -41,
+"polls": 45,
+"fails": 0,
+"avg": 180,
+"max": 243
+},
+{
+"t": "15:45:38",
+"station": 2,
+"rssi": -48,
+"polls": 44,
+"fails": 0,
+"avg": 186,
+"max": 261
+},
+{
+"t": "15:45:46",
+"station": 1,
+"rssi": -42,
+"polls": 45,
+"fails": 0,
+"avg": 179,
+"max": 242
+},
+{
+"t": "15:46:09",
+"station": 2,
+"rssi": -48,
+"polls": 45,
+"fails": 0,
+"avg": 187,
+"max": 264
+},
+{
+"t": "15:46:17",
+"station": 1,
+"rssi": -41,
+"polls": 45,
+"fails": 0,
+"avg": 176,
+"max": 246
+},
+{
+"t": "15:46:41",
+"station": 2,
+"rssi": -48,
+"polls": 45,
+"fails": 0,
+"avg": 195,
+"max": 247
+},
+{
+"t": "15:46:49",
+"station": 1,
+"rssi": -41,
+"polls": 44,
+"fails": 0,
+"avg": 198,
+"max": 262
+},
+{
+"t": "15:47:11",
+"station": 2,
+"rssi": -47,
+"polls": 43,
+"fails": 0,
+"avg": 195,
+"max": 278
+},
+{
+"t": "15:47:20",
+"station": 1,
+"rssi": -43,
+"polls": 45,
+"fails": 0,
+"avg": 200,
+"max": 306
+},
+{
+"t": "15:47:42",
+"station": 2,
+"rssi": -48,
+"polls": 44,
+"fails": 0,
+"avg": 207,
+"max": 260
+},
+{
+"t": "15:47:52",
+"station": 1,
+"rssi": -43,
+"polls": 45,
+"fails": 0,
+"avg": 195,
+"max": 250
+},
+{
+"t": "15:48:14",
+"station": 2,
+"rssi": -48,
+"polls": 45,
+"fails": 0,
+"avg": 185,
+"max": 242
+},
+{
+"t": "15:48:23",
+"station": 1,
+"rssi": -44,
+"polls": 45,
+"fails": 0,
+"avg": 175,
+"max": 264
+},
+{
+"t": "15:48:44",
+"station": 2,
+"rssi": -48,
+"polls": 45,
+"fails": 0,
+"avg": 175,
+"max": 248
+},
+{
+"t": "15:48:53",
+"station": 1,
+"rssi": -42,
+"polls": 45,
+"fails": 0,
+"avg": 175,
+"max": 242
+},
+{
+"t": "15:49:16",
+"station": 2,
+"rssi": -47,
+"polls": 44,
+"fails": 0,
+"avg": 190,
+"max": 259
+},
+{
+"t": "15:49:25",
+"station": 1,
+"rssi": -43,
+"polls": 45,
+"fails": 0,
+"avg": 196,
+"max": 269
+},
+{
+"t": "15:49:47",
+"station": 2,
+"rssi": -48,
+"polls": 44,
+"fails": 0,
+"avg": 196,
+"max": 257
+},
+{
+"t": "15:49:56",
+"station": 1,
+"rssi": -44,
+"polls": 44,
+"fails": 0,
+"avg": 195,
+"max": 250
+},
+{
+"t": "15:50:17",
+"station": 2,
+"rssi": -48,
+"polls": 45,
+"fails": 0,
+"avg": 186,
+"max": 263
+},
+{
+"t": "15:50:27",
+"station": 1,
+"rssi": -44,
+"polls": 45,
+"fails": 0,
+"avg": 181,
+"max": 246
+},
+{
+"t": "15:50:48",
+"station": 2,
+"rssi": -48,
+"polls": 45,
+"fails": 0,
+"avg": 181,
+"max": 249
+},
+{
+"t": "15:50:59",
+"station": 1,
+"rssi": -43,
+"polls": 45,
+"fails": 0,
+"avg": 189,
+"max": 250
+},
+{
+"t": "15:51:20",
+"station": 2,
+"rssi": -47,
+"polls": 45,
+"fails": 0,
+"avg": 184,
+"max": 244
+},
+{
+"t": "15:51:30",
+"station": 1,
+"rssi": -40,
+"polls": 45,
+"fails": 0,
+"avg": 180,
+"max": 248
+},
+{
+"t": "15:51:51",
+"station": 2,
+"rssi": -47,
+"polls": 44,
+"fails": 0,
+"avg": 194,
+"max": 253
+},
+{
+"t": "15:52:01",
+"station": 1,
+"rssi": -44,
+"polls": 45,
+"fails": 0,
+"avg": 190,
+"max": 249
+},
+{
+"t": "15:52:22",
+"station": 2,
+"rssi": -46,
+"polls": 45,
+"fails": 0,
+"avg": 192,
+"max": 262
+},
+{
+"t": "15:52:33",
+"station": 1,
+"rssi": -42,
+"polls": 44,
+"fails": 0,
+"avg": 194,
+"max": 243
+},
+{
+"t": "15:52:53",
+"station": 2,
+"rssi": -49,
+"polls": 44,
+"fails": 0,
+"avg": 189,
+"max": 243
+},
+{
+"t": "15:53:04",
+"station": 1,
+"rssi": -42,
+"polls": 45,
+"fails": 0,
+"avg": 185,
+"max": 277
+},
+{
+"t": "15:53:25",
+"station": 2,
+"rssi": -49,
+"polls": 45,
+"fails": 0,
+"avg": 190,
+"max": 261
+},
+{
+"t": "15:53:35",
+"station": 1,
+"rssi": -43,
+"polls": 45,
+"fails": 0,
+"avg": 190,
+"max": 249
+},
+{
+"t": "15:53:56",
+"station": 2,
+"rssi": -50,
+"polls": 45,
+"fails": 0,
+"avg": 181,
+"max": 246
+},
+{
+"t": "15:54:06",
+"station": 1,
+"rssi": -43,
+"polls": 44,
+"fails": 0,
+"avg": 194,
+"max": 247
+},
+{
+"t": "15:54:26",
+"station": 2,
+"rssi": -48,
+"polls": 44,
+"fails": 0,
+"avg": 188,
+"max": 250
+},
+{
+"t": "15:54:38",
+"station": 1,
+"rssi": -43,
+"polls": 45,
+"fails": 0,
+"avg": 194,
+"max": 251
+},
+{
+"t": "15:54:57",
+"station": 2,
+"rssi": -48,
+"polls": 45,
+"fails": 0,
+"avg": 181,
+"max": 245
+},
+{
+"t": "15:55:09",
+"station": 1,
+"rssi": -44,
+"polls": 45,
+"fails": 0,
+"avg": 189,
+"max": 248
+},
+{
+"t": "15:55:29",
+"station": 2,
+"rssi": -47,
+"polls": 44,
+"fails": 0,
+"avg": 194,
+"max": 248
+},
+{
+"t": "15:55:40",
+"station": 1,
+"rssi": -44,
+"polls": 44,
+"fails": 0,
+"avg": 188,
+"max": 270
+},
+{
+"t": "15:55:59",
+"station": 2,
+"rssi": -46,
+"polls": 45,
+"fails": 0,
+"avg": 181,
+"max": 247
+},
+{
+"t": "15:56:11",
+"station": 1,
+"rssi": -44,
+"polls": 45,
+"fails": 0,
+"avg": 185,
+"max": 249
+},
+{
+"t": "15:56:30",
+"station": 2,
+"rssi": -47,
+"polls": 45,
+"fails": 0,
+"avg": 174,
+"max": 239
+},
+{
+"t": "15:56:42",
+"station": 1,
+"rssi": -45,
+"polls": 44,
+"fails": 0,
+"avg": 188,
+"max": 302
+},
+{
+"t": "15:57:01",
+"station": 2,
+"rssi": -47,
+"polls": 45,
+"fails": 0,
+"avg": 174,
+"max": 242
+},
+{
+"t": "15:57:14",
+"station": 1,
+"rssi": -44,
+"polls": 45,
+"fails": 0,
+"avg": 193,
+"max": 243
+},
+{
+"t": "15:57:32",
+"station": 2,
+"rssi": -47,
+"polls": 45,
+"fails": 0,
+"avg": 181,
+"max": 258
+},
+{
+"t": "15:57:45",
+"station": 1,
+"rssi": -43,
+"polls": 45,
+"fails": 0,
+"avg": 174,
+"max": 243
+},
+{
+"t": "15:58:03",
+"station": 2,
+"rssi": -44,
+"polls": 44,
+"fails": 0,
+"avg": 183,
+"max": 264
+},
+{
+"t": "15:58:16",
+"station": 1,
+"rssi": -41,
+"polls": 45,
+"fails": 0,
+"avg": 187,
+"max": 248
+},
+{
+"t": "15:58:33",
+"station": 2,
+"rssi": -47,
+"polls": 45,
+"fails": 0,
+"avg": 175,
+"max": 246
+},
+{
+"t": "15:58:47",
+"station": 1,
+"rssi": -39,
+"polls": 45,
+"fails": 0,
+"avg": 174,
+"max": 242
+},
+{
+"t": "15:59:04",
+"station": 2,
+"rssi": -45,
+"polls": 45,
+"fails": 0,
+"avg": 179,
+"max": 250
+},
+{
+"t": "15:59:18",
+"station": 1,
+"rssi": -40,
+"polls": 45,
+"fails": 0,
+"avg": 186,
+"max": 256
+},
+{
+"t": "15:59:35",
+"station": 2,
+"rssi": -46,
+"polls": 44,
+"fails": 0,
+"avg": 196,
+"max": 488
+},
+{
+"t": "15:59:49",
+"station": 1,
+"rssi": -43,
+"polls": 45,
+"fails": 0,
+"avg": 173,
+"max": 245
+},
+{
+"t": "16:00:06",
+"station": 2,
+"rssi": -47,
+"polls": 45,
+"fails": 0,
+"avg": 171,
+"max": 248
+},
+{
+"t": "16:00:20",
+"station": 1,
+"rssi": -43,
+"polls": 45,
+"fails": 0,
+"avg": 183,
+"max": 245
+},
+{
+"t": "16:00:37",
+"station": 2,
+"rssi": -47,
+"polls": 45,
+"fails": 0,
+"avg": 187,
+"max": 250
+},
+{
+"t": "16:00:52",
+"station": 1,
+"rssi": -43,
+"polls": 45,
+"fails": 0,
+"avg": 184,
+"max": 245
+},
+{
+"t": "16:01:08",
+"station": 2,
+"rssi": -47,
+"polls": 44,
+"fails": 0,
+"avg": 189,
+"max": 275
+},
+{
+"t": "16:01:23",
+"station": 1,
+"rssi": -43,
+"polls": 45,
+"fails": 0,
+"avg": 185,
+"max": 260
+},
+{
+"t": "16:01:39",
+"station": 2,
+"rssi": -46,
+"polls": 45,
+"fails": 0,
+"avg": 181,
+"max": 248
+},
+{
+"t": "16:01:54",
+"station": 1,
+"rssi": -42,
+"polls": 45,
+"fails": 0,
+"avg": 186,
+"max": 247
+},
+{
+"t": "16:02:10",
+"station": 2,
+"rssi": -47,
+"polls": 45,
+"fails": 0,
+"avg": 180,
+"max": 244
+},
+{
+"t": "16:02:26",
+"station": 1,
+"rssi": -43,
+"polls": 45,
+"fails": 0,
+"avg": 189,
+"max": 242
+},
+{
+"t": "16:02:41",
+"station": 2,
+"rssi": -49,
+"polls": 45,
+"fails": 0,
+"avg": 180,
+"max": 275
+},
+{
+"t": "16:02:57",
+"station": 1,
+"rssi": -43,
+"polls": 44,
+"fails": 0,
+"avg": 189,
+"max": 253
+},
+{
+"t": "16:03:12",
+"station": 2,
+"rssi": -49,
+"polls": 45,
+"fails": 0,
+"avg": 180,
+"max": 241
+},
+{
+"t": "16:03:28",
+"station": 1,
+"rssi": -43,
+"polls": 45,
+"fails": 0,
+"avg": 199,
+"max": 248
+},
+{
+"t": "16:03:43",
+"station": 2,
+"rssi": -48,
+"polls": 45,
+"fails": 0,
+"avg": 171,
+"max": 247
+},
+{
+"t": "16:04:00",
+"station": 1,
+"rssi": -41,
+"polls": 45,
+"fails": 0,
+"avg": 188,
+"max": 248
+},
+{
+"t": "16:04:13",
+"station": 2,
+"rssi": -47,
+"polls": 45,
+"fails": 0,
+"avg": 174,
+"max": 241
+},
+{
+"t": "16:04:30",
+"station": 1,
+"rssi": -43,
+"polls": 44,
+"fails": 0,
+"avg": 177,
+"max": 241
+},
+{
+"t": "16:04:44",
+"station": 2,
+"rssi": -49,
+"polls": 45,
+"fails": 0,
+"avg": 179,
+"max": 243
+},
+{
+"t": "16:05:02",
+"station": 1,
+"rssi": -45,
+"polls": 45,
+"fails": 0,
+"avg": 193,
+"max": 255
+},
+{
+"t": "16:05:15",
+"station": 2,
+"rssi": -47,
+"polls": 45,
+"fails": 0,
+"avg": 178,
+"max": 246
+},
+{
+"t": "16:05:33",
+"station": 1,
+"rssi": -45,
+"polls": 45,
+"fails": 0,
+"avg": 189,
+"max": 248
+},
+{
+"t": "16:05:46",
+"station": 2,
+"rssi": -49,
+"polls": 45,
+"fails": 0,
+"avg": 184,
+"max": 261
+},
+{
+"t": "16:06:04",
+"station": 1,
+"rssi": -43,
+"polls": 45,
+"fails": 0,
+"avg": 178,
+"max": 249
+},
+{
+"t": "16:06:17",
+"station": 2,
+"rssi": -48,
+"polls": 45,
+"fails": 0,
+"avg": 174,
+"max": 255
+},
+{
+"t": "16:06:35",
+"station": 1,
+"rssi": -43,
+"polls": 45,
+"fails": 0,
+"avg": 174,
+"max": 241
+},
+{
+"t": "16:06:48",
+"station": 2,
+"rssi": -45,
+"polls": 45,
+"fails": 0,
+"avg": 180,
+"max": 240
+},
+{
+"t": "16:07:06",
+"station": 1,
+"rssi": -43,
+"polls": 45,
+"fails": 0,
+"avg": 179,
+"max": 261
+},
+{
+"t": "16:07:20",
+"station": 2,
+"rssi": -47,
+"polls": 44,
+"fails": 0,
+"avg": 189,
+"max": 253
+},
+{
+"t": "16:07:37",
+"station": 1,
+"rssi": -44,
+"polls": 44,
+"fails": 0,
+"avg": 182,
+"max": 250
+},
+{
+"t": "16:07:50",
+"station": 2,
+"rssi": -46,
+"polls": 44,
+"fails": 0,
+"avg": 183,
+"max": 248
+},
+{
+"t": "16:08:09",
+"station": 1,
+"rssi": -44,
+"polls": 45,
+"fails": 0,
+"avg": 194,
+"max": 262
+},
+{
+"t": "16:08:21",
+"station": 2,
+"rssi": -46,
+"polls": 45,
+"fails": 0,
+"avg": 181,
+"max": 258
+},
+{
+"t": "16:08:40",
+"station": 1,
+"rssi": -41,
+"polls": 45,
+"fails": 0,
+"avg": 188,
+"max": 245
+},
+{
+"t": "16:08:52",
+"station": 2,
+"rssi": -46,
+"polls": 45,
+"fails": 0,
+"avg": 186,
+"max": 274
+},
+{
+"t": "16:09:12",
+"station": 1,
+"rssi": -43,
+"polls": 45,
+"fails": 0,
+"avg": 188,
+"max": 241
+},
+{
+"t": "16:09:22",
+"station": 2,
+"rssi": -46,
+"polls": 45,
+"fails": 0,
+"avg": 171,
+"max": 250
+},
+{
+"t": "16:09:43",
+"station": 1,
+"rssi": -43,
+"polls": 45,
+"fails": 0,
+"avg": 189,
+"max": 242
+},
+{
+"t": "16:09:53",
+"station": 2,
+"rssi": -48,
+"polls": 45,
+"fails": 0,
+"avg": 181,
+"max": 261
+},
+{
+"t": "16:10:14",
+"station": 1,
+"rssi": -41,
+"polls": 45,
+"fails": 0,
+"avg": 174,
+"max": 242
+},
+{
+"t": "16:10:24",
+"station": 2,
+"rssi": -49,
+"polls": 45,
+"fails": 0,
+"avg": 170,
+"max": 259
+},
+{
+"t": "16:10:45",
+"station": 1,
+"rssi": -44,
+"polls": 45,
+"fails": 0,
+"avg": 185,
+"max": 247
+},
+{
+"t": "16:10:54",
+"station": 2,
+"rssi": -47,
+"polls": 45,
+"fails": 0,
+"avg": 165,
+"max": 241
+},
+{
+"t": "16:11:16",
+"station": 1,
+"rssi": -44,
+"polls": 44,
+"fails": 0,
+"avg": 188,
+"max": 247
+},
+{
+"t": "16:11:25",
+"station": 2,
+"rssi": -49,
+"polls": 45,
+"fails": 0,
+"avg": 186,
+"max": 248
+},
+{
+"t": "16:11:47",
+"station": 1,
+"rssi": -43,
+"polls": 45,
+"fails": 0,
+"avg": 184,
+"max": 251
+},
+{
+"t": "16:11:56",
+"station": 2,
+"rssi": -47,
+"polls": 45,
+"fails": 0,
+"avg": 179,
+"max": 245
+},
+{
+"t": "16:12:19",
+"station": 1,
+"rssi": -44,
+"polls": 45,
+"fails": 0,
+"avg": 193,
+"max": 246
+},
+{
+"t": "16:12:28",
+"station": 2,
+"rssi": -45,
+"polls": 45,
+"fails": 0,
+"avg": 183,
+"max": 243
+},
+{
+"t": "16:12:50",
+"station": 1,
+"rssi": -40,
+"polls": 45,
+"fails": 0,
+"avg": 184,
+"max": 250
+},
+{
+"t": "16:12:58",
+"station": 2,
+"rssi": -47,
+"polls": 45,
+"fails": 0,
+"avg": 175,
+"max": 250
+},
+{
+"t": "16:13:22",
+"station": 1,
+"rssi": -41,
+"polls": 45,
+"fails": 0,
+"avg": 200,
+"max": 266
+},
+{
+"t": "16:13:29",
+"station": 2,
+"rssi": -45,
+"polls": 45,
+"fails": 0,
+"avg": 177,
+"max": 264
+},
+{
+"t": "16:13:54",
+"station": 1,
+"rssi": -44,
+"polls": 45,
+"fails": 0,
+"avg": 188,
+"max": 245
+},
+{
+"t": "16:14:00",
+"station": 2,
+"rssi": -46,
+"polls": 45,
+"fails": 0,
+"avg": 175,
+"max": 243
+},
+{
+"t": "16:14:25",
+"station": 1,
+"rssi": -41,
+"polls": 44,
+"fails": 0,
+"avg": 201,
+"max": 276
+},
+{
+"t": "16:14:31",
+"station": 2,
+"rssi": -47,
+"polls": 45,
+"fails": 0,
+"avg": 186,
+"max": 259
+},
+{
+"t": "16:14:57",
+"station": 1,
+"rssi": -46,
+"polls": 45,
+"fails": 0,
+"avg": 193,
+"max": 265
+},
+{
+"t": "16:15:03",
+"station": 2,
+"rssi": -49,
+"polls": 45,
+"fails": 0,
+"avg": 187,
+"max": 297
+},
+{
+"t": "16:15:28",
+"station": 1,
+"rssi": -48,
+"polls": 45,
+"fails": 0,
+"avg": 186,
+"max": 258
+},
+{
+"t": "16:15:33",
+"station": 2,
+"rssi": -51,
+"polls": 45,
+"fails": 0,
+"avg": 174,
+"max": 245
+},
+{
+"t": "16:15:59",
+"station": 1,
+"rssi": -44,
+"polls": 45,
+"fails": 0,
+"avg": 174,
+"max": 241
+},
+{
+"t": "16:16:04",
+"station": 2,
+"rssi": -55,
+"polls": 45,
+"fails": 0,
+"avg": 171,
+"max": 251
+},
+{
+"t": "16:16:30",
+"station": 1,
+"rssi": -49,
+"polls": 45,
+"fails": 0,
+"avg": 183,
+"max": 249
+},
+{
+"t": "16:16:34",
+"station": 2,
+"rssi": -53,
+"polls": 45,
+"fails": 0,
+"avg": 167,
+"max": 242
+},
+{
+"t": "16:17:02",
+"station": 1,
+"rssi": -39,
+"polls": 45,
+"fails": 0,
+"avg": 198,
+"max": 251
+},
+{
+"t": "16:17:04",
+"station": 2,
+"rssi": -49,
+"polls": 45,
+"fails": 0,
+"avg": 167,
+"max": 245
+},
+{
+"t": "16:17:34",
+"station": 1,
+"rssi": -49,
+"polls": 45,
+"fails": 0,
+"avg": 191,
+"max": 251
+},
+{
+"t": "16:17:35",
+"station": 2,
+"rssi": -51,
+"polls": 45,
+"fails": 0,
+"avg": 164,
+"max": 251
+},
+{
+"t": "16:18:05",
+"station": 2,
+"rssi": -45,
+"polls": 45,
+"fails": 0,
+"avg": 167,
+"max": 247
+},
+{
+"t": "16:18:05",
+"station": 1,
+"rssi": -49,
+"polls": 45,
+"fails": 0,
+"avg": 194,
+"max": 249
+},
+{
+"t": "16:18:35",
+"station": 2,
+"rssi": -49,
+"polls": 45,
+"fails": 0,
+"avg": 174,
+"max": 297
+},
+{
+"t": "16:18:36",
+"station": 1,
+"rssi": -41,
+"polls": 44,
+"fails": 0,
+"avg": 190,
+"max": 301
+},
+{
+"t": "16:19:06",
+"station": 2,
+"rssi": -48,
+"polls": 45,
+"fails": 0,
+"avg": 174,
+"max": 269
+},
+{
+"t": "16:19:07",
+"station": 1,
+"rssi": -44,
+"polls": 44,
+"fails": 0,
+"avg": 189,
+"max": 262
+},
+{
+"t": "16:19:37",
+"station": 2,
+"rssi": -49,
+"polls": 45,
+"fails": 0,
+"avg": 184,
+"max": 257
+},
+{
+"t": "16:19:38",
+"station": 1,
+"rssi": -45,
+"polls": 45,
+"fails": 0,
+"avg": 186,
+"max": 260
+},
+{
+"t": "16:20:07",
+"station": 2,
+"rssi": -51,
+"polls": 44,
+"fails": 0,
+"avg": 178,
+"max": 276
+},
+{
+"t": "16:20:09",
+"station": 1,
+"rssi": -45,
+"polls": 45,
+"fails": 0,
+"avg": 181,
+"max": 251
+}
+]
+}
