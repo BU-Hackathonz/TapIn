@@ -293,11 +293,16 @@ def run_events(port: int, every: float, seed: int | None) -> None:
 RESULTS = {"checked_in", "joined", "repeat", "claimed", "unknown", "idle"}
 
 
+def test_uid() -> str:
+    """Fake badges start with 5EED (14 hex chars) so tools/count.py never counts them as real people."""
+    return "5EEDF" + secrets.token_hex(5).upper()[:9]
+
+
 class Taps:
     def __init__(self, server: str) -> None:
         import httpx
         self.c = httpx.Client(base_url=server.rstrip("/"), timeout=10)
-        self.fails: list = []
+        self.scenarios: dict = {}  # scenario number -> passed
 
     def tap(self, station: int, uid: str) -> dict:
         return self.c.post("/api/tap", json={"station_id": station, "uid": uid}).json()
@@ -320,9 +325,10 @@ class Taps:
             time.sleep(0.2)
 
     def check(self, name: str, ok: bool, got="") -> None:
-        print(("PASS " if ok else "FAIL ") + name + ("" if ok else f"   got: {got}"))
-        if not ok:
-            self.fails.append(name)
+        """name starts with the scenario number; a scenario passes only if all its checks pass."""
+        print(("   ok   " if ok else "   FAIL ") + name + ("" if ok else f"   got: {got}"))
+        n = int(name.split()[0])
+        self.scenarios[n] = self.scenarios.get(n, True) and ok
 
     def signup(self, name: str, **body) -> dict:
         for _ in range(40):
@@ -335,7 +341,7 @@ class Taps:
 
     def person(self, name: str, role: str = "student", skills=("backend",), looking_for=()) -> str:
         """Sign up and claim a fresh badge. Returns the badge UID."""
-        uid = "T" + secrets.token_hex(6).upper()
+        uid = test_uid()
         su = self.signup(f"Test {name}", role=role, skills=list(skills), looking_for=list(looking_for))
         self.tap(1, uid)
         if self.c.get(f"/api/claim/{su['claim_code']}").json()["status"] != "claimed":
@@ -400,7 +406,7 @@ def run_taps(server: str) -> int:
     t.settle(1, 2)
 
     print("8. an unregistered badge")
-    r = t.tap(1, "F" + secrets.token_hex(6).upper())
+    r = t.tap(1, test_uid())
     t.check("8 unknown", r.get("state") == "unknown", r)
     t.settle(1)
 
@@ -409,13 +415,16 @@ def run_taps(server: str) -> int:
     r = t.tap(1, ann)
     t.check("9 owned badge refused", r.get("state") == "unknown"
             and t.c.get(f"/api/claim/{su['claim_code']}").json()["status"] == "waiting", r)
-    r = t.tap(2, "T" + secrets.token_hex(6).upper())
+    r = t.tap(2, test_uid())
     t.check("9 blank badge claimed", r.get("state") == "claimed"
             and t.c.get(f"/api/claim/{su['claim_code']}").json()["status"] == "claimed", r)
 
-    print("\n10 (restart mid-demo) is manual.")
-    print(f"{len(t.fails)} failed" if t.fails else "all passed")
-    return 1 if t.fails else 0
+    print()
+    for n in range(1, 10):
+        print(f"Scenario {n}: {'PASS' if t.scenarios.get(n) else 'FAIL'}")
+    passed = sum(1 for n in range(1, 10) if t.scenarios.get(n))
+    print(f"Total: {passed} of 9 scenarios passed. Scenario 10 (restart mid-demo) is manual.")
+    return 0 if passed == 9 else 1
 
 
 def main() -> int:

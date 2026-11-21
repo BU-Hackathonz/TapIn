@@ -1,15 +1,15 @@
-"""Seed data for Tap In: about 20 people in 4 groups, a few links, a mentor, and the two judge badges.
+"""Seed data for Tap In: 20 fake people in 4 groups, a few links, 2 mentors, and the two judge badges.
 
 Writes straight to the database in DATABASE_URL (.env), the same one the server uses.
 
-    python tools/seed.py                                   # add the seed room (refuses if it is already there)
-    python tools/seed.py --judge1 04A1B2C3D4E5F6 --judge2 04FFEEDDCCBBAA   # only register the judge badges
-    python tools/seed.py --remove                          # delete only the seed people and their groups
-    python tools/seed.py --reset                           # WIPE EVERYTHING, asks you to type RESET first
+    python tools/seed.py                     # add the fake room; does nothing if it is already there
+    python tools/seed.py --judge1 <UID> --judge2 <UID>   # register two real spare badges as Judge 1 and Judge 2
+    python tools/seed.py --remove            # delete only the fake people and the groups that only had them
+    python tools/seed.py --reset             # WIPE EVERY TABLE (see the warning in --help)
 
-Seed badges have fake UIDs starting with SEED, so they never collide with real badges. Judge badges need the real
-UIDs of two spare badges (read them off the server log: tap each one, it shows as outcome=unknown).
---reset deletes every person, group, link, need, tap and scan, real ones included. Never run it after recruiting starts.
+Every fake badge UID starts with 5EED (14 hex characters, e.g. 5EED0000000001), so real sign-ups can always be
+counted apart: see tools/count.py. Judge badges need the real UIDs of two spare cards: tap each one with no claim
+waiting and read the uid from the server log (outcome=unknown).
 """
 import argparse
 import asyncio
@@ -21,19 +21,25 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
+FAKE_PREFIX = "5EED"
+JUDGES = [("Judge 1", ["design"], ["hardware"]), ("Judge 2", ["hardware"], ["design"])]
+# A real person: not a fake 5EED badge, not a judge, not a "Test ..." person left by fake_taps.py --taps.
+REAL = ("(people.uid IS NULL OR people.uid NOT LIKE '5EED%') "
+        "AND people.name NOT IN ('Judge 1', 'Judge 2') AND people.name NOT LIKE 'Test %'")
+
 # name, role, skills, looking_for, working_on
 PEOPLE = [
-    ("Maya", "student", ["firmware", "hardware"], ["design"], "a robot arm"),
+    ("Maya", "student", ["firmware", "hardware"], ["design"], ""),  # solo, so "Maya gets Table 2 first" can be checked
     ("Sam", "student", ["backend", "data"], ["firmware"], "a robot arm"),
-    ("Priya", "student", ["design", "frontend"], ["backend"], "a robot arm"),
-    ("Leo", "student", ["ml", "data"], ["frontend"], "a T delay predictor"),
+    ("Priya", "student", ["design", "frontend"], ["firmware"], "a robot arm"),
+    ("Ethan", "student", ["mobile"], ["firmware"], "a robot arm"),
+    ("Leo", "student", ["ml", "data"], ["design"], "a T delay predictor"),
     ("Ava", "student", ["frontend", "mobile"], ["ml"], "a T delay predictor"),
     ("Omar", "student", ["backend"], ["design"], "a T delay predictor"),
-    ("Zoe", "student", ["hardware"], ["firmware"], "a study-room finder"),
-    ("Ethan", "student", ["mobile", "design"], ["hardware"], "a study-room finder"),
-    ("Lina", "student", ["research", "pitch"], ["frontend"], "a study-room finder"),
-    ("Noah", "student", ["backend", "ml"], ["mobile"], "a dorm laundry bot"),
-    ("Chloe", "student", ["pitch", "design"], ["backend"], "a dorm laundry bot"),
+    ("Zoe", "student", ["research", "pitch"], ["backend"], "a study-room finder"),
+    ("Lina", "student", ["design"], ["backend"], "a study-room finder"),
+    ("Noah", "student", ["backend", "ml"], ["frontend"], "a dorm laundry bot"),
+    ("Chloe", "student", ["pitch", "design"], ["frontend"], "a dorm laundry bot"),
     ("Ravi", "student", ["firmware"], ["data"], ""),
     ("Mia", "student", ["data", "research"], ["ml"], ""),
     ("Jonah", "student", ["frontend"], ["design"], ""),
@@ -44,17 +50,24 @@ PEOPLE = [
     ("Elena", "mentor", ["backend", "data"], [], ""),
     ("Marcus", "mentor", ["hardware", "firmware"], [], ""),
 ]
-# groups: member indexes into PEOPLE, station, mode, looking_for (one need row per tag)
+# member indexes into PEOPLE, station, mode, looking_for (one need row per tag), working_on.
+# The station 2 firmware group is inserted second, so on a fresh database it is named "Table 2".
 GROUPS = [
-    ([0, 1, 2], 2, "open", ["firmware"], "a robot arm"),
-    ([3, 4, 5], 1, "open", ["design"], "a T delay predictor"),
-    ([6, 7, 8], 1, "open", ["backend", "hardware"], "a study-room finder"),
-    ([9, 10], 2, "heads_down", ["firmware"], "a dorm laundry bot"),
+    ([4, 5, 6], 1, "open", ["design"], "a T delay predictor"),
+    ([1, 2, 3], 2, "open", ["firmware"], "a robot arm"),
+    ([7, 8], 1, "open", ["backend"], "a study-room finder"),
+    ([9, 10], 2, "heads_down", ["frontend"], "a dorm laundry bot"),
 ]
-EXTRA_LINKS = [(0, 6), (3, 11), (2, 13), (4, 12), (1, 18)]  # across groups, so the room isn't four islands
-NOT_HERE = {15, 16, 17}  # registered but not checked in yet
-JUDGES = [("Judge 1", ["design"], ["hardware"]), ("Judge 2", ["hardware"], ["design"])]
+EXTRA_LINKS = [(0, 1), (4, 11), (2, 13), (5, 12), (6, 18)]  # across groups; Maya already knows Sam
+NOT_HERE = {15, 16, 17}  # registered but not checked in
 TABLES = ["people", "groups", "group_members", "connections", "needs", "taps", "scan_events"]
+
+
+def fake_uid(i: int) -> str:
+    return f"{FAKE_PREFIX}{i + 1:010X}"  # 5EED0000000001 ...
+
+
+SEED_UIDS = [fake_uid(i) for i in range(len(PEOPLE))]
 
 
 async def connect():
@@ -63,7 +76,7 @@ async def connect():
     db.load_env()
     url = os.environ.get("DATABASE_URL", "")
     if not url or "user:pass@host" in url:
-        sys.exit("seed: set DATABASE_URL in .env first")
+        sys.exit("set DATABASE_URL in .env first")
     conn = await asyncpg.connect(url)
     await conn.execute((ROOT / "server" / "schema.sql").read_text())
     return conn, url.split("@")[-1].split("/")[0]
@@ -90,15 +103,18 @@ async def delete_people(conn, where: str, *args) -> int:
 
 
 async def seed(conn) -> None:
-    if await conn.fetchval("SELECT count(*) FROM people WHERE uid LIKE 'SEED%'"):
-        sys.exit("seed: the seed room is already there (run with --remove first to redo it)")
+    have = await conn.fetchval("SELECT count(*) FROM people WHERE uid = ANY($1::text[])", SEED_UIDS)
+    if have:
+        print(f"The fake room is already there ({have} fake people). Nothing added.")
+        return
     async with conn.transaction():
         ids = []
         for i, (name, role, skills, looking, working) in enumerate(PEOPLE):
+            here = i not in NOT_HERE
             ids.append(await conn.fetchval(
                 """INSERT INTO people (uid, name, role, skills, looking_for, working_on, points, last_checkin)
                    VALUES ($1,$2,$3,$4,$5,$6,$7, CASE WHEN $8 THEN now() - interval '20 minutes' END) RETURNING id""",
-                f"SEED{i + 1:02d}", name, role, skills, looking, working, 1 if i not in NOT_HERE else 0, i not in NOT_HERE))
+                SEED_UIDS[i], name, role, skills, looking, working, 1 if here else 0, here))
         pairs = set()
         for members, station, mode, looking, working in GROUPS:
             gid = await conn.fetchval(
@@ -114,7 +130,7 @@ async def seed(conn) -> None:
         for a, b in sorted(pairs):
             await conn.execute("INSERT INTO connections (person_a, person_b) VALUES ($1,$2)", a, b)
             await conn.execute("UPDATE people SET points = points + 5 WHERE id = ANY($1::int[])", [a, b])
-    print(f"seed: added {len(PEOPLE)} people, {len(GROUPS)} groups, {len(pairs)} links")
+    print(f"Added {len(PEOPLE)} fake people, {len(GROUPS)} groups, {len(pairs)} links.")
 
 
 async def judges(conn, uids: dict) -> None:
@@ -122,40 +138,51 @@ async def judges(conn, uids: dict) -> None:
         if not uids.get(name):
             continue
         uid = uids[name].strip().upper()
-        if await conn.fetchval("SELECT 1 FROM people WHERE uid=$1", uid):
-            print(f"seed: badge {uid} is already registered, skipped {name}")
+        owner = await conn.fetchval("SELECT name FROM people WHERE uid=$1", uid)
+        if owner:
+            print(f"Badge {uid} already belongs to {owner}. Skipped {name}.")
+            continue
+        if await conn.fetchval("SELECT 1 FROM people WHERE name=$1 AND uid IS NOT NULL", name):
+            print(f"{name} already has a badge. Skipped.")
             continue
         await conn.execute("DELETE FROM people WHERE name=$1 AND uid IS NULL", name)
         await conn.execute("INSERT INTO people (uid, name, role, skills, looking_for) VALUES ($1,$2,'student',$3,$4)",
                            uid, name, skills, looking)
-        print(f"seed: registered {name} on badge {uid}")
+        print(f"Registered {name} on badge {uid}.")
+
+
+async def real_signups(conn) -> None:
+    with_badge = await conn.fetchval(f"SELECT count(*) FROM people WHERE {REAL} AND uid IS NOT NULL")
+    without = await conn.fetchval(f"SELECT count(*) FROM people WHERE {REAL} AND uid IS NULL")
+    print(f"Real sign-ups: {with_badge} with a badge, {without} more who never finished claiming a badge.")
 
 
 async def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--judge1", help="real UID of the Judge 1 badge")
-    ap.add_argument("--judge2", help="real UID of the Judge 2 badge")
-    ap.add_argument("--remove", action="store_true", help="delete only the seed people (SEED badges) and their groups")
-    ap.add_argument("--reset", action="store_true", help="wipe every table, real data included (asks first)")
+    ap.add_argument("--judge1", metavar="UID", help="real UID of the spare card for Judge 1 (design, looking for hardware)")
+    ap.add_argument("--judge2", metavar="UID", help="real UID of the spare card for Judge 2 (hardware, looking for design)")
+    ap.add_argument("--remove", action="store_true", help="delete only the fake 5EED people and the groups that only had them")
+    ap.add_argument("--reset", action="store_true",
+                    help="!!! DANGER !!! WIPES EVERY TABLE, REAL SIGN-UPS INCLUDED. NEVER RUN THIS AFTER RECRUITING "
+                         "STARTS: it deletes every real person, group, link and scan, and they cannot be brought back.")
     a = ap.parse_args()
     conn, host = await connect()
     try:
         if a.reset:
             n = await conn.fetchval("SELECT count(*) FROM people")
-            print(f"seed: this deletes ALL {n} people and every group, link, need, tap and scan on {host}.")
+            print(f"!!! This deletes ALL {n} people (real sign-ups too) and every group, link, need, tap and scan on {host}.")
             if input("Type RESET to continue: ").strip() != "RESET":
-                sys.exit("seed: nothing deleted")
+                sys.exit("Nothing deleted.")
             await conn.execute(f"TRUNCATE {', '.join(TABLES)} RESTART IDENTITY")
-            print("seed: database wiped")
-            return
-        if a.remove:
-            n = await delete_people(conn, "uid LIKE 'SEED%'")
-            print(f"seed: removed {n} seed people")
-            return
-        if a.judge1 or a.judge2:
+            print("Database wiped.")
+        elif a.remove:
+            n = await delete_people(conn, "uid = ANY($1::text[])", SEED_UIDS)
+            print(f"Removed {n} fake people.")
+        elif a.judge1 or a.judge2:
             await judges(conn, {"Judge 1": a.judge1, "Judge 2": a.judge2})
         else:
             await seed(conn)
+        await real_signups(conn)
     finally:
         await conn.close()
 
