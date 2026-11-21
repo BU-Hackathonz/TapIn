@@ -541,5 +541,5 @@ const View3D = (() => {
     document.getElementById("profile").hidden = false;
   }
 
-  return { init, setActive, relayout, pulse, PHONE };
+  return { init, setActive, relayout, pulse, avatar, PHONE };
 })();

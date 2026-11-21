@@ -94,35 +94,34 @@
     }, ms + 50);
   }
 
-  // ------------------------------------------------------------ arrival line
+  // ------------------------------------------------------------ side notifications
 
-  // Template line right away, swapped for the Gemini icebreaker if it lands while the line is still up.
-  let arrivalTimer = null, arrivalKey = "";
-  function arrival(p, sugg) {
-    const box = $("arrival");
-    box.replaceChildren();
-    const b = document.createElement("b");
-    b.textContent = p.name;
-    box.append(b);
-    arrivalKey = "";
-    if (sugg.length) {
-      const top = sugg[0], g = S.groups.get(top.group_id);
-      arrivalKey = `${p.id}-${top.group_id}`;
-      const table = g?.name || `Table ${top.group_id}`;
-      if (top.reason?.startsWith("needs ")) {
-        const em = document.createElement("em");
-        em.textContent = top.reason.slice(6);
-        box.append(`: ${table} needs `, em);
-      } else {
-        box.append(`: try ${table} (${top.reason})`);
-      }
-    } else {
-      box.append(" is here");
+  // A small card slides in on the side for each arrival, join, new table or mentor visit, then leaves.
+  // An arrival's line can be swapped for the Gemini icebreaker while its card is still up.
+  const TOAST_MS = 4500, TOAST_MAX = 4;
+  function toast(person, parts, kind = "arrive", key = "") {
+    if (!person) return null;
+    const box = $("toasts"), card = document.createElement("div");
+    card.className = `toast ${kind}`;
+    if (key) card.dataset.key = key;
+    const img = document.createElement("img");
+    img.src = View3D.avatar(person).toDataURL();
+    img.alt = "";
+    const text = document.createElement("div"), name = document.createElement("b"), line = document.createElement("span");
+    name.textContent = person.name;
+    line.className = "line";
+    for (const part of parts) {
+      if (typeof part === "string") line.append(part);
+      else { const em = document.createElement("em"); em.textContent = part.em; line.append(em); }
     }
-    box.classList.add("on");
-    clearTimeout(arrivalTimer);
-    arrivalTimer = setTimeout(() => box.classList.remove("on"), 10000);
+    text.append(name, line);
+    card.append(img, text);
+    box.prepend(card);
+    while (box.children.length > TOAST_MAX) box.lastChild.remove();
+    setTimeout(() => { card.classList.add("out"); setTimeout(() => card.remove(), 450); }, TOAST_MS);
+    return card;
   }
+  const tableName = (gid) => S.groups.get(gid)?.name || `Table ${gid}`;
 
   // ------------------------------------------------------------ events
 
@@ -138,11 +137,14 @@
       setTimeout(pruneHints, 10100);
       setTimeout(() => ripple(p.id), 60);
       Sound.arrive();
-      arrival(p, sugg);
+      const top = sugg[0];
+      if (!top) toast(p, ["checked in"]);
+      else if (top.reason?.startsWith("needs ")) toast(p, [`${tableName(top.group_id)} needs `, { em: top.reason.slice(6) }], "arrive", `${p.id}-${top.group_id}`);
+      else toast(p, [`try ${tableName(top.group_id)} · ${top.reason}`], "arrive", `${p.id}-${top.group_id}`);
     },
     icebreaker(d) {
-      if (arrivalKey !== `${d.person_id}-${d.group_id}`) return;
-      $("arrival").textContent = d.text;
+      const line = document.querySelector(`.toast[data-key="${d.person_id}-${d.group_id}"] .line`);
+      if (line) line.textContent = d.text;
     },
     async group_formed(d) {
       await syncGraph();
@@ -153,6 +155,8 @@
       glow(d.group_id);
       d.member_ids.forEach((id) => ripple(id, "join"));
       Sound.links(keys.length);
+      const others = d.member_ids.slice(1).map((id) => S.people.get(id)?.name).filter(Boolean);
+      toast(S.people.get(d.member_ids[0]), [`started ${tableName(d.group_id)}${others.length ? ` with ${others.join(", ")}` : ""}`], "join");
     },
     async group_joined(d) {
       if (!S.groups.has(d.group_id)) await syncGraph();
@@ -165,10 +169,12 @@
       glow(d.group_id);
       d.new_member_ids.forEach((id) => ripple(id, "join"));
       Sound.links(d.new_links.length);
+      for (const id of d.new_member_ids) toast(S.people.get(id), ["joined ", { em: tableName(d.group_id) }], "join");
     },
     help(d) {
       ripple(d.mentor_id, "help");
       glow(d.group_id);
+      toast(S.people.get(d.mentor_id), [`is helping ${tableName(d.group_id)}`], "help");
       syncSoon();
     },
     link_strengthened(d) {
@@ -203,16 +209,13 @@
 
   let backoff = 1000;
   function connect() {
-    const conn = $("conn");
     const ws = new WebSocket(WS);
     ws.onopen = () => {
       backoff = 1000;
-      conn.className = "conn live";
       syncAll().catch((e) => console.error("sync", e));  // catch up on anything missed while down
     };
     ws.onmessage = (e) => { try { handle(JSON.parse(e.data)); } catch (err) { console.error(err); } };
     ws.onclose = () => {
-      conn.className = "conn down";
       setTimeout(connect, backoff);
       backoff = Math.min(backoff * 2, 8000);
     };
@@ -234,7 +237,6 @@
   function startDemo() {
     demo = true;
     document.body.classList.add("demo");
-    $("conn").className = "conn demo";
     Demo.build();
     syncAll().catch((e) => console.error("demo", e));
     Demo.start(handle);
