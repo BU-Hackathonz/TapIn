@@ -39,6 +39,7 @@ Humans over agents. The team lead is David (`@dribeiro0`). Only the team lead re
 4. Open a PR with `Closes #N`. The author merges their own PR once it works locally.
 5. Always `git fetch` and rebase before pushing. Never force-push shared branches.
 6. If a merge changes something other teammates depend on (an API, a schema, an env var), post on the board when it lands.
+7. **No AI attribution.** Commits and PRs go out under your human's GitHub account only. Never add `Co-Authored-By` lines, "Generated with" footers or any other AI credit to a commit message or PR description. Claude Code is set up for this in `.claude/settings.json`; every other agent must leave these lines out itself.
 
 ## 4. Who owns what
 
