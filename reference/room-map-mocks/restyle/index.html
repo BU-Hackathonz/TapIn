@@ -6,10 +6,11 @@
 <title>Room map</title>
 <link rel="icon" href="data:,">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600;700&family=Patrick+Hand&family=Bricolage+Grotesque:wght@600;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600;700&family=Patrick+Hand&family=Bricolage+Grotesque:wght@500;700;800&family=DotGothic16&display=swap">
 <link rel="stylesheet" href="../../../wall/wall.css"> <link rel="stylesheet" href="tin.css">
 </head>
 <body data-theme="tin">
+<p class="lede">Who is here, and who is working together</p>
 <canvas id="map3d" aria-label="3D room view"></canvas>
 <aside id="profile" class="profile" aria-label="Profile" hidden>
   <button type="button" id="profile-close" class="profile-close" aria-label="Close profile">×</button>
@@ -39,6 +40,7 @@
 </details>
 <div id="wall-icebreaker" class="wall-icebreaker" role="status" hidden></div>
 <div id="toasts" class="toasts" aria-live="polite"></div>
+<footer class="tbar"><i class="rule"></i><span class="tmsg">Tap your badge at a station to join the room.</span><span class="wm">tap <span class="ii">&#305;<svg class="wifi" viewBox="0 0 24 20" aria-hidden="true"><circle cx="12" cy="16.6" r="2.3"/><path d="M6.6 11.6a7.6 7.6 0 0 1 10.8 0"/><path d="M2.9 7.4a12.8 12.8 0 0 1 18.2 0"/></svg></span>n</span></footer>
 
 <div id="start" class="start">
   <button type="button" id="start-btn">Start</button>
@@ -50,8 +52,30 @@
 <script src="themes.js"></script>
 <script src="../../../wall/view3d.js"></script>
 <script src="../../../wall/demo.js"></script>
+<script>
+// mock only: tables are named by letter like the host wall, and the demo room gets the stats the real server would send
+const letterOf = (n) => String.fromCharCode(64 + ((n - 1) % 26) + 1);
+const rename = (s) => String(s).replace(/\bTable (\d+)\b/g, (m, n) => "Table " + letterOf(+n));
+const _fill = CanvasRenderingContext2D.prototype.fillText;
+CanvasRenderingContext2D.prototype.fillText = function (s, ...r) { return _fill.call(this, rename(s), ...r); };
+const _snap = Demo.snapshot;
+Demo.snapshot = (path) => {
+  if (path === "/api/stats") {
+    const g = _snap("/api/graph"), b = [];
+    for (let i = 0; i < 12; i++) b.push({ bucket: new Date(Date.now() - (11 - i) * 600000).toISOString(), count: [3, 5, 2, 8, 9, 7, 11, 10, 6, 12, 9, 4][i] });
+    return { here: g.people.filter((p) => p.here).length, groups: g.groups.length, links_today: g.links.length, busiest_station: 2, scans_10min: b };
+  }
+  if (path === "/api/leaderboard") return { groups: _snap("/api/graph").groups.map((x) => ({ id: x.id, name: x.name, points: x.points || 0 })).sort((a, b) => b.points - a.points) };
+  return _snap(path);
+};
+new MutationObserver((ms) => { for (const m of ms) for (const n of m.addedNodes) { const root = n.nodeType === 1 ? n : n.parentNode; if (!root) continue; const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT); let x; while ((x = w.nextNode())) { const r = rename(x.nodeValue); if (r !== x.nodeValue) x.nodeValue = r; } } }).observe(document.body, { childList: true, subtree: true });
+</script>
 <script src="../../../wall/corner.js"></script>
 <script src="../../../wall/panels.js"></script>
 <script src="../../../wall/wall.js"></script>
+<script>
+// mock only: demo mode never asks for stats, so feed the panel the numbers the real server would send
+setInterval(() => Panels.stats(Demo.snapshot("/api/stats")), 2000);
+</script>
 </body>
 </html>

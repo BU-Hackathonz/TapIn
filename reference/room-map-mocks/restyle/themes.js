@@ -32,11 +32,11 @@ const Theme = (() => {
            font: SANS, avatar: "face", rough: false, linkAlpha: 1 },
     },
     tin: {
-      label: "Tin", swatch: ["#f3ece1", "#2f6d4e", "#e0367f"],
-      c: { regionFill: "rgba(47,109,78,0.07)", region: "#2f6d4e", link: "#7d8f80", inner: "#2f6d4e", accent: "#e0367f",
-           title: "#1d1a16", need: "#b4531f", dim: "#8c8579", name: "#3a352d",
-           student: "#2f6d4e", mentor: "#c9822b", away: "#c9c0b0", join: "#2f6d4e", help: "#c9822b",
-           font: SANS, avatar: "face", rough: false, linkAlpha: 1.25 },
+      label: "Host look", swatch: ["#ecd9d2", "#2f6d4e", "#d4151b"],
+      c: { regionFill: "rgba(47,109,78,0.05)", region: "#1b4a33", link: "#1b4a33", inner: "#1b4a33", accent: "#d4151b",
+           title: "#2b1f23", need: "#d4151b", dim: "#a88f93", name: "#3a2b2b",
+           student: "#2f6d4e", mentor: "#2f6d4e", away: "#c9a99f", join: "#2f6d4e", help: "#ED8B00",
+           font: SANS, avatar: "face", rough: false, linkAlpha: 1.4 },
     },
     blueprint: {
       label: "Blueprint", swatch: ["#123a6b", "#cfe8ff", "#ffd166"],

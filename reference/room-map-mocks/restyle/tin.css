@@ -1,14 +1,68 @@
-/* "Tin": the user map in its own look. Same markup and same scripts as wall/index.html; only colors, type and the cards change. */
+/* The user map in the host wall's look: rose ground, white sign panels with black label bars, line colors, amber bar.
+   Overrides only: same markup and scripts as wall/index.html. */
 body[data-theme="tin"] {
-  --bg: #f3ece1; --bg-image: radial-gradient(60% 50% at 50% 38%, #fbf6ee 0%, transparent 100%); --panel: #fffdf8; --line: #e1d8c8; --text: #1d1a16; --text-soft: #3a352d;
-  --muted: #8c8579; --faint: #b9b1a2; --tile: #f3ece1; --accent: #e0367f; --accent-text: #e0367f; --mint: #2f6d4e; --amber: #c9822b;
-  --overlay: rgba(243,236,225,.92); --shadow: 0 14px 40px rgba(60,40,20,.14); --radius: 18px; --border: 1px solid #e1d8c8;
-  --font: "IBM Plex Sans", system-ui, sans-serif;
+  --bg: #ecd9d2; --bg-image: none; --panel: #ffffff; --line: #111; --text: #111; --text-soft: #111; --muted: #6b6b6b; --faint: #8a8a8a; --tile: #f2f1ee;
+  --accent: #d4151b; --accent-text: #d4151b; --mint: #00843D; --amber: #ED8B00; --overlay: rgba(236,217,210,.94); --shadow: none; --radius: 0; --border: 0;
+  --font: "Helvetica Neue", Helvetica, Arial, sans-serif; --mono: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  background-image: repeating-linear-gradient(to bottom, rgba(0,0,0,.04) 0 1px, transparent 1px 3px);
 }
-body[data-theme="tin"] { background-size: auto; }
-body[data-theme="tin"] .count b { font: 800 44px/1 "Bricolage Grotesque", var(--font); letter-spacing: -.03em; }
-body[data-theme="tin"] .count span { color: var(--muted); }
-body[data-theme="tin"] .profile, body[data-theme="tin"] .room-insights, body[data-theme="tin"] .me-panel { background: var(--panel); border: var(--border); border-radius: 20px; box-shadow: var(--shadow); }
-body[data-theme="tin"] .room-insights summary, body[data-theme="tin"] .insights-body h2 { font-family: "Bricolage Grotesque", var(--font); font-weight: 800; letter-spacing: -.01em; }
-body[data-theme="tin"] .me-tab { border-radius: 999px; background: var(--panel); border: var(--border); box-shadow: var(--shadow); }
-body[data-theme="tin"] .toast b { color: var(--accent); }
+body[data-theme="tin"] #map3d { bottom: 76px; height: calc(100% - 76px); }
+@media (min-width: 801px) { body[data-theme="tin"]:has(.room-insights[open]) #map3d { width: calc(100% - clamp(250px, 21vw, 380px)); } }
+
+.lede { position: fixed; z-index: 2; left: 190px; top: 30px; margin: 0; font: 600 20px/1.2 "IBM Plex Sans", sans-serif; color: #2b1f23; pointer-events: none; }
+
+body[data-theme="tin"] .me-tab { background: #111; color: #fff; border: 0; border-radius: 0; box-shadow: inset -10px 0 0 #DA291C; padding-right: 22px; }
+body[data-theme="tin"] .me-name, body[data-theme="tin"] .me-gear { color: #fff; font-weight: 700; }
+body[data-theme="tin"] .me-panel, body[data-theme="tin"] .profile, body[data-theme="tin"] .room-insights { background: #fff; color: #111; border: 0; border-radius: 0; box-shadow: none; }
+body[data-theme="tin"] .me-panel { border-top: 6px solid #111; }
+
+body[data-theme="tin"] .count b { font: 800 44px/1 "Bricolage Grotesque", var(--font); letter-spacing: -.03em; color: #2b1f23; }
+body[data-theme="tin"] .count span { color: #6a4f55; font-weight: 600; }
+body[data-theme="tin"] .demo-tag { border-color: #111; color: #111; border-radius: 0; }
+
+body[data-theme="tin"] .room-insights { padding: 18px 20px; border-left: 0; font-family: "Bricolage Grotesque", var(--font); font-weight: 500; }
+body[data-theme="tin"] .room-insights summary, body[data-theme="tin"] .room-insights h2 { display: block; background: #111; color: #fff; padding: .45em .8em; margin: 0; font: 700 13px/1.2 var(--font); text-transform: uppercase; letter-spacing: .1em; list-style: none; }
+body[data-theme="tin"] .room-insights summary::-webkit-details-marker { display: none; }
+body[data-theme="tin"] .room-insights summary { box-shadow: inset -10px 0 0 #DA291C; }
+body[data-theme="tin"] .room-insights section { border-top: 0; margin-top: 18px; padding-top: 0; }
+body[data-theme="tin"] .room-insights section:nth-of-type(1) h2 { box-shadow: inset -10px 0 0 #ED8B00; }
+body[data-theme="tin"] .room-insights section:nth-of-type(2) h2 { box-shadow: inset -10px 0 0 #003DA5; }
+body[data-theme="tin"] .room-insights section:nth-of-type(3) h2 { box-shadow: inset -10px 0 0 #DA291C; }
+body[data-theme="tin"] .room-insights section:nth-of-type(4) h2 { box-shadow: inset -10px 0 0 #00843D; }
+body[data-theme="tin"] .room-insights li { color: #111; font-size: 15px; font-weight: 500; padding: 6px 0; border-bottom: 1px solid #d9d9d9; }
+body[data-theme="tin"] .room-insights li:last-child { border-bottom: 0; }
+body[data-theme="tin"] #room-stats { gap: 10px 12px; margin-top: 14px; }
+body[data-theme="tin"] #room-stats dt { color: #6b6b6b; font-size: 12px; font-weight: 600; }
+body[data-theme="tin"] #room-stats dd { font: 800 24px/1.1 "Bricolage Grotesque", var(--font); }
+body[data-theme="tin"] #scan-chart span { background: #111; }
+body[data-theme="tin"] #scan-chart span:last-child { background: #DA291C; }
+body[data-theme="tin"] #top-tables li:first-child { color: #DA291C; font-weight: 700; }
+
+body[data-theme="tin"] .profile { border-top: 6px solid #111; font-family: "Bricolage Grotesque", var(--font); }
+body[data-theme="tin"] .p-pic { border: 3px solid #111; }
+body[data-theme="tin"] .p-role, body[data-theme="tin"] .p-state { border: 0; background: #111; color: #fff; font-weight: 700; border-radius: 0; }
+body[data-theme="tin"] .p-state.here { background: #00843D; }
+body[data-theme="tin"] .p-role.mentor, body[data-theme="tin"] .p-role.staff { background: #ED8B00; color: #111; }
+body[data-theme="tin"] .p-stats div { background: #f2f1ee; border: 0; border-radius: 8px; }
+body[data-theme="tin"] .p-stats b { font-family: "Bricolage Grotesque", var(--font); font-weight: 800; }
+body[data-theme="tin"] .p-sec h3 { display: inline-block; background: #111; color: #fff; padding: .3em 1.3em .3em .7em; font: 700 11px/1.2 var(--font); letter-spacing: .1em; box-shadow: inset -8px 0 0 #ED8B00; }
+body[data-theme="tin"] .p-chip { background: #f2f1ee; border: 0; border-radius: 6px; color: #111; }
+body[data-theme="tin"] .p-chip.want { background: #00843D; color: #fff; }
+body[data-theme="tin"] .p-need { color: #DA291C; font-weight: 700; }
+body[data-theme="tin"] .start button { background: #111; color: #fff; border-radius: 0; box-shadow: inset -14px 0 0 #DA291C; padding-right: 70px; }
+
+.tbar { position: fixed; z-index: 5; left: 0; right: 0; bottom: 0; height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 0 28px; background: #111; color: #ffb000; }
+.tbar .rule { position: absolute; left: 0; right: 0; top: 0; height: 6px; background: linear-gradient(90deg, #DA291C 0 25%, #ED8B00 25% 50%, #003DA5 50% 75%, #00843D 75% 100%); }
+.tbar .tmsg { font: 400 19px/1.2 "DotGothic16", monospace; text-transform: uppercase; letter-spacing: .04em; }
+.tbar .wm { position: relative; display: inline-block; font: 800 34px/1 "Bricolage Grotesque", sans-serif; letter-spacing: -.04em; color: #ece0c6; padding: .46em .1em .08em; margin: -.46em -.1em -.08em; }
+.tbar .ii { position: relative; display: inline-block; }
+.tbar .wifi { position: absolute; left: 50%; bottom: .66em; width: .62em; height: .52em; transform: translateX(-50%); overflow: visible; color: #ff3b36; fill: none; stroke: currentColor; stroke-width: 2.3; stroke-linecap: round; }
+.tbar .wifi circle { fill: currentColor; stroke: none; }
+body[data-theme="tin"] .wall-icebreaker { bottom: 96px; background: #111; color: #ffb000; border: 0; font-family: "DotGothic16", monospace; text-transform: uppercase; }
+@media (max-width: 800px) { .lede { display: none; } .tbar { height: 64px; padding: 0 16px; } .tbar .tmsg { font-size: 13px; } body[data-theme="tin"] #map3d { bottom: 64px; height: calc(100% - 64px); } }
+
+/* fixes: the wordmark never wraps, and cards sit above the bottom bar */
+.tbar .wm { white-space: nowrap; flex: none; }
+body[data-theme="tin"] .profile { bottom: 96px; max-height: calc(100% - 190px); }
+body[data-theme="tin"] .count { top: 22px; }
+@media (max-width: 800px) { .tbar .wm { font-size: 26px; } body[data-theme="tin"] .profile { bottom: 76px; max-height: 56%; } .tbar .tmsg { font-size: 12px; max-width: 62%; } }
