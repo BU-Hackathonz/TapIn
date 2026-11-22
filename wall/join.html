@@ -526,6 +526,14 @@
     const $ = (id) => document.getElementById(id);
     const STEPS = ["step-start", "step-pin", "step-host", "step-create", "step-login", "step-tap", "step-found", "step-account", "step-connect", "step-linked"];
     const show = (id) => { if (id === "step-tap" || id === "step-login") setTimeout(() => document.getElementById(id === "step-tap" ? "reader" : "reader-login").click(), 300); for (const s of STEPS) $(s).hidden = s !== id; document.querySelector(".panel").classList.toggle("signup", ["step-account", "step-connect", "step-linked"].includes(id)); const f = document.querySelector(`#${id} input:not([type=file])`); if (f) f.focus(); };
+    // the room this device is in (set by Join room, or by a host), if signed in and joined within the last 18 hours
+    const inRoom = () => {
+      try {
+        const r = JSON.parse(localStorage.getItem("wall.room") || "null");
+        if (!r || r.status !== "in" || !localStorage.getItem("wall.me")) return null;
+        return !r.time || Date.now() - r.time < 18 * 3600e3 ? r : null;
+      } catch { return null; }
+    };
     const joinRoom = () => { try { localStorage.setItem("wall.room", JSON.stringify({ status: "in", name: document.querySelector("#step-found .room").textContent || "This room", time: Date.now() })); } catch { /* private mode */ } };
     document.querySelectorAll("[data-back]").forEach((b) => b.addEventListener("click", () => show("step-start")));
     // Sign up goes to the real sign-up (phone/), which creates the profile and claims a blank badge on the server.
@@ -632,6 +640,21 @@
     const QS = new URLSearchParams(location.search);
     if (QS.has("edit")) show("step-account");
     else if (QS.has("login")) show("step-login");
+    else if (QS.has("join") && inRoom()) {
+      // already in a room on this device: no second tap, straight back in (the same train ride as Join room)
+      const r = inRoom();
+      document.querySelector("#step-found h1").textContent = "Welcome back";
+      $("found-lead").textContent = "You're already in this room. Taking you back in…";
+      document.querySelector("#step-found .kicker").textContent = "You're in";
+      document.querySelector("#step-found .room").textContent = r.name || "This room";
+      document.querySelector("#step-found .place").textContent = name ? `Signed in as ${name}` : "";
+      document.querySelector("#step-found a.enter").textContent = "Enter room";
+      $("decline").style.display = "none";
+      const back = document.querySelector("#step-found [data-to=step-tap]");
+      back.textContent = "Not you? Tap your badge instead";
+      show("step-found");
+      setTimeout(() => document.querySelector("#step-found a.enter").click(), 900);
+    }
     else if (QS.has("join")) show("step-tap");
     else if (QS.has("host") && /(^|\.)tapin\.boston$/i.test(location.hostname)) {
       // On the public site, hosting hands over to the venue server: it only loads on the venue Wi-Fi (cmap), so the PIN is

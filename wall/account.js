@@ -12,7 +12,14 @@
   const tag = $(".tag");
   if (tag) { tag.textContent = ""; tag.append(el("b", "acc-hi", `Welcome back, ${me.name}`), el("span", "acc-q", "What do you want to do?")); }
   const join = $(".choice.join"), host = $(".choice.host");
-  if (join) { join.href = "/wall/join.html?join"; join.querySelector("b").textContent = "Join a room"; join.querySelector("span").textContent = "Tap your badge at the event"; }
+  let room = null;
+  try { room = JSON.parse(localStorage.getItem("wall.room") || "null"); } catch { /* private mode */ }
+  if (room && (room.status !== "in" || (room.time && Date.now() - room.time > 18 * 3600e3))) room = null;   // same 18 h rule as the join page
+  if (join) {
+    join.href = "/wall/join.html?join";
+    join.querySelector("b").textContent = room ? `Back to ${room.name || "your room"}` : "Join a room";
+    join.querySelector("span").textContent = room ? "You're already in, no tap needed" : "Tap your badge at the event";
+  }
   if (host) { host.href = "/wall/join.html?host"; host.querySelector("b").textContent = "Host a room"; host.querySelector("span").textContent = "Start a room others can join"; }
 
   // your picture in the corner (photo if you added one, otherwise your initial)
