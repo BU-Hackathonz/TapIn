@@ -1,116 +1,128 @@
-/* Tap In phone site, in the host screen's Boston T (MBTA) platform-sign language: white sign panels with black label
-   bars on a station-grey wall, route bullets in the four line colors, an amber dot-matrix arrival board, and David's
-   "tap in" wordmark with the Wi-Fi dot. Helvetica for signage, as on the T and on the host screen. */
+/* Tap In phone site: pixel Boston at dusk. A pixel-art skyline and a Red Line train on the Longfellow bridge sit above
+   a paper card with a double pixel frame. DotGothic16 for the wordmark, headings and signage (it is the host screen's
+   arrival-board face); IBM Plex Sans for reading. Line colors from the T mark tables, like the wall. */
 :root {
-  --wall: #e6e6e3; --sign: #ffffff; --ink: #111111; --muted: #4a4a4a; --rule: #d6d6d6;
-  --red: #DA291C; --orange: #ED8B00; --blue: #003DA5; --green: #00843D; --amber: #ffb000;
-  --hv: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --night: #262a52; --paper: #f6f3f8; --white: #ffffff; --ink: #1f2142; --muted: #545670; --rule: #d9d4e3;
+  --amber: #ffc24a; --rose: #c23b55; --teal: #2fb5a3;
+  --red: #DA291C; --orange: #ED8B00; --blue: #003DA5; --green: #00843D;
   --dot: "DotGothic16", ui-monospace, monospace;
-  --wm: "Bricolage Grotesque", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 * { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
-body { margin: 0; background: var(--wall); color: var(--ink); font: 17px/1.45 var(--hv); caret-color: var(--red); accent-color: var(--red); }
+html { -webkit-text-size-adjust: 100%; background: var(--night); }
+body { margin: 0; background: var(--night); color: var(--ink); font: 17px/1.45 var(--sans); caret-color: var(--rose); accent-color: var(--ink); }
 ::selection { background: var(--amber); color: var(--ink); }
-main { max-width: 480px; margin: 0 auto; padding: 20px 16px 40px; }
 p { margin: 6px 0; }
 small { font-weight: 400; color: var(--muted); }
 .mono { font-variant-numeric: tabular-nums; }
 .muted, .lede { color: var(--muted); }
 
-/* Top bar: the host screen's black strip with the wordmark, then the four line colors. */
-.topbar { background: var(--ink); padding: 14px 16px 12px; }
-.wm { position: relative; display: inline-block; font: 800 32px/1 var(--wm); letter-spacing: -0.04em; color: #fff; padding-top: 6px; }
+/* The scene: drawn at 192 px wide and scaled up in whole, crisp pixels. */
+.scene { max-width: 520px; margin: 0 auto; line-height: 0; }
+.scene img { display: block; width: 100%; height: auto; image-rendering: pixelated; }
+.scene.strip { opacity: .95; }
+
+/* The card: paper with a double pixel frame, pulled up over the river. */
+.card { position: relative; max-width: 480px; margin: -22px auto 32px; padding: 20px 18px 22px; background: var(--paper);
+  border: 3px solid var(--ink); box-shadow: 0 0 0 3px var(--paper), 0 0 0 6px var(--ink); }
+@media (max-width: 500px) { .card { margin-left: 10px; margin-right: 10px; } }
+
+/* Wordmark in the board's dot face, with the Wi-Fi dot and a rose rule. */
+.wm { position: relative; margin: 2px 0 0; padding: 10px 0 10px; font: 400 44px/1 var(--dot); color: var(--ink); border-bottom: 4px solid var(--rose); }
+.wm-solo + .card { margin-top: 0; }
+.wm-solo { max-width: 480px; margin: 14px auto 16px; padding: 6px 18px 0; color: #fff; border: 0; font-size: 36px; }
 .ii { position: relative; display: inline-block; }
-.wifi { position: absolute; left: 50%; bottom: 0.66em; width: 0.62em; height: 0.52em; transform: translateX(-50%); overflow: visible; color: var(--red); fill: none; stroke: currentColor; stroke-width: 2.3; stroke-linecap: round; }
+.wifi { position: absolute; left: 50%; bottom: 0.7em; width: 0.62em; height: 0.52em; transform: translateX(-50%); overflow: visible; color: var(--teal); fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: square; }
 .wifi circle { fill: currentColor; stroke: none; }
-.lines { display: flex; height: 6px; }
-.lines i { flex: 1; }
-.lines i:nth-child(1) { background: var(--red); } .lines i:nth-child(2) { background: var(--orange); }
-.lines i:nth-child(3) { background: var(--blue); } .lines i:nth-child(4) { background: var(--green); }
 
-h1 { font: 700 30px/1.1 var(--hv); letter-spacing: -0.02em; margin: 8px 0 8px; text-wrap: balance; }
+h1 { font: 700 28px/1.12 var(--sans); letter-spacing: -0.02em; margin: 16px 0 6px; text-wrap: balance; }
+h2 { display: flex; align-items: center; gap: 10px; margin: 28px 0 10px; font: 400 18px/1.2 var(--dot); text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink); }
+h2 small { font: 400 13px var(--sans); text-transform: none; letter-spacing: 0; }
+.step { margin-top: 24px; padding-top: 4px; }
+.step + .step { border-top: 2px dashed var(--rule); padding-top: 6px; }
+.step .step-title { margin: 14px 0 0; }
 
-/* Sign panels: a black label bar, then a white sign body. */
-h2 { display: flex; align-items: center; gap: 10px; margin: 26px 0 0; padding: 9px 12px; background: var(--ink); color: #fff;
-  font: 700 14px/1.2 var(--hv); text-transform: uppercase; letter-spacing: 0.08em; }
-h2 small { color: #bdbdbd; text-transform: none; letter-spacing: 0; font-size: 13px; }
-.step { margin-top: 26px; background: var(--sign); padding: 0 14px 18px; }
-.step .step-title { margin: 0 -14px; }
-
-/* Route bullets, the same squares the host screen gives each table. */
-.bullet { display: inline-grid; place-items: center; min-width: 26px; height: 26px; padding: 0 5px; border-radius: 4px; font: 700 15px/1 var(--hv); letter-spacing: 0; color: #fff; flex: none; }
+/* Route bullets in the T line colors, like the tables on the wall. */
+.bullet { display: inline-grid; place-items: center; min-width: 26px; height: 26px; padding: 0 5px; font: 400 16px/1 var(--dot); color: #fff; flex: none; }
 .bullet.o { background: var(--orange); color: var(--ink); } .bullet.b { background: var(--blue); }
 .bullet.g { background: var(--green); } .bullet.r { background: var(--red); }
 
 label.field { display: block; margin: 16px 0 6px; font-weight: 700; }
-input[type=text] { width: 100%; min-height: 50px; padding: 12px 14px; font: inherit; color: var(--ink); background: var(--sign); border: 1.5px solid #9a9a9a; border-radius: 4px; }
-input[type=text]::placeholder { color: #6f6f6f; }
-input[type=text]:focus { outline: 3px solid var(--amber); outline-offset: 0; border-color: var(--ink); }
+input[type=text] { width: 100%; min-height: 50px; padding: 12px 14px; font: inherit; color: var(--ink); background: var(--white); border: 2px solid var(--ink); border-radius: 0; }
+input[type=text]::placeholder { color: #66687f; }
+input[type=text]:focus { outline: 3px solid var(--amber); outline-offset: 0; }
 fieldset { border: 0; padding: 0; margin: 16px 0 0; }
 legend { font-weight: 700; padding: 0; margin-bottom: 8px; }
 
-/* Tags read like sign tiles: square-cornered, black when picked. */
+/* Tags: square tiles; picked ones light up like the board. */
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip { position: relative; }
 .chip input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-.chip span { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: 4px; border: 1.5px solid #9a9a9a; background: var(--sign); color: var(--ink); cursor: pointer; user-select: none; }
-.chip input:checked + span { background: var(--ink); border-color: var(--ink); color: #fff; font-weight: 700; }
+.chip span { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border: 2px solid var(--ink); background: var(--white); color: var(--ink); cursor: pointer; user-select: none; }
+.chip input:checked + span { background: var(--ink); color: var(--amber); font-weight: 700; }
 .chip input:focus-visible + span { outline: 3px solid var(--amber); outline-offset: 1px; }
 .chip input:disabled + span { cursor: not-allowed; }
 
-/* The button stays in reach at the bottom of the screen. */
-.submit-bar { position: sticky; bottom: 0; margin: 24px -16px 0; padding: 14px 16px calc(12px + env(safe-area-inset-bottom)); background: linear-gradient(to bottom, rgba(230, 230, 227, 0), var(--wall) 24%); }
-button, .button { display: inline-flex; align-items: center; justify-content: center; width: 100%; min-height: 54px; margin-top: 18px;
-  font: 700 18px/1 var(--hv); color: #fff; background: var(--red); border: 0; border-radius: 4px; cursor: pointer; text-decoration: none; }
+/* Primary button: the board's navy with amber dot letters. */
+.submit-bar { position: sticky; bottom: 0; margin: 24px -18px -22px; padding: 14px 18px calc(14px + env(safe-area-inset-bottom)); background: var(--paper); border-top: 3px solid var(--ink); }
+button, .button { display: inline-flex; align-items: center; justify-content: center; gap: 12px; width: 100%; min-height: 56px; margin-top: 18px;
+  font: 400 21px/1 var(--dot); text-transform: uppercase; letter-spacing: 0.04em; color: var(--amber); background: var(--ink); border: 0; border-radius: 0; cursor: pointer; text-decoration: none; }
+button::before, .button::before { content: ""; width: 10px; height: 14px; background: var(--rose); clip-path: polygon(0 0, 100% 50%, 0 100%); flex: none; }
 .submit-bar button { margin-top: 0; }
-button:hover, .button:hover { background: #b9200f; }
+button:hover, .button:hover { background: #33376a; }
 button:disabled { opacity: .55; cursor: wait; }
-button:focus-visible, .button:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; }
-.secondary { background: var(--sign); color: var(--ink); border: 1.5px solid var(--ink); }
-.secondary:hover { background: #f2f2f2; }
+button:focus-visible, .button:focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
+.secondary { background: var(--white); color: var(--ink); border: 2px solid var(--ink); }
+.secondary:hover { background: #ece8f2; }
 .note { color: var(--muted); font-size: 15px; margin-top: 8px; }
-.error { color: var(--red); margin: 0 0 8px; font-weight: 700; }
+.error { color: #b3263a; margin: 0 0 8px; font-weight: 700; }
 .error:empty { display: none; }
 
-/* Claim: the arrival board from the host screen's bottom strip. */
-.board { display: flex; align-items: stretch; margin: 22px 0 12px; background: var(--ink); border-top: 6px solid var(--red); }
+/* Journey line along the bottom: where you are in the three steps. */
+.journey { list-style: none; display: flex; flex-wrap: wrap; gap: 2px 0; margin: 14px 0 0; padding: 0; font: 400 13px/1.2 var(--dot); text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+.journey li { position: relative; display: flex; align-items: center; padding: 3px 0; }
+.journey li + li { margin-left: 26px; }
+.journey li + li::before { content: ""; position: absolute; left: -20px; top: 50%; width: 14px; height: 2px; background: var(--muted); opacity: .5; }
+.journey li[aria-current] { color: var(--white); background: var(--rose); padding: 3px 6px; }
+
+/* Claim: the arrival board. */
+.board { display: flex; align-items: stretch; margin: 18px 0 12px; background: var(--ink); border-top: 6px solid var(--red); }
 .count { display: grid; place-items: center; min-width: 96px; padding: 10px 12px; background: var(--red); color: #fff; font: 400 48px/1 var(--dot); font-variant-numeric: tabular-nums; }
 .board-text { margin: 0; padding: 14px 14px 12px; color: var(--amber); font: 400 20px/1.3 var(--dot); text-transform: uppercase; letter-spacing: 0.04em; }
-.big { font: 700 30px/1.1 var(--hv); letter-spacing: -0.02em; margin: 26px 0 8px; }
+.big { font: 700 28px/1.12 var(--sans); letter-spacing: -0.02em; margin: 22px 0 8px; }
 .ok { color: var(--green); }
 
 /* Where you stand */
-.status { display: inline-block; padding: 5px 10px; font: 700 13px/1 var(--hv); text-transform: uppercase; letter-spacing: 0.06em; border-radius: 4px; background: #d0d0cc; color: var(--ink); }
+.status { display: inline-block; padding: 5px 10px; font: 400 14px/1 var(--dot); text-transform: uppercase; letter-spacing: 0.05em; background: #d9d4e3; color: var(--ink); }
 .status.here { background: var(--green); color: #fff; }
-.points { font: 400 16px/1 var(--hv); color: var(--muted); margin-left: 8px; font-variant-numeric: tabular-nums; }
-.list { list-style: none; margin: 0; padding: 0 14px; background: var(--sign); }
-.list li { padding: 12px 0; border-bottom: 1px solid var(--rule); }
+.points { font: 400 16px/1 var(--dot); color: var(--muted); margin-left: 8px; }
+.list { list-style: none; margin: 0; padding: 0; background: var(--white); border: 2px solid var(--ink); }
+.list li { padding: 12px 14px; border-bottom: 2px dashed var(--rule); }
 .list li:last-child { border-bottom: 0; }
 .list .title { font-weight: 700; display: flex; align-items: center; flex-wrap: wrap; gap: 0 8px; }
-.list .why { color: var(--red); }
+.list .why { color: var(--rose); }
 .list .sub { color: var(--muted); font-size: 15px; }
-.list .sub.mono { color: var(--red); font-weight: 700; }
-.list li.top .title { font-size: 18px; }
+.list .sub.mono { color: var(--red); font: 400 15px/1.3 var(--dot); }
+.list li.top { background: #fff6dd; }
 .list li.handled .title { text-decoration: line-through; color: var(--muted); }
-.empty { margin: 0; padding: 12px 14px; background: var(--sign); color: var(--muted); }
-#app > .note { margin-top: 10px; }
+.empty { margin: 0; padding: 12px 14px; background: var(--white); border: 2px dashed var(--rule); color: var(--muted); }
+.yours { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
 
-.switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 60px; margin-top: 16px; padding: 8px 14px; background: var(--sign); }
+.switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 60px; margin-top: 16px; padding: 8px 14px; background: var(--white); border: 2px solid var(--ink); }
 .switch-row label { flex: 1; cursor: pointer; font-weight: 700; }
 .switch-row small { display: block; font-size: 14px; font-weight: 400; }
-.switch { appearance: none; -webkit-appearance: none; width: 54px; height: 32px; margin: 0; flex: none; position: relative; cursor: pointer; background: #c4c4c0; border: 0; border-radius: 4px; }
-.switch::after { content: ""; position: absolute; top: 4px; left: 4px; width: 24px; height: 24px; border-radius: 3px; background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, .3); transition: left .15s cubic-bezier(.2, .8, .2, 1); }
+.switch { appearance: none; -webkit-appearance: none; width: 56px; height: 32px; margin: 0; flex: none; position: relative; cursor: pointer; background: #d9d4e3; border: 2px solid var(--ink); border-radius: 0; }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; background: var(--ink); transition: left .18s cubic-bezier(.16, 1, .3, 1); }
 .switch:checked { background: var(--green); }
-.switch:checked::after { left: 26px; }
+.switch:checked::after { left: 27px; background: #fff; }
 .switch:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; }
-.switch-state { font: 700 14px/1 var(--hv); text-transform: uppercase; letter-spacing: 0.06em; width: 2.4em; text-align: right; color: var(--muted); }
+.switch-state { font: 400 14px/1 var(--dot); text-transform: uppercase; width: 2.4em; text-align: right; color: var(--muted); }
 .switch-state.on { color: var(--green); }
 .seg { display: flex; gap: 8px; margin-top: 10px; }
-.seg button { margin: 0; min-height: 44px; background: var(--sign); border: 1.5px solid var(--ink); color: var(--ink); font-weight: 400; font-size: 17px; }
-.seg button[aria-pressed=true] { background: var(--ink); color: #fff; font-weight: 700; }
-.yours { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
-footer { margin-top: 36px; font-size: 14px; color: var(--muted); }
+.seg button { margin: 0; min-height: 46px; font-size: 16px; background: var(--white); border: 2px solid var(--ink); color: var(--ink); }
+.seg button::before { display: none; }
+.seg button[aria-pressed=true] { background: var(--ink); color: var(--amber); }
+footer { margin-top: 20px; font-size: 14px; color: var(--muted); }
 footer a { color: var(--ink); text-underline-offset: 3px; }
 
 @media (prefers-reduced-motion: reduce) { .switch::after { transition: none; } }

@@ -5,15 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Where you stand · Tap In</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@800&family=DotGothic16&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&family=IBM+Plex+Sans:wght@400;600;700&display=swap">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header class="topbar">
-  <span class="wm" role="img" aria-label="Tap In">tap <span class="ii" aria-hidden="true">&#305;<svg class="wifi" viewBox="0 0 24 20" aria-hidden="true"><circle cx="12" cy="16.6" r="2.3"/><path d="M6.6 11.6a7.6 7.6 0 0 1 10.8 0"/><path d="M2.9 7.4a12.8 12.8 0 0 1 18.2 0"/></svg></span>n</span>
-</header>
-<div class="lines" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
-<main id="app">
+<div class="scene strip"><img src="scene-strip.svg" width="192" height="29" alt=""></div>
+<p class="wm wm-solo" role="img" aria-label="Tap In">tap <span class="ii" aria-hidden="true">&#305;<svg class="wifi" viewBox="0 0 24 20" aria-hidden="true"><circle cx="12" cy="16.6" r="2.3"/><path d="M6.6 11.6a7.6 7.6 0 0 1 10.8 0"/><path d="M2.9 7.4a12.8 12.8 0 0 1 18.2 0"/></svg></span>n</p>
+<main id="app" class="card">
   <p class="muted">Loading...</p>
 </main>
 <script>const FAKE = false; // true = hard-coded replies, no server needed. false = the real server.</script>
@@ -125,6 +123,7 @@
       list(me.known_here.map(k => el("li", {}, el("span", { class: "title" }, k.name))), "Nobody you've met is here yet."),
       ...(helper ? needsSection(needs) : groupsSection(me)),
       ...groupSection(me.group),
+      el("ol", { class: "journey", "aria-label": "Steps" }, el("li", {}, "Sign up"), el("li", {}, "Tap your badge"), el("li", { "aria-current": "step" }, "Find your table")),
       el("footer", {}, "Not you? ", el("a", { href: "index.html", onclick: () => store.del("tapin_person") }, "Make a new profile")),
     );
   }

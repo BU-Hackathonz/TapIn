@@ -5,15 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tap In</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@800&family=DotGothic16&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&family=IBM+Plex+Sans:wght@400;600;700&display=swap">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header class="topbar">
-  <span class="wm" role="img" aria-label="Tap In">tap <span class="ii" aria-hidden="true">&#305;<svg class="wifi" viewBox="0 0 24 20" aria-hidden="true"><circle cx="12" cy="16.6" r="2.3"/><path d="M6.6 11.6a7.6 7.6 0 0 1 10.8 0"/><path d="M2.9 7.4a12.8 12.8 0 0 1 18.2 0"/></svg></span>n</span>
-</header>
-<div class="lines" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
-<main>
+<div class="scene"><img src="scene.svg" width="192" height="84" alt="Pixel Boston at dusk: the skyline, Back Bay brownstones and a Red Line train on the Longfellow bridge"></div>
+<main class="card">
+  <p class="wm" role="img" aria-label="Tap In">tap <span class="ii" aria-hidden="true">&#305;<svg class="wifi" viewBox="0 0 24 20" aria-hidden="true"><circle cx="12" cy="16.6" r="2.3"/><path d="M6.6 11.6a7.6 7.6 0 0 1 10.8 0"/><path d="M2.9 7.4a12.8 12.8 0 0 1 18.2 0"/></svg></span>n</p>
   <h1>Find the table that needs you</h1>
   <p class="lede">Make a profile, tap a blank badge at a station, and see who you already know here.</p>
   <p id="back" hidden><a class="button secondary" id="back-link" href="me.html">Go to your page</a></p>
@@ -63,6 +61,7 @@
     <div class="submit-bar">
       <p class="error" id="error" role="alert"></p>
       <button type="submit" id="go">Get my badge</button>
+      <ol class="journey" aria-label="Steps"><li aria-current="step">Sign up</li><li>Tap your badge</li><li>Find your table</li></ol>
     </div>
     <p class="note">Only your first name shows on screen. Ask us and we'll delete your profile.</p>
   </form>
