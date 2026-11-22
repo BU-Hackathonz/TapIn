@@ -4,7 +4,16 @@
   const qs = new URLSearchParams(location.search);
   // Sign in first. The venue projector has nobody to sign in, so it opens the wall with ?kiosk.
   let signedIn = false;
-  try { signedIn = !!localStorage.getItem("wall.me"); } catch { /* private mode: treat as signed out */ }
+  try {
+    // arriving from tapin.boston or the phone page: ?as=<person id>&name=<name> is who you are on this address
+    if (/^\d+$/.test(qs.get("as") || "")) {
+      const prev = JSON.parse(localStorage.getItem("wall.me") || "null") || {};
+      localStorage.setItem("wall.me", JSON.stringify({ ...prev, person_id: +qs.get("as"), name: qs.get("name") || prev.name || "You", face: prev.face || `face-${qs.get("as")}` }));
+      if (!localStorage.getItem("wall.room")) localStorage.setItem("wall.room", JSON.stringify({ status: "in", name: "This room", time: Date.now() }));
+      history.replaceState(null, "", location.pathname);   // keep the address clean
+    }
+    signedIn = !!localStorage.getItem("wall.me");
+  } catch { /* private mode: treat as signed out */ }
   if (qs.has("kiosk")) document.body.classList.add("kiosk");
   const peek = window.top !== window && qs.has("peek");   // the mockups gallery shows the room in a frame, signed out
   if (!signedIn && !qs.has("kiosk") && !peek) {
@@ -328,7 +337,12 @@
     const offline = () => {
       document.body.classList.add("no-room");
       const n = document.createElement("div"); n.className = "no-room-note"; n.setAttribute("role", "status");
-      n.innerHTML = "<b>The room shows at the venue</b><span>Connect to the venue Wi-Fi to see who is here right now.</span>";   // static text
+      n.innerHTML = "<b>The room shows at the venue</b><span>The room is private to the venue network. On the venue Wi-Fi, open it there:</span>";   // static text
+      // the public site never serves the room; on the venue Wi-Fi the venue address does, so link there with who you are
+      const a = document.createElement("a"); a.className = "no-room-go"; a.textContent = "Open the room on the venue Wi-Fi";
+      let me = null; try { me = JSON.parse(localStorage.getItem("wall.me") || "null"); } catch { /* private mode */ }
+      a.href = "http://192.168.8.236:8000/wall/index.html" + (me && me.person_id != null ? `?as=${encodeURIComponent(me.person_id)}&name=${encodeURIComponent(me.name || "")}` : "");
+      n.append(a);
       document.body.append(n);
     };
     fetch(HTTP + "/api/graph")

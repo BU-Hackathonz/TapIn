@@ -302,4 +302,6 @@ body.hw .wall-icebreaker[hidden] { display: none; }
 /* no room server behind the page (public site): an honest note instead of a made-up room */
 .no-room-note { position: fixed; z-index: 40; left: 50%; top: 50%; transform: translate(-50%, -50%); display: grid; gap: 6px; max-width: min(420px, calc(100vw - 32px));
   padding: 18px 20px; background: #fbf9f6; color: #111; border: 3px solid #111; box-shadow: 8px 8px 0 #DA291C; text-align: center; font: 400 15px/1.4 "IBM Plex Sans", system-ui, sans-serif; }
+.no-room-go { justify-self: center; margin-top: 6px; padding: 10px 14px; background: #111; color: #ffb000; text-decoration: none; font: 400 14px "DotGothic16", monospace; text-transform: uppercase; letter-spacing: .05em; box-shadow: 4px 4px 0 #DA291C; }
+.no-room-go:focus-visible { outline: 3px solid #003DA5; outline-offset: 3px; }
 .no-room-note b { font: 800 22px/1.15 "Bricolage Grotesque", system-ui, sans-serif; }
