@@ -50,16 +50,23 @@
       setTimeout(() => { msg.textContent = ""; }, 1800);
     });
     const sw = el("label", "hp-sw"), cb = el("input"); cb.type = "checkbox";
-    cb.checked = !!(window.Sound && Sound.started && !Sound.muted);
+    cb.checked = !!(typeof Sound !== "undefined" && Sound.started && !Sound.muted);
     sw.append(el("span", "", "Bell and plucks"), cb);
     cb.addEventListener("change", async () => {
       if (cb.checked) { try { await Sound.start(); } catch { /* no audio yet */ } }
-      if (window.Sound && Sound.setMuted) Sound.setMuted(!cb.checked);
+      if (typeof Sound !== "undefined" && Sound.setMuted) Sound.setMuted(!cb.checked);
       try { localStorage.setItem("wall.hostSound", cb.checked ? "on" : "off"); } catch { /* private mode */ }
     });
     const acct = el("button", "hp-save hp-out", mine().name ? "Sign out" : "Sign in"); acct.type = "button";
     acct.addEventListener("click", () => { const was = !!mine().name; if (was) { try { localStorage.removeItem("wall.me"); } catch { /* private mode */ } } location.href = was ? "join.html" : "join.html?login"; });
-    body.append(form, bar("Account"), acct, bar("Sound"), sw);
+    const qw = el("label", "hp-sw"), qb = el("input"); qb.type = "checkbox";
+    qb.checked = !!(typeof Sound !== "undefined" && Sound.mode === "quiet");
+    qw.append(el("span", "", "Quiet mode (study hours)"), qb);
+    qb.addEventListener("change", () => {
+      if (typeof Sound !== "undefined" && Sound.setMode) Sound.setMode(qb.checked ? "quiet" : "event");
+      try { localStorage.setItem("wall.hostQuiet", qb.checked ? "on" : "off"); } catch { /* private mode */ }
+    });
+    body.append(form, bar("Account"), acct, bar("Sound"), sw, qw, el("p", "hp-note", "Quiet mode: no bell when someone taps in, just plucks for tables. Good for study hours."));
   };
 
   const render = () => {
