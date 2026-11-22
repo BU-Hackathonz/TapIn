@@ -19,26 +19,13 @@ const View3D = (() => {
   // Mockup profile picture: initials on a colour from the name, drawn in the active theme's style. Cached.
   const avatars = new Map();
   function avatar(person) {
-    const style = Theme.c.avatar, key = `${style}:${person.id}:${person.name}:${person.face || ""}:${person.photo ? person.photo.length : 0}`;
+    const style = Theme.c.avatar, key = `${style}:${person.id}:${person.name}`;
     if (avatars.has(key)) return avatars.get(key);
     const c = document.createElement("canvas");
     c.width = c.height = 128;
     const g = c.getContext("2d");
     let h = 0;
     for (const ch of person.name) h = (h * 31 + ch.charCodeAt(0)) % 360;
-    if (person.photo) {
-      // Draw the face first so there's something to show, then paint the photo over it once it decodes.
-      drawFace(g, person);
-      const img = new Image();
-      img.onload = () => {
-        g.save(); g.beginPath(); g.arc(64, 64, 64, 0, Math.PI * 2); g.clip();
-        g.drawImage(img, 0, 0, 128, 128); g.restore();
-        if (typeof Corner !== "undefined") Corner.refresh();   // the sign-in page has no Corner
-      };
-      img.src = person.photo;
-      avatars.set(key, c);
-      return c;
-    }
     if (style === "face") {
       drawFace(g, person);
       avatars.set(key, c);
@@ -86,7 +73,7 @@ const View3D = (() => {
   const HAIR = ["#2a1b12", "#4b2e1c", "#7b4a27", "#c79a5b", "#151515", "#9b3a24", "#8a8a8a", "#e0c48a"];
   function drawFace(g, person) {
     let s = 7;
-    for (const ch of person.face || `${person.id}:${person.name}`) s = Math.imul(s ^ ch.charCodeAt(0), 16777619) >>> 0;
+    for (const ch of `${person.id}:${person.name}`) s = Math.imul(s ^ ch.charCodeAt(0), 16777619) >>> 0;
     const r = (n) => { s = Math.imul(s ^ (s >>> 13), 1274126177) >>> 0; return s % n; };
     const bgHue = r(360), skin = SKIN[r(SKIN.length)], hair = HAIR[r(HAIR.length)];
     const shirt = `hsl(${r(360)} 45% ${38 + r(20)}%)`, style = r(5);
@@ -153,12 +140,6 @@ const View3D = (() => {
     return [Math.cos(th) * rad, y, Math.sin(th) * rad];
   };
   const spread = (n) => 34 + 14 * Math.sqrt(n);
-  // 2D layout of n people in a circle (sunflower spacing); the third value keeps the same shape as fib()
-  const disc = (i, n) => {
-    if (n <= 1) return [0, 0, 0];
-    const r = Math.sqrt((i + 0.5) / n) * 1.1, th = i * 2.399963;
-    return [Math.cos(th) * r, Math.sin(th) * r, 0];
-  };
 
   function init(sceneFn) {
     canvas = document.getElementById("map3d");
@@ -192,15 +173,9 @@ const View3D = (() => {
     // Stretch the sphere toward the screen's long side: tall on portrait phones, wide on the projector.
     const xs = W > H ? Math.min(1.8, W / H) : 0.5, ys = H > W ? 1.7 : 0.8;
     shownGroups.forEach((g, i) => {
+      const [x, y, z] = fib(i, shownGroups.length);
       const n = visible.filter((p) => p.group_id === g.id).length;
       const k = shownGroups.length === 1 ? 0 : R;
-      if (opts.flat) {
-        // 2D: tables on a ring around you, everything on one plane
-        const a = -Math.PI / 2 + (i / shownGroups.length) * Math.PI * 2;
-        centers.set(g.id, { x: Math.cos(a) * k * 1.15 * xs, y: Math.sin(a) * k * 1.15 * (H > W ? 1.5 : 0.95), z: 0, r: spread(n) });
-        return;
-      }
-      const [x, y, z] = fib(i, shownGroups.length);
       centers.set(g.id, { x: x * k * xs, y: y * k * ys, z: z * k, r: spread(n) });
     });
     const byGroup = new Map();
@@ -209,15 +184,11 @@ const View3D = (() => {
       if (!byGroup.has(key)) byGroup.set(key, []);
       byGroup.get(key).push(p);
     }
-    const seen = new Set(), me = scene().me;
+    const seen = new Set();
     for (const [gid, ms] of byGroup) {
-      const lobby = !centers.has(gid);
-      // With you in the middle, people not at a table circle around you instead of sitting on top of you.
-      const c = centers.get(gid) || { x: 0, y: 0, z: 0, r: me ? Math.max(70, spread(ms.length)) : spread(ms.length) };
+      const c = centers.get(gid) || { x: 0, y: 0, z: 0, r: spread(ms.length) };
       ms.forEach((p, i) => {
-        let [ox, oy, oz] = opts.flat ? disc(i, ms.length) : fib(i, ms.length);
-        if (lobby && me && ms.length === 1) [ox, oy, oz] = [1, 0, 0];
-        const r = c.r * (lobby && me ? 1 : 0.72);
+        const [ox, oy, oz] = fib(i, ms.length), r = c.r * 0.72;
         const q = pos.get(p.id) || { x: c.x, y: c.y, z: c.z };
         Object.assign(q, { tx: c.x + ox * r, ty: c.y + oy * r, tz: c.z + oz * r });
         pos.set(p.id, q);
@@ -225,22 +196,6 @@ const View3D = (() => {
       });
     }
     for (const id of [...pos.keys()]) if (!seen.has(id)) pos.delete(id);
-    myTable = me ? bestTable(me) : null;
-  }
-
-  // The open table whose needs overlap your skills most; ties go to the smaller table.
-  function bestTable(me) {
-    const { S, shownGroups } = scene();
-    let best = null, score = 0;
-    for (const g of shownGroups) {
-      if (g.mode !== "open") continue;
-      const needs = S.needs.filter((n) => n.group_id === g.id && !n.handled_by).map((n) => n.need);
-      const hit = needs.filter((n) => (me.skills || []).includes(n)).length;
-      const size = [...S.people.values()].filter((p) => p.group_id === g.id).length;
-      const sc = hit * 10 - size * 0.1;
-      if (hit && sc > score) { best = g.id; score = sc; }
-    }
-    return best;
   }
 
   function project(x, y, z) {
@@ -261,13 +216,12 @@ const View3D = (() => {
     const dt = Math.min(64, t - lastFrame);
     lastFrame = t;
     coast(dt, t);
-    if (opts.flat) { rotX *= 0.85; rotY *= 0.85; }                    // 2D: ease back to looking straight on
-    else if (opts.spin && t - lastTouch > 5000) rotY += 0.00018 * dt;   // idle spin
+    if (opts.spin && t - lastTouch > 5000) rotY += 0.00018 * dt;   // idle spin
     for (const q of pos.values()) {
       q.x += (q.tx - q.x) * 0.08; q.y += (q.ty - q.y) * 0.08; q.z += (q.tz - q.z) * 0.08;
     }
-    const f = (focusId !== null && pos.get(focusId)) || (focusGroup !== null && centers.get(focusGroup));
-    const goal = f || { x: opts.flat ? panX : 0, y: opts.flat ? panY : 0, z: 0 };
+    const f = focusId !== null && pos.get(focusId);
+    const goal = f || { x: 0, y: 0, z: 0 };
     cam.x += (goal.x - cam.x) * 0.1; cam.y += (goal.y - cam.y) * 0.1; cam.z += (goal.z - cam.z) * 0.1;
     zoom += (zoomGoal - zoom) * 0.12;
     // Phones: the profile is a bottom sheet, so lift the view to keep the tapped person above it.
@@ -301,7 +255,7 @@ const View3D = (() => {
       ctx.fill();
       ctx.setLineDash(g?.mode === "heads_down" ? [6, 6] : []);
       ctx.strokeStyle = g?.glow ? T.accent : T.region;
-      ctx.lineWidth = g?.glow ? 3 : 1;
+      ctx.lineWidth = g?.glow ? 3 : 1.5;
       ctx.stroke();
       ctx.setLineDash([]);
     }
@@ -313,10 +267,7 @@ const View3D = (() => {
       const pa = S.people.get(l.a), pb = S.people.get(l.b);
       const inner = pa.group_id && pa.group_id === pb.group_id;
       const mine = focusLinks && (l.a === focusLinks || l.b === focusLinks);
-      const hov = hoverId !== null && (l.a === hoverId || l.b === hoverId);
-      // Less clutter: links between tables only show for the person you selected or point at.
-      if (!inner && !mine && !hov && !S.fresh.has(k)) continue;
-      ctx.globalAlpha = mine || hov ? 1 : Math.min(1, depthAlpha((a.z + b.z) / 2) * 0.35 * T.linkAlpha);
+      ctx.globalAlpha = mine ? 1 : Math.min(1, depthAlpha((a.z + b.z) / 2) * (inner ? 0.55 : 0.2) * T.linkAlpha);
       ctx.strokeStyle = S.fresh.has(k) || mine ? T.accent : inner ? T.inner : T.link;
       ctx.lineWidth = Math.min(1 + (l.strength - 1) * 0.7, 4) * (mine ? 1.6 : 1);
       line(a.x, a.y, b.x, b.y, hash(k));
@@ -331,29 +282,13 @@ const View3D = (() => {
     }
     ctx.setLineDash([]);
 
-    // you -> the table that needs your skills
-    const ME = scene().me, meP = ME ? project(0, 0, 0) : null;
-    if (meP && !meP.off && myTable !== null && C.get(myTable)) {
-      const c = C.get(myTable);
-      ctx.setLineDash([4, 6]); ctx.strokeStyle = T.accent; ctx.lineWidth = 1.6; ctx.globalAlpha = 0.75;
-      line(meP.x, meP.y, c.x, c.y, 7);
-      ctx.setLineDash([]);
-    }
-
-    // people you know: green and tied to you while zoomed out, so you can find them at a glance
-    const known = scene().known || new Set(), greenOn = zoom < 1.6;
-    if (meP && !meP.off && greenOn) {
-      ctx.strokeStyle = T.known; ctx.lineWidth = 1.4; ctx.globalAlpha = 0.55;
-      for (const id of known) { const p = P.get(id); if (p) line(meP.x, meP.y, p.x, p.y, id * 31); }
-    }
-
     // people, far first
     const order = [...P].sort((a, b) => b[1].z - a[1].z);
     for (const [id, p] of order) {
       const person = S.people.get(id);
       const r = radius(person) * p.s;
       const base = person.here ? depthAlpha(p.z) : 0.22;
-      const col = greenOn && known.has(id) ? T.known : person.here ? T[person.role] || T.student : T.away;
+      const col = person.here ? T[person.role] || T.student : T.away;
       // Dot below ~14 px on screen, profile picture above ~22 px, cross-fade between.
       const pic = Math.max(0, Math.min(1, (r - 14) / 8));
       if (pic < 1) {
@@ -389,10 +324,7 @@ const View3D = (() => {
     };
     const k = T.rough ? 1.2 : 1, big = (PHONE ? 15 : 20) * k, small = (PHONE ? 12 : 14) * k;
     for (const [gid, c] of [...C].sort((a, b) => a[1].z - b[1].z)) {
-      const g = S.groups.get(gid), top = c.y - c.r * c.s - 10;
-      // one need, plus a count, keeps the labels short
-      const all = scene().needLine(g), parts = all.replace(/^needs /, "").split(", ").filter(Boolean);
-      const need = all.startsWith("needs ") && parts.length > 1 ? `needs ${parts[0]} +${parts.length - 1}` : all;
+      const g = S.groups.get(gid), need = scene().needLine(g), top = c.y - c.r * c.s - 10;
       ctx.font = `700 ${big}px ${T.font}`;
       const w = Math.max(ctx.measureText(g?.name || "").width, need.length * small * 0.5);
       const lx = Math.max(w / 2 + 8, Math.min(W - w / 2 - 8, c.x));   // keep the label on screen
@@ -405,9 +337,7 @@ const View3D = (() => {
       ctx.fillText(need, lx, top);
     }
     ctx.font = `${small}px ${T.font}`;
-    // Names only once you zoom in (or for whoever you point at), so the overview stays quiet.
-    const near = opts.names && zoom > 1.5 ? order.slice(-PRESET.labels).map(([id]) => id).reverse() : [];
-    if (hoverId !== null && hoverId !== focusLinks) near.unshift(hoverId);
+    const near = opts.names ? order.slice(-PRESET.labels).map(([id]) => id).reverse() : [];
     if (focusLinks) near.unshift(focusLinks);
     for (const id of near) {
       const p = P.get(id), person = S.people.get(id);
@@ -419,20 +349,6 @@ const View3D = (() => {
       ctx.fillText(person.name, p.x, y);
     }
 
-    // you, always on top in the middle
-    if (meP && !meP.off) {
-      const rr = Math.max(16, 15 * meP.s * 1.3);
-      ctx.globalAlpha = 1;
-      ctx.save(); ctx.beginPath(); ctx.arc(meP.x, meP.y, rr, 0, Math.PI * 2); ctx.clip();
-      ctx.drawImage(avatar(ME), meP.x - rr, meP.y - rr, rr * 2, rr * 2);
-      ctx.restore();
-      ctx.beginPath(); ctx.arc(meP.x, meP.y, rr + 2, 0, Math.PI * 2);
-      ctx.strokeStyle = T.accent; ctx.lineWidth = 3; ctx.stroke();
-      ctx.font = `700 ${small}px ${T.font}`; ctx.fillStyle = T.title;
-      ctx.fillText("You", meP.x, meP.y + rr + 18);
-    }
-    lastMe = meP && !meP.off ? { x: meP.x, y: meP.y, r: Math.max(16, 15 * meP.s * 1.3) } : null;
-
     // arrival pulses
     for (let i = pulses.length - 1; i >= 0; i--) {
       const u = (t - pulses[i].t0) / 1400, p = P.get(pulses[i].id);
@@ -443,10 +359,8 @@ const View3D = (() => {
     }
     ctx.globalAlpha = 1;
     lastProjection = P;
-    lastCenters = C;
   }
-  let lastProjection = new Map(), lastCenters = new Map(), focusGroup = null, onGroup = () => {}, onMe = () => {};
-  let lastMe = null, myTable = null, hoverId = null;
+  let lastProjection = new Map();
 
   function pulse(id, kind = "accent") {
     pulses.push({ id, kind, t0: performance.now() });
@@ -455,8 +369,7 @@ const View3D = (() => {
   // ------------------------------------------------------------ input
 
   function reset() {
-    panX = panY = 0;
-    rotY = opts.flat ? 0 : 0.4; rotX = opts.flat ? 0 : -0.3; zoomGoal = 1; focusId = null; focusGroup = null; picked = null; spinX = spinY = 0;
+    rotY = 0.4; rotX = -0.3; zoomGoal = 1; focusId = null; picked = null; spinX = spinY = 0;
   }
   const setZoom = (z) => { zoomGoal = zoom = Math.max(0.5, Math.min(4.5, z)); };
 
@@ -489,18 +402,11 @@ const View3D = (() => {
     });
     canvas.addEventListener("pointermove", (e) => {
       const prev = pts.get(e.pointerId);
-      if (!prev) { hover(e); return; }
-      canvas.style.cursor = "move";
+      if (!prev) return;
       const cur = { x: e.clientX, y: e.clientY }, now = performance.now();
       pts.set(e.pointerId, cur);
       lastTouch = now;
-      if (pts.size === 1 && opts.flat) {
-        // 2D: dragging pans the map instead of turning it
-        const sc = (Math.min(W, H) * (H > W ? 1.35 : 0.95)) / (950 / zoom);
-        panX -= (cur.x - prev.x) / sc; panY -= (cur.y - prev.y) / sc;
-        focusId = null; focusGroup = null;
-        moved += Math.abs(cur.x - prev.x) + Math.abs(cur.y - prev.y);
-      } else if (pts.size === 1) {
+      if (pts.size === 1) {
         // Upside down (rolled past the top), a sideways drag must turn the other way to follow the finger.
         const flip = Math.cos(rotX) < 0 ? -1 : 1;
         const dy = (cur.x - prev.x) * 0.006 * flip, dx = (cur.y - prev.y) * 0.006, dt = Math.max(8, now - lastMove);
@@ -521,7 +427,6 @@ const View3D = (() => {
       const was = pts.get(e.pointerId);
       pts.delete(e.pointerId);
       pointers = pts.size;
-      if (pts.size === 0) canvas.style.cursor = "default";
       if (pts.size < 2) pinch = 0;
       if (pts.size === 0) {
         // Finger rested before lifting, or this was a pinch: no throw.
@@ -545,63 +450,22 @@ const View3D = (() => {
     canvas.addEventListener("contextmenu", (e) => { e.preventDefault(); reset(); hideCard(); });
   }
 
-  // What's under the pointer: you, a person, a table bubble, or nothing.
-  function hit(x, y) {
-    const { S, radius } = scene();
-    if (lastMe && Math.hypot(lastMe.x - x, lastMe.y - y) < lastMe.r + 6) return { me: true };
-    let best = null, bestD = Infinity;
-    for (const [id, p] of lastProjection) {
-      const d = Math.hypot(p.x - x, p.y - y), person = S.people.get(id);
-      if (d < Math.max(22, radius(person) * p.s + 8) && d < bestD) { best = id; bestD = d; }
-    }
-    if (best !== null) return { person: best };
-    for (const [gid, c] of lastCenters) if (Math.hypot(c.x - x, c.y - y) < c.r * c.s) return { table: gid };
-    return null;
-  }
-  function hover(e) {
-    if (e.pointerType === "touch") return;
-    const r = canvas.getBoundingClientRect(), h = hit(e.clientX - r.left, e.clientY - r.top);
-    hoverId = h && h.person !== undefined ? h.person : null;
-    canvas.style.cursor = h ? "pointer" : "default";
-  }
-
   function pick(x, y) {
-    if (lastMe && Math.hypot(lastMe.x - x, lastMe.y - y) < lastMe.r + 6) {
-      focusId = null; focusGroup = null; picked = null; zoomGoal = Math.max(zoom, 1.6);
-      onMe();
-      return;
-    }
     const { S, radius } = scene();
     let best = null, bestD = Infinity;
     for (const [id, p] of lastProjection) {
       const d = Math.hypot(p.x - x, p.y - y), person = S.people.get(id);
       if (d < Math.max(22, radius(person) * p.s + 8) && d < bestD) { best = id; bestD = d; }
     }
-    if (best !== null) { focusPerson(best); return; }
-    // No person under the finger: a table bubble opens that table's hub. Nearest bubble wins.
-    let table = null, tableD = Infinity;
-    for (const [gid, c] of lastCenters) {
-      const d = Math.hypot(c.x - x, c.y - y);
-      if (d < c.r * c.s && d < tableD) { table = gid; tableD = d; }
-    }
-    if (table !== null) { focusTable(table); return; }
-    hideCard();
-  }
-  // Fly to the person: the camera orbits them and zooms until their picture shows.
-  function focusPerson(id) {
-    const { S } = scene();
-    if (!S.people.has(id)) return;
-    picked = id; pickedUntil = Infinity;
-    focusId = id; focusGroup = null; zoomGoal = Math.max(zoom, 3);
-    showProfile(S.people.get(id));
-  }
-  function focusTable(gid) {
-    picked = null; focusId = null; focusGroup = gid; zoomGoal = Math.max(zoom, 1.9);
-    onGroup(gid);
+    if (best === null) { hideCard(); return; }
+    // Fly to the person: the camera orbits them and zooms until their picture shows.
+    picked = best; pickedUntil = Infinity;
+    focusId = best; zoomGoal = Math.max(zoom, 3);
+    showProfile(S.people.get(best));
   }
   function hideCard() {
     document.getElementById("profile").hidden = true;
-    picked = null; focusId = null; focusGroup = null; zoomGoal = Math.min(zoomGoal, 1);
+    picked = null; focusId = null; zoomGoal = Math.min(zoomGoal, 1);
   }
 
   // ------------------------------------------------------------ mock profile
@@ -629,12 +493,6 @@ const View3D = (() => {
       bio: BIOS[Math.floor(r() * BIOS.length)],
       // everyone shows LinkedIn and GitHub; Instagram and a website only for some, so profiles differ
       socials: ["linkedin", "github", ...(r() < 0.5 ? ["instagram"] : []), ...(r() < 0.6 ? ["web"] : [])],
-      // a profile filled in on the sign-in page overrides the made-up parts
-      ...(person.major ? { major: person.major } : {}),
-      ...(person.year ? { year: person.year } : {}),
-      ...(person.bio ? { bio: person.bio } : {}),
-      school: person.school || "",
-      ...(person.socials ? { socials: person.socials } : {}),
     };
   }
 
@@ -696,7 +554,7 @@ const View3D = (() => {
     const tags = el("div", "p-tags");
     tags.append(el("span", `p-role ${person.role}`, person.role));
     tags.append(el("span", `p-state${person.here ? " here" : ""}`, person.focus ? "focus mode" : person.here ? "here now" : "away"));
-    who.append(tags, el("p", "p-sub", `${m.school ? m.school + " · " : ""}${m.major} · '${String(m.year).slice(2)}`));
+    who.append(tags, el("p", "p-sub", `${m.major} · '${String(m.year).slice(2)}`));
     head.append(img, who);
 
     const table = el("section", "p-sec");
@@ -730,19 +588,12 @@ const View3D = (() => {
   }
   function showProfile(person) {
     document.getElementById("profile-body").replaceChildren(...buildProfile(person));
-    document.getElementById("profile").classList.remove("hub", "compact");
     document.getElementById("profile").hidden = false;
   }
 
   // Viewer settings from the corner tab.
-  const opts = { names: true, spin: true, flat: false };
-  let panX = 0, panY = 0;
-  const setOption = (k, v) => {
-    opts[k] = v;
-    if (k === "flat") { panX = panY = 0; spinX = spinY = 0; if (!v) { rotY = 0.4; rotX = -0.3; } relayout(); }
-  };
+  const opts = { names: true, spin: true };
+  const setOption = (k, v) => { opts[k] = v; };
 
-  return { init, setActive, relayout, pulse, avatar, buildProfile, setOption, focusPerson,
-           onTable: (fn) => { onGroup = fn; }, onMe: (fn) => { onMe = fn; }, socialIcon: (k) => SOCIAL[k],
-           option: (k) => opts[k], PHONE };
+  return { init, setActive, relayout, pulse, avatar, buildProfile, setOption, PHONE };
 })();
