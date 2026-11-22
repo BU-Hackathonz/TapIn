@@ -217,7 +217,7 @@
                       links: me.links, socials: Object.keys(me.links) };
     try { localStorage.setItem("wall.me", JSON.stringify(profile)); } catch { /* private mode or full: carry on without saving */ }
     // Last thing before the room: join one (badge tap) or host your own. Either one leads into the room.
-    Room.chooser({ into: $("room-slot"), bare: true, onDone: () => { location.href = "index.html"; } });
+    Room.chooser({ into: $("room-slot"), bare: true, onDone: () => { if (typeof TapLoading !== "undefined") TapLoading.go("index.html"); else location.href = "index.html"; } });
   }
 
   // ---------------------------------------------------------- wire up
