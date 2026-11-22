@@ -19,6 +19,7 @@
   const VN = Math.min(11, Math.max(1, parseInt(qs.get("v"), 10) || 11)), V = VARIANTS[VN], LW = V.lw;
   if (VN > 1) document.documentElement.dataset.v = String(VN);
   document.documentElement.dataset.palette = VN > 1 ? "v" : qs.get("palette") || "sand";
+  document.documentElement.dataset.mk = qs.get("mk") === "num" ? "num" : "let";      // table markers: letters like the T's route letters (default), or ?mk=num for numbers
   if (qs.get("s")) document.documentElement.dataset.s = qs.get("s");
   if (!qs.get("s") && !qs.get("h") && !qs.has("classic")) { document.documentElement.dataset.s = "1"; document.documentElement.dataset.h = "7"; }
   if (qs.get("h")) { document.documentElement.dataset.h = qs.get("h"); if (!qs.get("s")) document.documentElement.dataset.s = "1"; }   // ?h=1..6: variations on draft 1 with the markers and heading rectangles of draft 2      // ?s=1..6: Boston T (MBTA) style drafts for the side column and bottom bar
@@ -124,6 +125,7 @@
     const m = Math.max(0, Math.floor((Date.now() - new Date(iso)) / 60000));
     return m < 60 ? `${m}m` : `${Math.floor(m / 60)}h ${m % 60}m`;
   };
+  const letterOf = (n) => (n > 0 ? String.fromCharCode(65 + ((n - 1) % 26)) : "?");        // table 1 is A, 2 is B, ...
   // A number that changes flashes once, so a glance at the column shows what just moved.
   const prevVal = new Map();
   const chg = (k, v) => { const c = prevVal.has(k) && prevVal.get(k) !== v; prevVal.set(k, v); return c; };
@@ -136,7 +138,7 @@
       ? top.map((g, i) => {
         const full = S.groups.get(g.id);
         const tn = parseInt(String(g.name).replace(/\D+/g, ""), 10) || i + 1;
-        return `<li class="${i === 0 && g.points > 0 ? "top" : ""}${full?.working_on ? "" : " nowo"}" data-n="${tn}" data-l="${tn % 4}"><span class="t"><b>${esc(g.name)}</b>${full?.working_on ? `<small>${esc(full.working_on.replace(/^an?\s+/i, '').replace(/^./, (ch) => ch.toUpperCase()))}</small>` : ""}</span><span class="v ${chg("g:" + g.id, g.points) ? "bump" : ""}">${g.points}</span></li>`;
+        return `<li class="${i === 0 && g.points > 0 ? "top" : ""}${full?.working_on ? "" : " nowo"}" data-n="${tn}" data-k="${letterOf(tn)}" data-l="${tn % 4}"><span class="t"><b>${esc(g.name)}</b>${full?.working_on ? `<small>${esc(full.working_on.replace(/^an?\s+/i, '').replace(/^./, (ch) => ch.toUpperCase()))}</small>` : ""}</span><span class="v ${chg("g:" + g.id, g.points) ? "bump" : ""}">${g.points}</span></li>`;
       }).join("")
       : `<li class="empty">No tables yet</li>`;
 
@@ -151,7 +153,7 @@
       return [...m.values()];
     };
     const tnum = (t) => parseInt(String(t).replace(/\D+/g, ""), 10) || 0;
-    const attrs = (t) => `data-n="${tnum(t)}" data-l="${tnum(t) % 4}"`;
+    const attrs = (t) => `data-n="${tnum(t)}" data-k="${letterOf(tnum(t))}" data-l="${tnum(t) % 4}"`;
     const open = byTable(S.needs.filter((n) => n.handled_by == null && onPlan(n.group_id))).sort((a, b) => new Date(a.since) - new Date(b.since)).slice(0, 4);
     const done = byTable(S.needs.filter((n) => n.handled_by != null && onPlan(n.group_id))).slice(0, Math.max(0, 5 - open.length));
     $("needs").innerHTML = (open.length || done.length)

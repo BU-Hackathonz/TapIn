@@ -325,6 +325,17 @@ body::before {
 :root[data-s] #needs .v, :root[data-s] #groups .v { font-family: "Bricolage Grotesque", var(--hv); font-weight: 700; }
 :root[data-s] #activity .tm { font-weight: 500; }
 
+/* ---- markers as letters (table 1 = A, 2 = B, ...), and the row text says which table it is */
+:root[data-mk="let"] #groups li::before, :root[data-mk="let"] #needs li::before, :root[data-mk="let"] #needs li.wait::before, :root[data-mk="let"] #needs li.done::before { content: attr(data-k); }
+:root[data-mk="let"][data-s] #groups .t b { display: block; font-weight: 700; }
+:root[data-mk="let"][data-s] #groups .t small { font-size: 0.78em; font-weight: 500; color: var(--muted); margin-top: 0.15em; }
+:root[data-mk="let"][data-s] #groups li.top .t small { color: var(--muted); }
+:root[data-mk="let"][data-s] #needs .n { display: inline; }
+
+/* ---- the wordmark: level with the left edge's inset, and the whole mark (arcs and letters) centred in the bar */
+:root:not([data-logo]) #brand, :root[data-logo="strip"] #brand { right: calc(var(--side-w) + (100vw - var(--side-w)) * 0.025); padding-top: 0.28vh; }
+:root[data-s] #moment { padding-right: 12vw; }
+
 .start { position: fixed; inset: 0; display: grid; place-content: center; justify-items: center; gap: 1.2vh; background: color-mix(in srgb, var(--bg) 96%, transparent); z-index: 6; cursor: pointer; }
 .start.gone { display: none; }
 .start button { font: 500 calc(var(--u) * 1.6)/1 var(--sans); padding: 0.7em 2em; color: var(--bg); background: var(--green); border: 0; border-radius: 0; cursor: pointer; }
