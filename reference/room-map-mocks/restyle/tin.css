@@ -66,3 +66,25 @@ body[data-theme="tin"] .wall-icebreaker { bottom: 96px; background: #111; color:
 body[data-theme="tin"] .profile { bottom: 96px; max-height: calc(100% - 190px); }
 body[data-theme="tin"] .count { top: 22px; }
 @media (max-width: 800px) { .tbar .wm { font-size: 26px; } body[data-theme="tin"] .profile { bottom: 76px; max-height: 56%; } .tbar .tmsg { font-size: 12px; max-width: 62%; } }
+
+/* the info button (bottom right of the map) and its card */
+.lede b { font-weight: 800; }
+.info-btn { position: fixed; z-index: 6; bottom: 96px; right: 24px; width: 44px; height: 44px; border: 0; background: #111; color: #fff; font: 800 22px/1 "Bricolage Grotesque", sans-serif; box-shadow: inset -6px 0 0 #DA291C; cursor: pointer; }
+.info-btn:focus-visible { outline: 3px solid #003DA5; outline-offset: 3px; }
+.info-card { position: fixed; z-index: 6; right: 24px; bottom: 150px; width: min(340px, calc(100vw - 48px)); padding: 18px 20px 16px; background: #fff; color: #111; border-top: 6px solid #111; font: 500 15px/1.4 "Bricolage Grotesque", "Helvetica Neue", Helvetica, Arial, sans-serif; }
+.info-card[hidden] { display: none; }
+.info-card h2 { display: block; margin: 0 0 10px; padding: .4em .8em; background: #111; color: #fff; font: 700 12px/1.2 "Helvetica Neue", Helvetica, Arial, sans-serif; text-transform: uppercase; letter-spacing: .1em; box-shadow: inset -10px 0 0 #ED8B00; }
+.info-card p { margin: 0 0 10px; } .info-card .how { color: #444; font-size: 14px; }
+.info-card ul { list-style: none; margin: 0 0 12px; padding: 0; } .info-card li { display: flex; align-items: center; gap: 10px; padding: 5px 0; border-bottom: 1px solid #e3e3e3; }
+.info-card li:last-child { border-bottom: 0; }
+.info-x { position: absolute; top: 6px; right: 6px; width: 32px; height: 32px; border: 0; background: transparent; color: #fff; font-size: 22px; cursor: pointer; }
+.k { display: inline-block; width: .85em; height: .85em; flex: none; }
+.k.dot { border-radius: 50%; background: #2f6d4e; } .k.sq { border: 2px solid #2f6d4e; } .k.ring { border-radius: 50%; border: 2px solid #8a8a8a; }
+.k.dash, .k.line { width: 1.5em; height: 0; border-top: 2.5px dashed #1b4a33; } .k.line { border-top-style: solid; }
+@media (max-width: 800px) { .info-btn { bottom: 76px; right: 12px; } .info-card { right: 12px; bottom: 130px; } }
+
+/* the button and card belong to the map, so they sit left of the Room activity column */
+@media (min-width: 801px) {
+  body:has(.room-insights[open]) .info-btn { right: calc(clamp(250px, 21vw, 380px) + 24px); }
+  body:has(.room-insights[open]) .info-card { right: calc(clamp(250px, 21vw, 380px) + 24px); }
+}
