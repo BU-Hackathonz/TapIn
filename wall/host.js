@@ -762,6 +762,14 @@
   $("start-btn").addEventListener("click", async () => {
     $("start").classList.add("gone");
     try { await Sound.start(); } catch (e) { console.error("sound", e); }
+    // Avery's intro (intro/): the room fills up, then lands on this plan. Never blocks the data or the WebSocket.
+    try {
+      if (window.TapInIntro) TapInIntro.map(document.body, { quiet: Sound.muted, target: () => {
+        const r = $("room").getBoundingClientRect();
+        return { tables: [...layout.tables()].map(([id, t]) => ({ id, x: r.left + t.x, y: r.top + t.y, r: t.R })),
+                 people: layout.positions().map((p) => ({ x: r.left + p.x, y: r.top + p.y, table: p.gid })) };
+      } }).catch(() => {});
+    } catch (e) { console.error("intro", e); }
   });
   buildLayout();
   let rt = 0;
