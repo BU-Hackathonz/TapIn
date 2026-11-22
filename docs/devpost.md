@@ -40,14 +40,14 @@ javascript, html5, css3, canvas, tone.js, web-audio, vercel, cloudflare
 
 ## Gallery, in upload order (every image 3:2, PNG, under 5 MB)
 
-| # | File (media/devpost/) | Caption |
+| # | File (media/devpost/) | Caption (140 characters max) |
 |---|---|---|
 | 1 | landing.png | The landing page at tapin.boston: a pixel Green Line train down Comm Ave, then Join a space or Host a space. |
-| 2 | host-wall.png | The host wall on the projector: tables by letter, groups by points, open needs, activity and scans per 10 minutes. Sample data from our fake server, no real attendees. |
+| 2 | host-wall.png | Sample data, no real attendees: the host wall with tables by letter, groups by points, open needs and scans per 10 minutes. |
 | 3 | phone-signup-claim.png | The real phone sign-up, then 30 seconds to tap a blank badge on any station. |
 | 4 | join.png | Join a space: Sign up goes to the real sign-up; Log in is a prototype that stays in the browser. |
 | 5 | host-pin.png | Host a space: a PIN on the venue Wi-Fi, then create the event (name and tables, saved on the server). |
-| 6 | system.png | How it fits together: two ESP32 stations and a laptop server on the venue Wi-Fi, Tiger Data and Gemini in the cloud, tapin.boston through a tunnel. |
+| 6 | system.png | How it fits: two ESP32 stations and a laptop server on the venue Wi-Fi, Tiger Data and Gemini, and tapin.boston through a tunnel. |
 | 7 | access.png | What is public: six API routes. Names, taps, hosting and live updates stay on the venue network. |
 | 8 | sound-map.png | The room plays it: one pentatonic scale, a bell in your own note, plucks for links, a trolley bell for every 10th person. |
 | 9 | live-activity.png | Every tap since Saturday 10 AM from the taps hypertable, by hour and station, our own testing included. (refresh 8:15) |
