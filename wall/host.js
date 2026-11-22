@@ -847,15 +847,23 @@
       }, 900);
     }
   }
-  // The room the host made on the join page (wall.room in this browser): its name and how many tables to draw. The URL still wins.
+  // The event's name and table count: the URL first, then the room this browser hosts (wall.room, from the join page), then the event
+  // saved on the server (Create event saves it there, so another screen opening the wall shows the same event).
+  let localRoom = null;
   try {
     const r = JSON.parse(localStorage.getItem("wall.room") || "null");
     if (r && r.host) {
-      if (!qs.get("venue") && r.name) { $("locname").textContent = r.name; $("venue").textContent = ""; }
+      localRoom = r;
+      if (!qs.get("venue") && r.name) $("locname").textContent = r.name;
       if (!qs.has("tables") && r.tables > 0) MAXT = r.tables;
     }
     if (localStorage.getItem("wall.hostSound") === "off" && window.Sound && Sound.setMuted) Sound.setMuted(true);
   } catch { /* private mode or no room saved */ }
+  fetch("/api/room-settings").then((r) => (r.ok ? r.json() : null)).then((s) => {
+    if (!s) return;
+    if (!qs.get("venue") && !(localRoom && localRoom.name) && s.venue) $("locname").textContent = s.venue;
+    if (!qs.has("tables") && !(localRoom && localRoom.tables > 0) && Number.isFinite(s.tables)) { MAXT = s.tables; if (graphRaw) applyGraph(graphRaw); }
+  }).catch(() => {});
   async function begin() {
     $("start").classList.add("gone");
     try { await Sound.start(); } catch (e) { console.error("sound", e); }

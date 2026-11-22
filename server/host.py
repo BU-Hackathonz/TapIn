@@ -42,7 +42,7 @@ def _load() -> dict:
 
 class Settings(BaseModel):
     venue: str = Field(DEFAULTS["venue"], min_length=1, max_length=40)
-    tables: int = Field(DEFAULTS["tables"], ge=0, le=12)       # 0 shows every table
+    tables: int = Field(DEFAULTS["tables"], ge=0, le=26)       # 0 shows every table; letters run A to Z
     marker: str = Field(DEFAULTS["marker"], pattern="^(letters|numbers)$")
     sound: bool = DEFAULTS["sound"]
 
