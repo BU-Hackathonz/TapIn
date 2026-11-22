@@ -25,6 +25,12 @@
   let busy = false;      // skip a refresh while a switch is being saved
   let lastKey = "";      // only rebuild the page when something changed
 
+  // Tables show as letters with line colors, exactly like the host screen (wall/host.js): table 1 is A, 2 is B...
+  const letterOf = n => (n > 0 ? String.fromCharCode(65 + ((n - 1) % 26)) : "?");
+  const tableNum = name => +((String(name).match(/\d+/) || [0])[0]);
+  const tableName = name => String(name).replace(/\bTable (\d+)\b/gi, (m, n) => "Table " + letterOf(+n));
+  const bullet = name => el("span", { class: "bullet " + "robg"[tableNum(name) % 4], "aria-hidden": "true" }, letterOf(tableNum(name)));
+
   const list = (items, empty) => items.length ? el("ul", { class: "list" }, items) : el("p", { class: "empty" }, empty);
 
   async function post(path, body) {
@@ -46,7 +52,7 @@
       el("h2", {}, "Tables that fit you"),
       list(me.suggested_groups.map((s, i) => el("li", { class: i === 0 ? "top" : "" },
         // "Table 2 needs firmware" reads as a sentence; other reasons get a separator
-        el("div", { class: "title" }, el("span", { class: "bullet " + "obgr"[i % 4], "aria-hidden": "true" }, s.group.name.replace(/\D+/g, "") || "?"), s.group.name, s.reason.startsWith("needs") ? " " : " · ", el("span", { class: "why" }, s.reason)),
+        el("div", { class: "title" }, bullet(s.group.name), tableName(s.group.name), s.reason.startsWith("needs") ? " " : " · ", el("span", { class: "why" }, s.reason)),
         s.group.working_on ? el("div", {}, "Building ", s.group.working_on) : null,
         el("div", { class: "sub" }, `You know ${s.group.known_count} of its ${s.group.size} ${s.group.size === 1 ? "person" : "people"}`),
       )), me.here ? "No open tables fit you right now. Check back soon." : "Check in at a station to see tables that fit you."),
@@ -67,10 +73,10 @@
       needs.length ? el("p", { class: "muted" }, `${done.length} of ${needs.length} needs met`) : null,
       list([
         ...open.map((n, i) => el("li", { class: i === 0 ? "top" : "" },
-          el("div", { class: "title" }, n.table, " ", el("span", { class: "why" }, "needs " + n.need)),
+          el("div", { class: "title" }, bullet(n.table), tableName(n.table), " ", el("span", { class: "why" }, "needs " + n.need)),
           el("div", { class: "sub mono" }, "waiting " + ago(n.since)))),
         ...done.map(n => el("li", { class: "handled" },
-          el("div", { class: "title" }, `${n.table} needs ${n.need}`),
+          el("div", { class: "title" }, bullet(n.table), `${tableName(n.table)} needs ${n.need}`),
           el("div", { class: "sub" }, "handled"))),
       ], "No table is asking for help right now."),
       el("p", { class: "note" }, "Scan in with a table at its station to mark its need handled."),
@@ -90,7 +96,7 @@
     }, label);
     return [
       el("h2", {}, "Your table"),
-      el("p", {}, el("strong", {}, g.name), el("span", { class: "points" }, `${g.points} pts`)),
+      el("p", { class: "yours" }, bullet(g.name), el("strong", {}, tableName(g.name)), el("span", { class: "points" }, `${g.points} pts`)),
       g.working_on ? el("p", { class: "muted" }, "Building ", g.working_on) : null,
       el("p", { class: "muted" }, g.members.map(m => m.name).join(", ")),
       el("div", { class: "seg", role: "group", "aria-label": "Table mode" }, modeBtn("open", "Open"), modeBtn("heads_down", "Heads-down")),
