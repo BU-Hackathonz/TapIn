@@ -125,6 +125,8 @@ const View3D = (() => {
   // Sketch style: every stroke is drawn twice with a small, stable wobble (seeded per element, so it doesn't boil).
   const seeded = (n) => { let x = (n * 2654435761) >>> 0; return () => ((x = Math.imul(x ^ (x >>> 15), 2246822507) >>> 0) / 4294967296 - 0.5); };
   const hash = (str) => { let h = 7; for (const ch of String(str)) h = Math.imul(h ^ ch.charCodeAt(0), 16777619); return h >>> 0; };
+  // host look: "Table 3" reads "Table C", as on the host screen
+  const tname = (g) => { const n = g?.name || ""; return Theme.c.host ? n.replace(/\bTable (\d+)\b/i, (m, d) => "Table " + String.fromCharCode(64 + (((+d - 1) % 26) + 1))) : n; };
   function line(x1, y1, x2, y2, seed) {
     if (!Theme.c.rough) { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); return; }
     const r = seeded(seed), len = Math.hypot(x2 - x1, y2 - y1) || 1, nx = -(y2 - y1) / len, ny = (x2 - x1) / len;
@@ -189,12 +191,13 @@ const View3D = (() => {
     if (!scene) return;
     const { visible, shownGroups } = scene();
     centers.clear();
+    if (opts.plan && typeof RoomLayout !== "undefined") { planLayout(); return; }
     // Stretch the sphere toward the screen's long side: tall on portrait phones, wide on the projector.
     const xs = W > H ? Math.min(1.8, W / H) : 0.5, ys = H > W ? 1.7 : 0.8;
     shownGroups.forEach((g, i) => {
       const n = visible.filter((p) => p.group_id === g.id).length;
       const k = shownGroups.length === 1 ? 0 : R;
-      if (opts.flat) {
+      if (isFlat()) {
         // 2D: tables on a ring around you, everything on one plane
         const a = -Math.PI / 2 + (i / shownGroups.length) * Math.PI * 2;
         centers.set(g.id, { x: Math.cos(a) * k * 1.15 * xs, y: Math.sin(a) * k * 1.15 * (H > W ? 1.5 : 0.95), z: 0, r: spread(n) });
@@ -215,7 +218,7 @@ const View3D = (() => {
       // With you in the middle, people not at a table circle around you instead of sitting on top of you.
       const c = centers.get(gid) || { x: 0, y: 0, z: 0, r: me ? Math.max(70, spread(ms.length)) : spread(ms.length) };
       ms.forEach((p, i) => {
-        let [ox, oy, oz] = opts.flat ? disc(i, ms.length) : fib(i, ms.length);
+        let [ox, oy, oz] = isFlat() ? disc(i, ms.length) : fib(i, ms.length);
         if (lobby && me && ms.length === 1) [ox, oy, oz] = [1, 0, 0];
         const r = c.r * (lobby && me ? 1 : 0.72);
         const q = pos.get(p.id) || { x: c.x, y: c.y, z: c.z };
@@ -223,6 +226,33 @@ const View3D = (() => {
         pos.set(p.id, q);
         seen.add(p.id);
       });
+    }
+    for (const id of [...pos.keys()]) if (!seen.has(id)) pos.delete(id);
+    myTable = me ? bestTable(me) : null;
+  }
+
+  // The host wall's room plan (David's room_layout.js, used read-only): tables on a tidy grid, people seated around
+  // them, mentors beside the first table they helped. Laid out in screen pixels at zoom 1, then turned into world units,
+  // so zoom and pan still work. You get a seat like everyone else.
+  let mePlan = null;
+  function planLayout() {
+    const { visible, shownGroups, S } = scene(), me = scene().me;
+    const PW = W, K = Math.min(1.4, Math.max(0.7, Math.min(PW / 1440, H / 900) * 1.25));
+    const L = RoomLayout.create({ width: PW, height: H, scale: K, margin: { x: 96 * K, top: 170 * K, bottom: 150 * K } });
+    const people = visible.map((p) => ({ ...p, here: true }));
+    if (me) people.push({ ...me, id: -1, here: true, role: "student", group_id: null });
+    L.setData({ people, groups: shownGroups, links: [...S.links.values()] });
+    for (let i = 0; i < 400 && L.step(); i++);                        // settle at once; the wall's own easing then glides
+    const s0 = Math.min(W, H) * (H > W ? 1.35 : 0.95) / 950, toW = (x, y) => [(x - W / 2) / s0, (y - H / 2) / s0];
+    for (const [gid, t] of L.tables()) { const [x, y] = toW(t.x, t.y); centers.set(gid, { x, y, z: 0, r: Math.max(28, t.R + 20 * K) / s0 }); }
+    const seen = new Set();
+    mePlan = null;
+    for (const n of L.positions()) {
+      const [x, y] = toW(n.x, n.y);
+      if (n.id === -1) { mePlan = { x, y }; continue; }
+      const q = pos.get(n.id) || { x, y, z: 0 };
+      Object.assign(q, { tx: x, ty: y, tz: 0 });
+      pos.set(n.id, q); seen.add(n.id);
     }
     for (const id of [...pos.keys()]) if (!seen.has(id)) pos.delete(id);
     myTable = me ? bestTable(me) : null;
@@ -261,13 +291,13 @@ const View3D = (() => {
     const dt = Math.min(64, t - lastFrame);
     lastFrame = t;
     coast(dt, t);
-    if (opts.flat) { rotX *= 0.85; rotY *= 0.85; }                    // 2D: ease back to looking straight on
+    if (isFlat()) { rotX *= 0.85; rotY *= 0.85; }                    // 2D: ease back to looking straight on
     else if (opts.spin && t - lastTouch > 5000) rotY += 0.00018 * dt;   // idle spin
     for (const q of pos.values()) {
       q.x += (q.tx - q.x) * 0.08; q.y += (q.ty - q.y) * 0.08; q.z += (q.tz - q.z) * 0.08;
     }
     const f = (focusId !== null && pos.get(focusId)) || (focusGroup !== null && centers.get(focusGroup));
-    const goal = f || { x: opts.flat ? panX : 0, y: opts.flat ? panY : 0, z: 0 };
+    const goal = f || { x: isFlat() ? panX : 0, y: isFlat() ? panY : 0, z: 0 };
     cam.x += (goal.x - cam.x) * 0.1; cam.y += (goal.y - cam.y) * 0.1; cam.z += (goal.z - cam.z) * 0.1;
     zoom += (zoomGoal - zoom) * 0.12;
     // Phones: the profile is a bottom sheet, so lift the view to keep the tapped person above it.
@@ -296,6 +326,27 @@ const View3D = (() => {
     for (const [gid, c] of [...C].sort((a, b) => b[1].z - a[1].z)) {
       const g = S.groups.get(gid);
       ctx.globalAlpha = depthAlpha(c.z);
+      if (T.host) {                                                   // the host screen's table outline: breathes out of round
+        const R = c.r * c.s, path = (off, ox, oy, ph) => {
+          ctx.beginPath();
+          for (let k = 0; k <= 72; k++) {
+            const a = (k / 72) * Math.PI * 2, rr = R * off * (1 + 0.08 * Math.sin(2 * a + t / 2600 + gid * 1.9 + ph) + 0.05 * Math.sin(3 * a - t / 3300 + gid * 0.8));
+            k ? ctx.lineTo(c.x + ox + Math.cos(a) * rr, c.y + oy + Math.sin(a) * rr) : ctx.moveTo(c.x + ox + Math.cos(a) * rr, c.y + oy + Math.sin(a) * rr);
+          }
+          ctx.closePath();
+        };
+        path(1, 0, 0, 0);
+        ctx.fillStyle = T.regionFill; ctx.fill();
+        ctx.setLineDash(T.ringDash ? (g?.mode === "heads_down" ? [2, 5] : T.ringDash) : []);
+        ctx.strokeStyle = g?.glow ? T.accent : T.lines ? T.lines[gid % T.lines.length] : T.region;
+        ctx.lineWidth = g?.glow ? 3 : T.ringWidth || 1;
+        ctx.stroke();
+        const r2 = seeded(gid * 977);                                 // a second pass, slightly off, like going over it with the pen again
+        path(1 + r2() * 0.06, r2() * 3, r2() * 3, 0.2);
+        const a0 = ctx.globalAlpha; ctx.globalAlpha = a0 * 0.6; ctx.lineWidth *= 0.7; ctx.stroke(); ctx.globalAlpha = a0;
+        ctx.setLineDash([]);
+        continue;
+      }
       ring(c.x, c.y, c.r * c.s, gid * 977);
       ctx.fillStyle = T.regionFill;
       ctx.fill();
@@ -334,8 +385,8 @@ const View3D = (() => {
     ctx.setLineDash([]);
 
     // you -> the table that needs your skills
-    const ME = scene().me, meP = ME ? project(0, 0, 0) : null;
-    if (meP && !meP.off && myTable !== null && C.get(myTable)) {
+    const ME = scene().me, meP = ME ? (opts.plan && mePlan ? project(mePlan.x, mePlan.y, 0) : project(0, 0, 0)) : null;
+    if (meP && !meP.off && !opts.hideMe && myTable !== null && C.get(myTable)) {
       const c = C.get(myTable);
       ctx.setLineDash([4, 6]); ctx.strokeStyle = T.accent; ctx.lineWidth = 1.6; ctx.globalAlpha = 0.75;
       line(meP.x, meP.y, c.x, c.y, 7);
@@ -344,7 +395,7 @@ const View3D = (() => {
 
     // people you know: green and tied to you while zoomed out, so you can find them at a glance
     const known = scene().known || new Set(), greenOn = zoom < 1.6;
-    if (meP && !meP.off && greenOn) {
+    if (meP && !meP.off && !opts.hideMe && greenOn) {
       ctx.strokeStyle = T.known; ctx.lineWidth = 1.4; ctx.globalAlpha = 0.55;
       for (const id of known) { const p = P.get(id); if (p) line(meP.x, meP.y, p.x, p.y, id * 31); }
     }
@@ -353,7 +404,7 @@ const View3D = (() => {
     const order = [...P].sort((a, b) => b[1].z - a[1].z);
     for (const [id, p] of order) {
       const person = S.people.get(id);
-      const r = radius(person) * p.s;
+      const r = radius(person) * p.s * (T.host ? 1 + 0.06 * Math.sin(t / 650 + id) : 1);   // host look: everyone breathes a little
       const base = person.here ? depthAlpha(p.z) : 0.22;
       const col = greenOn && known.has(id) ? T.known : !person.here ? T.away
         : T.lines && person.group_id ? T.lines[person.group_id % T.lines.length] : T[person.role] || T.student;
@@ -361,9 +412,14 @@ const View3D = (() => {
       const pic = Math.max(0, Math.min(1, (r - 14) / 8));
       if (pic < 1) {
         ctx.globalAlpha = base * (1 - pic);
-        ring(p.x, p.y, r, id);
-        if (person.focus || T.rough) { ctx.strokeStyle = col; ctx.lineWidth = T.rough ? 1.6 : 2.5; ctx.stroke(); }
-        if (!person.focus) { ctx.fillStyle = col; ctx.globalAlpha *= T.rough ? 0.85 : 1; ctx.fill(); }
+        if (T.host && person.role !== "student") {                    // mentors and staff are squares, as on the host screen
+          ctx.beginPath(); ctx.rect(p.x - r, p.y - r, r * 2, r * 2);
+          ctx.fillStyle = T.bg || "#fff"; ctx.fill(); ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.stroke();
+        } else {
+          ring(p.x, p.y, r, id);
+          if (person.focus || T.rough) { ctx.strokeStyle = col; ctx.lineWidth = T.rough ? 1.6 : 2.5; ctx.stroke(); }
+          if (!person.focus) { ctx.fillStyle = col; ctx.globalAlpha *= T.rough ? 0.85 : 1; ctx.fill(); }
+        }
       }
       if (pic > 0) {
         const rr = r * 1.25;
@@ -390,19 +446,19 @@ const View3D = (() => {
       boxes.push(b);
       return true;
     };
-    const k = T.rough ? 1.2 : 1, big = (PHONE ? 15 : 20) * k, small = (PHONE ? 12 : 14) * k;
+    const k = T.rough && !T.host ? 1.2 : 1, big = (PHONE ? 15 : 20) * k, small = (PHONE ? 12 : 14) * k;
     for (const [gid, c] of [...C].sort((a, b) => a[1].z - b[1].z)) {
       const g = S.groups.get(gid), top = c.y - c.r * c.s - 10;
       // one need, plus a count, keeps the labels short
       const all = scene().needLine(g), parts = all.replace(/^needs /, "").split(", ").filter(Boolean);
       const need = all.startsWith("needs ") && parts.length > 1 ? `needs ${parts[0]} +${parts.length - 1}` : all;
       ctx.font = `700 ${big}px ${T.font}`;
-      const w = Math.max(ctx.measureText(g?.name || "").width, need.length * small * 0.5);
+      const w = Math.max(ctx.measureText(tname(g)).width, need.length * small * 0.5);
       const lx = Math.max(w / 2 + 8, Math.min(W - w / 2 - 8, c.x));   // keep the label on screen
       if (!fits(lx, top, w, big + small + 8)) continue;
       ctx.globalAlpha = Math.max(0.5, depthAlpha(c.z));
       ctx.fillStyle = T.title;
-      ctx.fillText(g?.name || "", lx, top - small - 4);
+      ctx.fillText(tname(g), lx, top - small - 4);
       ctx.fillStyle = g?.mode === "heads_down" ? T.dim : T.need;
       ctx.font = `${small}px ${T.font}`;
       ctx.fillText(need, lx, top);
@@ -423,7 +479,7 @@ const View3D = (() => {
     }
 
     // you, always on top in the middle
-    if (meP && !meP.off) {
+    if (meP && !meP.off && !opts.hideMe) {
       const rr = Math.max(16, 15 * meP.s * 1.3);
       ctx.globalAlpha = 1;
       ctx.save(); ctx.beginPath(); ctx.arc(meP.x, meP.y, rr, 0, Math.PI * 2); ctx.clip();
@@ -459,7 +515,7 @@ const View3D = (() => {
 
   function reset() {
     panX = panY = 0;
-    rotY = opts.flat ? 0 : 0.4; rotX = opts.flat ? 0 : -0.3; zoomGoal = 1; focusId = null; focusGroup = null; picked = null; spinX = spinY = 0;
+    rotY = isFlat() ? 0 : 0.4; rotX = isFlat() ? 0 : -0.3; zoomGoal = 1; focusId = null; focusGroup = null; picked = null; spinX = spinY = 0;
   }
   const setZoom = (z) => { zoomGoal = zoom = Math.max(0.5, Math.min(4.5, z)); };
 
@@ -497,7 +553,7 @@ const View3D = (() => {
       const cur = { x: e.clientX, y: e.clientY }, now = performance.now();
       pts.set(e.pointerId, cur);
       lastTouch = now;
-      if (pts.size === 1 && opts.flat) {
+      if (pts.size === 1 && isFlat()) {
         // 2D: dragging pans the map instead of turning it
         const sc = (Math.min(W, H) * (H > W ? 1.35 : 0.95)) / (950 / zoom);
         panX -= (cur.x - prev.x) / sc; panY -= (cur.y - prev.y) / sc;
@@ -738,14 +794,16 @@ const View3D = (() => {
   }
 
   // Viewer settings from the corner tab.
-  const opts = { names: true, spin: true, flat: false };
+  const opts = { names: true, spin: true, flat: false, plan: false };
+  function isFlat() { return opts.flat || opts.plan; }
   let panX = 0, panY = 0;
   const setOption = (k, v) => {
     opts[k] = v;
-    if (k === "flat") { panX = panY = 0; spinX = spinY = 0; if (!v) { rotY = 0.4; rotX = -0.3; } relayout(); }
+    if (k === "flat" || k === "plan") { panX = panY = 0; spinX = spinY = 0; if (!isFlat()) { rotY = 0.4; rotX = -0.3; } else { rotY = 0; rotX = 0; } zoomGoal = 1; relayout(); }
   };
 
   return { init, setActive, relayout, pulse, avatar, buildProfile, setOption, focusPerson,
            onTable: (fn) => { onGroup = fn; }, onMe: (fn) => { onMe = fn; }, socialIcon: (k) => SOCIAL[k],
-           option: (k) => opts[k], PHONE };
+           option: (k) => opts[k], PHONE,
+           mePoint: () => { const ME = scene && scene().me; if (!ME) return null; const q = opts.plan && mePlan ? project(mePlan.x, mePlan.y, 0) : project(0, 0, 0); return q.off ? null : { x: q.x, y: q.y, r: Math.max(16, 15 * q.s * 1.3) }; } };
 })();

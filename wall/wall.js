@@ -265,7 +265,15 @@
   const applyMainScreen = () => {
     mainScreen = qs.has("kiosk");
     document.body.classList.toggle("main-screen", mainScreen);
-    View3D.setOption("flat", mainScreen);
+    View3D.setOption("flat", false);
+    // Your page is the host wall's room plan (David's seating and look) with your own layer on it; ?view=3d or the
+    // Settings switch brings back the 3D map.
+    let plan = qs.get("view") !== "3d";                     // the projector (?kiosk) gets the same room plan, without your layer
+    try { if (!qs.has("view") && localStorage.getItem("wall.view") === "3d") plan = false; } catch { /* private mode */ }
+    document.body.classList.toggle("plan", plan);
+    document.body.classList.toggle("plan-side", true);
+    document.body.classList.add("hw");                       // David's host wall frame (key, side column, bottom bar) on every view
+    View3D.setOption("plan", plan);
   };
   View3D.init(() => ({ visible, shownGroups, S, radius, needLine,
                        me: Corner.signedIn() && !mainScreen ? Corner.me() : null, known: mainScreen ? new Set() : Corner.known() }));

@@ -38,8 +38,7 @@ const HostLook = (() => {
     f.className = "hl-board";
     const t = document.createElement("b"); t.textContent = "NEXT";
     const p = document.createElement("span"); p.textContent = "Sign in · tap your badge · find your table";
-    const tag = document.createElement("i"); tag.textContent = "Prototype · sample data";
-    f.append(t, p, tag);
+    f.append(t, p);
     document.body.append(f);
   }
 

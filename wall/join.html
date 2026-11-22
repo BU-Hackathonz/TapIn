@@ -147,6 +147,20 @@
   .linkbtn { background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; }
   .fine { margin-top: 18px; color: #888; font: 400 12px var(--dot); text-transform: uppercase; letter-spacing: 0.05em; }
   [hidden] { display: none !important; }
+  /* the loading screen: the train runs through town under a LOADING sign, then speeds off and the room fades in */
+  .loading { position: fixed; inset: 0; z-index: 20; background: #f4cfc4; animation: lfade 0.35s ease-out; }
+  .loading-scene { position: absolute; inset: 0; }
+  .loading-top { position: absolute; left: 0; right: 0; top: 9vh; display: grid; justify-items: center; gap: 10px; text-align: center; }
+  .loading-word { margin: 0; padding: 10px 26px 8px; background: #111; color: var(--amber); font: 400 clamp(30px, 5vw, 56px)/1 var(--dot); letter-spacing: 0.12em;
+                  box-shadow: 8px 8px 0 var(--red); }
+  .dots i { font-style: normal; animation: dot 1.2s steps(1) infinite; } .dots i:nth-child(2) { animation-delay: 0.2s; } .dots i:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes dot { 0%, 30% { opacity: 0; } 31%, 100% { opacity: 1; } }
+  .loading-sub { margin: 0; color: #fff; font: 400 18px var(--dot); text-transform: uppercase; letter-spacing: 0.06em; text-shadow: 2px 2px 0 rgba(17, 17, 17, 0.75); }
+  .loading-bar { width: min(360px, 70vw); height: 14px; padding: 2px; background: #111; }
+  .loading-bar i { display: block; height: 100%; width: 0; background: repeating-linear-gradient(90deg, #DA291C 0 8px, #ED8B00 8px 16px, #003DA5 16px 24px, #00843D 24px 32px); transition: width 1.6s steps(16); }
+  .loading-fade { position: absolute; inset: 0; background: #fbf9f6; opacity: 0; pointer-events: none; transition: opacity 0.5s ease; }
+  .loading-fade.on { opacity: 1; }
+  @keyframes lfade { from { opacity: 0; } }
   .form { display: grid; gap: 12px; text-align: left; }
   .form label { display: grid; gap: 6px; font: 400 13px var(--dot); text-transform: uppercase; letter-spacing: 0.06em; }
   .form label small { text-transform: none; letter-spacing: 0; color: #888; font: 12px var(--hv); }
@@ -205,7 +219,7 @@
       <button type="button" class="reader" id="reader" aria-describedby="reader-help">
         <span class="tapart" aria-hidden="true"><canvas class="px-badge" width="40" height="64"></canvas><span class="px-reader-wrap"><span class="waves"><i></i><i></i><i></i></span><canvas class="px-reader" width="34" height="48"></canvas></span></span>
         <b>Hold your badge flat on the reader</b>
-        <small id="reader-help">Prototype: tap here to stand in for a real tap.</small>
+        <small id="reader-help">Hold it there until the light blinks.</small>
       </button>
       <button type="button" class="alt linkbtn" data-to="step-start">Back</button>
     </section>
@@ -213,12 +227,13 @@
     <section id="step-found" hidden aria-live="polite">
       <h1>You're in</h1>
       <p class="lead" id="found-lead">Welcome back.</p>
+      <p class="lead" style="margin-top:-12px">Taking you to the room…</p>
       <div class="found">
         <span class="kicker">You joined</span>
         <span class="room">BostonHacks 2026</span>
         <span class="place">GSU Metcalf Ballroom</span>
       </div>
-      <a class="btn" href="index.html">Enter the room</a><br>
+      <a class="btn enter" href="index.html">Enter the room</a><br>
       <button type="button" class="alt linkbtn" data-to="step-tap">Not you? Tap again</button>
     </section>
 
@@ -268,7 +283,7 @@
       <button type="button" class="reader" id="reader-new" aria-describedby="reader-new-help">
         <span class="tapart" aria-hidden="true"><canvas class="px-badge" width="40" height="64"></canvas><span class="px-reader-wrap"><span class="waves"><i></i><i></i><i></i></span><canvas class="px-reader" width="34" height="48"></canvas></span></span>
         <b>Tap the blank badge</b>
-        <small id="reader-new-help">Prototype: tap here to stand in for a real tap.</small>
+        <small id="reader-new-help">Hold it there until the light blinks.</small>
       </button>
       <button type="button" class="alt linkbtn" data-to="step-account">Back</button>
     </section>
@@ -295,15 +310,23 @@
         <p class="pf-empty" id="pf-empty">No skills or links yet. Add them any time.</p>
         <p class="place">Joined BostonHacks 2026 · GSU Metcalf Ballroom</p>
       </article>
-      <a class="btn" href="index.html">Enter the room</a>
+      <a class="btn enter" href="index.html">Enter the room</a>
       <button type="button" class="alt linkbtn" data-to="step-account">Edit profile</button>
       <p class="lead" style="margin-top:10px">Next time, just tap this card to log in.</p>
     </section>
-    <p class="fine">Prototype: nothing is sent anywhere.</p>
   </main>
   <aside class="scene" id="scene" aria-label="Pixel Boston: a train running down Comm Ave past BU"></aside>
 </div>
-<footer class="board"><b>NEXT</b><span>Tap your badge · join the space · find your table</span><i>Prototype · sample data</i></footer>
+<div class="loading" id="loading" hidden aria-live="polite">
+  <div class="loading-scene" id="loading-scene" aria-hidden="true"></div>
+  <div class="loading-top">
+    <p class="loading-word">LOADING<span class="dots"><i>.</i><i>.</i><i>.</i></span></p>
+    <p class="loading-sub" id="loading-sub">Next stop: BostonHacks 2026</p>
+    <div class="loading-bar"><i id="loading-fill"></i></div>
+  </div>
+  <div class="loading-fade" id="loading-fade"></div>
+</div>
+<footer class="board"><b>NEXT</b><span>Tap your badge · join the space · find your table</span></footer>
 
 <script src="pixel.js"></script>
 <script>
@@ -362,6 +385,23 @@
     }
     document.querySelectorAll(".px-badge").forEach(badge);
     document.querySelectorAll(".px-reader").forEach(reader);
+
+    // Enter the room: the loading screen, then the train speeds off and the 3D map fades in
+    document.querySelectorAll("a.enter").forEach((a) => a.addEventListener("click", (e) => {
+      if (typeof PixelBoston === "undefined") return;          // no scene: just follow the link
+      e.preventDefault();
+      const box = $("loading"); box.hidden = false;
+      const scene = PixelBoston.mount($("loading-scene"));
+      requestAnimationFrame(() => { $("loading-fill").style.width = "100%"; });
+      const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+      setTimeout(async () => {
+        $("loading-sub").textContent = "Arriving";
+        await scene.leave(900);
+        $("loading-fade").classList.add("on");
+        try { sessionStorage.setItem("tapin.arrive", "1"); } catch { /* private mode */ }
+        setTimeout(() => { location.href = a.href; }, reduce ? 0 : 450);
+      }, reduce ? 0 : 1700);
+    }));
 
     if (typeof PixelBoston !== "undefined") {
       PixelBoston.mount(document.getElementById("scene"));
@@ -476,6 +516,8 @@
       joinRoom();
       document.getElementById("found-lead").textContent = name ? `Welcome back, ${name}.` : "Welcome back.";
       show("step-found");
+      // logged in and in the room: head straight to the wall (the loading train), no button to press
+      setTimeout(() => { const a = document.querySelector("#step-found a.enter"); if (a && !$("step-found").hidden) a.click(); }, 1400);
     });
   })();
 </script>

@@ -29,7 +29,6 @@
   </section>
 </div>
 <div class="count"><b id="here">0</b><span>here now</span></div>
-<span class="demo-tag" title="This copy runs a made-up room, not live data">PROTOTYPE · SAMPLE DATA</span>
 <details id="room-insights" class="room-insights" open>
   <summary>Room activity</summary>
   <div class="insights-body">
@@ -40,6 +39,11 @@
     <section><h2>Recent activity</h2><ul id="room-activity"></ul></section>
   </div>
 </details>
+<header class="plan-key" aria-hidden="true">
+  <b>Who is here, and who is working together</b>
+  <ul><li><i class="dot"></i>person</li><li><i class="sq"></i>mentor</li><li><i class="ring"></i>heads-down</li><li><i class="dash"></i>a table</li><li><i class="line"></i>have met</li><li class="k-you"><i class="you"></i>you</li></ul>
+</header>
+<footer class="plan-bar" aria-hidden="true"><span class="pb-text pb-you"><b>You</b> are on the map. Tap a table to open its chat.</span><span class="pb-text pb-room">Tap your badge at a station to join the room.</span><span class="pb-wm">tap <span class="ii">&#305;<svg class="wifi" viewBox="0 0 24 20"><circle cx="12" cy="16.6" r="2.3"/><path d="M6.6 11.6a7.6 7.6 0 0 1 10.8 0"/><path d="M2.9 7.4a12.8 12.8 0 0 1 18.2 0"/></svg></span>n</span></footer>
 <div id="wall-icebreaker" class="wall-icebreaker" role="status" hidden></div>
 <div id="toasts" class="toasts" aria-live="polite"></div>
 
@@ -48,6 +52,7 @@
 <script src="sound.js"></script>
 <script src="tlook.js"></script>
 <script src="themes.js"></script>
+<script src="room_layout.js"></script>
 <script src="view3d.js"></script>
 <script src="demo.js"></script>
 <script src="room.js"></script>
@@ -55,6 +60,9 @@
 <script src="panels.js"></script>
 <script src="server.js"></script>
 <script src="hub.js"></script>
+<script src="fume.js"></script>
 <script src="wall.js"></script>
+<script src="pixel.js"></script>
+<script src="arrive.js"></script>
 </body>
 </html>

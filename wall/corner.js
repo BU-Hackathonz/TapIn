@@ -139,6 +139,11 @@ const Corner = (() => {
       el("h3", "set-h", "Profile"), profileForm(),
       el("h3", "set-h", "Style"), styles,
       el("h3", "set-h", "Display"),
+      toggleRow("Room plan (the host wall)", !!View3D.option("plan"), (v) => {
+        View3D.setOption("plan", v);
+        document.body.classList.toggle("plan", v);
+        try { localStorage.setItem("wall.view", v ? "plan" : "3d"); } catch { /* private mode */ }
+      }),
       toggleRow("2D map", !!View3D.option("flat"), (v) => View3D.setOption("flat", v)),
       toggleRow("Names on the map", state.names !== false, (v) => { state.names = v; View3D.setOption("names", v); }),
       toggleRow("Spin when idle", state.spin !== false, (v) => { state.spin = v; View3D.setOption("spin", v); }),
