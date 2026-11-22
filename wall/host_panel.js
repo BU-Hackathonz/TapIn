@@ -24,7 +24,7 @@
     body.append(bar("You"), el("p", "hp-big", m.name || "Not signed in"));
     if (m.school || m.major) body.append(el("p", "hp-note", [m.school, m.major].filter(Boolean).join(" · ")));
     if (m.bio) body.append(el("p", "hp-note", m.bio));
-    body.append(el("p", "hp-note", r.name ? `Hosting ${r.name}${r.place ? " · " + r.place : ""}` : "Not in a room"),
+    body.append(el("p", "hp-note", r.host && r.name ? `Hosting ${r.name}${r.place ? " · " + r.place : ""}` : "Not in a room"),
                 el("p", "hp-note", signedIn ? `Signed in as ${m.name}` : "Sign in to keep your profile on this screen."),
                 signedIn ? link("Edit your profile", "join.html?edit") : link("Sign in or set up your profile", "join.html?login"));
   };
@@ -56,7 +56,7 @@
       try { localStorage.setItem("wall.hostSound", cb.checked ? "on" : "off"); } catch { /* private mode */ }
     });
     const acct = el("button", "hp-save hp-out", mine().name ? "Sign out" : "Sign in"); acct.type = "button";
-    acct.addEventListener("click", () => { if (mine().name) { try { localStorage.removeItem("wall.me"); } catch { /* private mode */ } } location.href = "join.html" + (mine().name ? "" : "?login"); });
+    acct.addEventListener("click", () => { const was = !!mine().name; if (was) { try { localStorage.removeItem("wall.me"); } catch { /* private mode */ } } location.href = was ? "join.html" : "join.html?login"; });
     body.append(form, bar("Account"), acct, bar("Sound"), sw);
   };
 
@@ -92,10 +92,11 @@
   };
   const close = () => { shade.hidden = true; if (last && last.focus) last.focus(); };
   no.addEventListener("click", close);
-  shade.addEventListener("click", (e) => { if (e.target === shade) close(); });
+  shade.addEventListener("click", (e) => { e.stopPropagation(); if (e.target === shade) close(); });
   yes.addEventListener("click", () => {
     yes.disabled = true;
     try { localStorage.removeItem("wall.room"); } catch { /* private mode */ }
+    fetch("/api/host/logout", { method: "POST" }).catch(() => {});
     document.body.classList.add("hp-leaving");
     setTimeout(() => location.assign("/landing/?skip"), 380);
   });

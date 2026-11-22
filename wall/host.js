@@ -840,7 +840,7 @@
       const loud = () => { try { return Promise.resolve(Sound.start()).catch(() => {}); } catch { return null; } };
       loud(); addEventListener("pointerdown", loud, { once: true }); addEventListener("keydown", loud, { once: true });
       setTimeout(() => {                                                // the browser held the sound back: a small note until the first click
-        if (window.Sound && Sound.started) return;
+        if (window.Sound && (Sound.started || Sound.muted)) return;   // already on, or the host turned sound off
         const n = document.createElement("div"); n.className = "soundnote"; n.textContent = "Click anywhere to turn on sound"; document.body.append(n);
         const gone = () => n.remove(); addEventListener("pointerdown", gone, { once: true }); addEventListener("keydown", gone, { once: true });
         setTimeout(gone, 15000);
