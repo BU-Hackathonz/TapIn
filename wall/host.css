@@ -135,7 +135,9 @@ body::before {
 
 /* The side column and the bottom bar follow the approved v5 mockup: plain lists, no cards or badges, mono only for numbers, times and the log. */
 #side, #moment { font-variant-numeric: tabular-nums; }
-#side { grid-area: side; background: color-mix(in srgb, var(--side) 96%, transparent); border-left: 1px solid var(--line); padding: 3.4vh 2vw 3vh; display: flex; flex-direction: column; gap: 3.2vh; min-height: 0; overflow: hidden; position: relative; z-index: 2; }
+#side { grid-area: side; background: color-mix(in srgb, var(--side) 96%, transparent); border-left: 1px solid var(--line); padding: 3.4vh 2vw 3vh; display: flex; flex-direction: column; gap: 3.2vh; min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #111 transparent; position: relative; z-index: 2; }
+#side > * { flex: none; }
+#side .chart { margin-top: auto; }
 #statline { margin: 0; font: 400 calc(var(--u) * 0.9)/1.2 var(--mono); color: var(--muted); white-space: nowrap; letter-spacing: -0.02em; }
 #statline b { color: var(--fg); font-weight: 500; }
 #side h2 { margin: 0 0 1vh; font: 400 var(--u)/1.2 var(--sans); color: var(--muted); display: flex; justify-content: space-between; align-items: baseline; }
@@ -301,12 +303,7 @@ body::before {
 :root[data-s] #mtext { font-size: calc(var(--u) * 1.1); line-height: 1.2; -webkit-line-clamp: 2; }
 :root[data-s] #mtime { white-space: nowrap; flex: none; }
 :root[data-s] #moment { overflow: hidden; }
-@media (max-height: 820px) {
-  #side { gap: 2.2vh; padding-top: 2.6vh; padding-bottom: 2.2vh; }
-  .bars { height: 7vh; }
-  #needs li:nth-child(n + 4), #activity li:nth-child(n + 4) { display: none; }
-}
-@media (max-height: 700px) { #activity { display: none; } #activity ~ * { } .note { display: none; } }
+@media (max-height: 820px) { #side { gap: 2.2vh; padding-top: 2.6vh; padding-bottom: 2.2vh; } .bars { height: 7vh; } }
 
 /* ---- no repeated labels: the number marker names the table, so the text beside it only says what is new */
 .rows .n { font-weight: inherit; }

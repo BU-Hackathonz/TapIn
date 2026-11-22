@@ -260,6 +260,12 @@
 
   // ------------------------------------------------------------ drawing
   const rgbOf = (hex) => { const h = String(hex).replace("#", ""); return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]; };
+  // The depth look: every table and person sits at a fixed depth (from its id). Near things are a little bigger, brighter and
+  // lit like a sphere with a soft shadow; far things are smaller and fainter; a tiny parallax follows the mouse. ?flat turns it off.
+  const FLAT = qs.has("flat");
+  const depthOf = (id, salt = 0) => { const h = Math.sin((id + salt) * 12.9898 + 4.1) * 43758.5453; return h - Math.floor(h); };   // 0 far .. 1 near
+  const mix = (hex, to, k) => { const a = rgbOf(hex), b = to; return "rgb(" + a.map((v, i) => Math.round(v + (b[i] - v) * k)).join(",") + ")"; };
+  const parallax = (z) => FLAT ? [0, 0] : [((mouse.x < 0 ? 0.5 : mouse.x / innerWidth) - 0.5) * 18 * (z - 0.5) * K, ((mouse.y < 0 ? 0.5 : mouse.y / innerHeight) - 0.5) * 12 * (z - 0.5) * K];
   const withAlpha = (hex, a) => { const [r, g, b] = rgbOf(hex); return "rgba(" + r + "," + g + "," + b + "," + a + ")"; };
 
   // ---- the pixel fume: a small canvas of value noise, warped and drifting, posterized with an ordered (Bayer) dither so it
@@ -583,6 +589,15 @@
       const g = S.groups.get(gid);
       if (!g) continue;
       const ringR = tb.R + 34 * K, hi = gid === hiGroup, quiet = g.mode === "heads_down";
+      if (!FLAT) {                                                    // a glass shell: tinted toward the edge, a bright rim light up and to the left
+        const z = depthOf(gid, 7), [px0, py0] = parallax(z), cx0 = tb.x + px0, cy0 = tb.y + py0, rs = ringR * tb.sc * (0.94 + 0.12 * z);
+        const tint = hi ? hiColor : quiet ? C.dim : C.green;
+        const gg = ctx.createRadialGradient(cx0 - rs * 0.3, cy0 - rs * 0.35, rs * 0.1, cx0, cy0, rs);
+        gg.addColorStop(0, withAlpha("#ffffff", 0.16 + 0.1 * z)); gg.addColorStop(0.62, withAlpha(tint, 0.03)); gg.addColorStop(1, withAlpha(tint, 0.14 + 0.08 * z));
+        ctx.globalAlpha = 0.5 + 0.5 * z; ctx.fillStyle = gg; ctx.beginPath(); ctx.arc(cx0, cy0, rs, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = withAlpha("#ffffff", 0.55); ctx.lineWidth = 2 * K; ctx.beginPath(); ctx.arc(cx0, cy0, rs * 0.94, Math.PI * 1.08, Math.PI * 1.45); ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
       ctx.save();
       ctx.lineWidth = (hi ? 3.4 : 2.5) * K * LW;
       ctx.setLineDash(V.ring === "solid" ? [] : V.ring === "dot" ? [0.1, 8 * K] : hi ? [14 * K, 9 * K] : [7 * K, 8 * K]);
@@ -623,8 +638,9 @@
       ctx.globalAlpha = 0.2 + 0.8 * age;
       // A little life: each person drifts a couple of pixels and breathes; people still gliding leave a fading trail; a new
       // arrival sends out one ripple.
-      const nx = p.x, ny = p.y;
-      const r = p.r * (newest ? 1.9 : 1) * (1 + 0.07 * Math.sin(t / 650 + p.id));
+      const z = FLAT ? 0.5 : depthOf(p.id), [px1, py1] = parallax(z);
+      const nx = p.x + px1, ny = p.y + py1;
+      const r = p.r * (newest ? 1.9 : 1) * (1 + 0.07 * Math.sin(t / 650 + p.id)) * (FLAT ? 1 : 0.86 + 0.28 * z);
       const col = newest ? C.pink : quiet ? C.dim : C.green;
       const tr = trails.get(p.id);
       if (tr && tr.length > 1) {
@@ -648,7 +664,14 @@
         if (V.node === "ring") { ctx.strokeStyle = col; ctx.fillStyle = C.bg; ctx.lineWidth = 2.6 * K; ctx.beginPath(); ctx.arc(nx, ny, r + 1 * K, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
         else {
           if (V.node === "glow") { ctx.shadowColor = col; ctx.shadowBlur = 14 * K; }
-          ctx.fillStyle = col;
+          if (FLAT) ctx.fillStyle = col;
+          else {                                                      // lit sphere: highlight up-left, darker rim, and a soft shadow below
+            const a0 = ctx.globalAlpha;
+            ctx.globalAlpha = a0 * 0.28; ctx.fillStyle = "#000"; ctx.beginPath(); ctx.ellipse(nx + r * 0.25, ny + r * 1.05, r * 0.9, r * 0.32, 0, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = a0 * (0.78 + 0.22 * z);
+            const sg = ctx.createRadialGradient(nx - r * 0.4, ny - r * 0.45, r * 0.08, nx, ny, r * 1.05);
+            sg.addColorStop(0, mix(col, [255, 255, 255], 0.62)); sg.addColorStop(0.45, col); sg.addColorStop(1, mix(col, [0, 0, 0], 0.38));
+            ctx.fillStyle = sg;
+          }
           ctx.beginPath(); ctx.arc(nx, ny, r, 0, Math.PI * 2); ctx.fill();
           ctx.shadowBlur = 0;
         }
