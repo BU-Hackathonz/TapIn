@@ -72,7 +72,7 @@ def main() -> int:
             time.sleep(2.2)  # let station 2's 2 s "joined" result expire so the claim state shows
             r = c.post("/api/signup", json=body)
             su = r.json()
-            check("signup reply shape", r.status_code == 200 and set(su) == {"person_id", "claim_code", "expires_in"} and su["expires_in"] == 30, str(su))
+            check("signup reply shape", r.status_code == 200 and set(su) == {"person_id", "claim_code", "expires_in"} and su["expires_in"] == int(claims.CLAIM_SECONDS), str(su))
             check("claim waiting", c.get(f"/api/claim/{su['claim_code']}").json() == {"status": "waiting"})
             check("stations show claim", c.get("/api/station/1").json()["state"] == "claim" and c.get("/api/station/2").json()["state"] == "claim")
             r2 = c.post("/api/signup", json={**body, "name": "Zzother"})

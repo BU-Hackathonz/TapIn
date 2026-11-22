@@ -15,10 +15,11 @@
 
   <section id="waiting">
     <div class="board">
-      <div class="count" id="count" aria-label="seconds left">30</div>
+      <div class="count" id="count" aria-label="seconds left">60</div>
       <p class="board-text">Tap your badge on any station now</p>
     </div>
     <p class="muted">Use a blank badge from the table.</p>
+    <p class="error" id="owned" role="alert" hidden>That badge already belongs to someone. Tap a blank one.</p>
   </section>
 
   <section id="done" hidden>
@@ -49,13 +50,16 @@
 
   function start() {
     show("waiting");
-    const deadline = Date.now() + (claim.expires_in || 30) * 1000;
+    const deadline = Date.now() + (claim.expires_in || 60) * 1000;
+    document.getElementById("owned").hidden = true;
     clearInterval(timer);
     timer = setInterval(async () => {
       const left = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
       document.getElementById("count").textContent = left;
       let status = null;
-      try { status = (await api("GET", "/claim/" + encodeURIComponent(claim.claim_code))).data?.status; } catch (_) {}
+      let note = "";
+      try { const d = (await api("GET", "/claim/" + encodeURIComponent(claim.claim_code))).data || {}; status = d.status; note = d.note || ""; } catch (_) {}
+      document.getElementById("owned").hidden = note !== "owned";
       if (status === "claimed") {
         clearInterval(timer);
         store.set("tapin_person", claim.person_id);
@@ -77,7 +81,7 @@
     e.target.disabled = true;
     err.textContent = "";
     try {
-      const { status, data } = await api("POST", "/signup", form);
+      const { status, data } = await api("POST", "/signup", { ...form, retry_person_id: claim.person_id });   // same profile, new claim
       if (status !== 200) { err.textContent = signupError(status, data); return; }
       claim = data;
       store.set("tapin_claim", claim, sessionStorage);

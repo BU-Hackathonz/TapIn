@@ -34,6 +34,10 @@ const Corner = (() => {
   }
   function me() {
     const p = saved();
+    // a badge-linked profile (person_id, from a badge tap or the phone) is the real person in the room: their links, table and points
+    const real = p && p.person_id != null && getS() ? getS().people.get(p.person_id) : null;
+    if (real) return (meObj && meObj.src === p && meObj.real === real) ? meObj.person
+      : (meObj = { src: p, real, person: { ...p, ...real, id: real.id } }).person;
     if (p) return (meObj && meObj.src === p) ? meObj.person
       : (meObj = { src: p, person: { id: -1, role: "student", points: 0, here: true, group_id: null, ...p } }).person;
     const S = getS();
@@ -121,7 +125,9 @@ const Corner = (() => {
       link.href = saved() ? "join.html?edit" : "join.html";
       const r = Room.current;
       const status = el("p", "me-room", r.status === "in" ? `${r.host ? "Hosting" : "In"} ${r.name}` : "Not in a room");
-      body.replaceChildren(status, el("p", "me-note", saved() ? `Signed in as ${p.name}` : `Signed in as ${p.name} (mock)`), link,
+      const mine = saved();
+      const page = mine && mine.person_id != null ? Object.assign(el("a", "me-edit", "Your suggestions and table"), { href: "/phone/me.html?id=" + encodeURIComponent(mine.person_id) }) : null;
+      body.replaceChildren(status, el("p", "me-note", mine ? `Signed in as ${p.name}` : "Not signed in"), ...(page ? [page] : []), link,
                            ...View3D.buildProfile(p));
       return;
     }
@@ -151,6 +157,7 @@ const Corner = (() => {
       el("h3", "set-h", "Room"),
       leaveButton(), chooseButton(), ...(Room.current.status === "in" && Room.current.host ? [displayLink()] : []),
       el("h3", "set-h", "Account"),
+      ...(saved() && saved().person_id != null ? [Object.assign(el("a", "me-edit", "Your suggestions and table"), { href: "/phone/me.html?id=" + encodeURIComponent(saved().person_id) })] : []),
       signOutButton(),
       el("h3", "set-h", "Sound"),
       toggleRow("Bell and plucks", Sound.started && !Sound.muted, async (v) => {

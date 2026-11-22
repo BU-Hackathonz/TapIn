@@ -10,7 +10,7 @@ import os
 import time
 from dataclasses import dataclass, field
 
-from . import claims, db, gemini, groups
+from . import claims, db, gemini, groups, logins
 from .hub import hub
 
 log = logging.getLogger("tapin.scans")
@@ -74,13 +74,20 @@ async def on_tap(station_id: int, uid: str) -> dict:
 
     person = await db.pool.fetchrow("SELECT id FROM people WHERE uid=$1", uid)
 
+    if person is not None:
+        login = logins.waiting()
+        if login:  # a browser asked "who taps next?": tell it, and let the tap carry on as a normal scan
+            logins.finish(login, person["id"])
+            log.info("tap station=%s uid=%s outcome=badge_login person=%s", station_id, uid, person["id"])
+
     claim = claims.waiting()
     if claim:
-        if person is not None:  # already-owned badge is refused; the claim keeps waiting
-            log.info("tap station=%s uid=%s outcome=claim_refused_owned", station_id, uid)
-            await db.log_tap(station_id, uid, "unknown")
-            return set_result(station_id, "unknown")
-        return await finish_claim(station_id, uid, claim)
+        if person is None:
+            return await finish_claim(station_id, uid, claim)
+        # An already-owned badge during a claim is not linked. It goes on as a normal scan, so a sign-up never blocks
+        # check-ins or group scans; the claim keeps waiting and the phone says the badge belongs to someone.
+        claim.note = "owned"
+        log.info("tap station=%s uid=%s outcome=claim_skipped_owned", station_id, uid)
 
     if person is None:
         log.info("tap station=%s uid=%s outcome=unknown", station_id, uid)

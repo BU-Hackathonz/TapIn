@@ -525,8 +525,8 @@
     try { name = (JSON.parse(localStorage.getItem("wall.me") || "null") || {}).name || ""; } catch { /* private mode */ }
     const $ = (id) => document.getElementById(id);
     const STEPS = ["step-start", "step-pin", "step-host", "step-create", "step-login", "step-tap", "step-found", "step-account", "step-connect", "step-linked"];
-    const show = (id) => { for (const s of STEPS) $(s).hidden = s !== id; document.querySelector(".panel").classList.toggle("signup", ["step-account", "step-connect", "step-linked"].includes(id)); const f = document.querySelector(`#${id} input:not([type=file])`); if (f) f.focus(); };
-    const joinRoom = () => { try { localStorage.setItem("wall.room", JSON.stringify({ status: "in", name: "BostonHacks 2026", place: "GSU Metcalf Ballroom", time: Date.now() })); } catch { /* private mode */ } };
+    const show = (id) => { if (id === "step-tap" || id === "step-login") setTimeout(() => document.getElementById(id === "step-tap" ? "reader" : "reader-login").click(), 300); for (const s of STEPS) $(s).hidden = s !== id; document.querySelector(".panel").classList.toggle("signup", ["step-account", "step-connect", "step-linked"].includes(id)); const f = document.querySelector(`#${id} input:not([type=file])`); if (f) f.focus(); };
+    const joinRoom = () => { try { localStorage.setItem("wall.room", JSON.stringify({ status: "in", name: document.querySelector("#step-found .room").textContent || "This room", time: Date.now() })); } catch { /* private mode */ } };
     document.querySelectorAll("[data-back]").forEach((b) => b.addEventListener("click", () => show("step-start")));
     // Sign up goes to the real sign-up (phone/), which creates the profile and claims a blank badge on the server.
     // This page's own sign-up steps keep everything in the browser, so they stay a prototype (Avery's call, Nov 22).
@@ -656,12 +656,48 @@
       location.href = "/landing/";
     };
     document.querySelectorAll("[data-login]").forEach((b) => b.addEventListener("click", () => logIn(b.dataset.login)));
-    $("reader-login").addEventListener("click", () => logIn("badge"));
-    // Join a room: tap at the event, the station's room is offered, then Join room or Decline
-    document.getElementById("reader").addEventListener("click", () => {
-      try { if (!localStorage.getItem("wall.me")) localStorage.setItem("wall.me", JSON.stringify({ name: "Guest", role: "student", face: `face-${Date.now()}` })); } catch { /* private mode */ }
+    // Tap your badge (log in, and join a room): the server tells this page who taps next at any station. The tap is also a
+    // normal check-in, so it puts you in the room. Works on the venue network (the public site keeps these routes private).
+    let badgeWait = null, waiting = false;
+    async function waitForBadge(help, onPerson) {
+      if (waiting) return;                      // already waiting for this page: a second click changes nothing
+      waiting = true; clearInterval(badgeWait);
+      const stop = () => { waiting = false; clearInterval(badgeWait); };
+      const say = (t) => { help.textContent = t; };
+      let r;
+      try { r = await fetch("/api/badge-login", { method: "POST" }); } catch { stop(); return say("Couldn't reach the room. Connect to the venue Wi-Fi and try again."); }
+      if (r.status === 404) { stop(); return say("Badge log-in works on the venue Wi-Fi. Connect to it and open this page again."); }
+      if (r.status === 409) { stop(); say("Someone else is tapping in right now. Trying again in a moment…"); return setTimeout(() => waitForBadge(help, onPerson), 4000); }
+      if (!r.ok) { stop(); return say("Badge log-in isn't available right now (" + r.status + ")."); }
+      const { code, expires_in } = await r.json(), end = Date.now() + expires_in * 1000;
+      say(`Tap your badge on any station now (${expires_in} s).`);
+      badgeWait = setInterval(async () => {
+        const left = Math.max(0, Math.round((end - Date.now()) / 1000));
+        let d = {};
+        try { d = await (await fetch("/api/badge-login/" + code)).json(); } catch { /* try again next second */ }
+        if (d.status === "done" && d.person) { stop(); onPerson(d.person); return; }
+        if (d.status === "expired" || left === 0) { stop(); say("No badge tapped in time. Tap the picture to try again."); return; }
+        say(`Tap your badge on any station now (${left} s).`);
+      }, 1000);
+    }
+    // the person from the server becomes this browser's profile, so the room map shows the real you
+    const saveMe = (p) => {
+      try {
+        const prev = JSON.parse(localStorage.getItem("wall.me") || "null") || {};
+        localStorage.setItem("wall.me", JSON.stringify({ ...prev, person_id: p.id, name: p.name, role: p.role, skills: p.skills, looking_for: p.looking_for, working_on: p.working_on, face: prev.face || `face-${p.id}` }));
+      } catch { /* private mode */ }
+    };
+    const venue = fetch("/api/room-settings").then((r) => (r.ok ? r.json() : null)).catch(() => null);
+    $("reader-login").addEventListener("click", () => waitForBadge($("reader-login-help"), (p) => { saveMe(p); if (typeof UISound !== "undefined") UISound.ok(); location.href = "/landing/"; }));
+    // Join a room: your tap finds the room you're in, then Join room or Decline
+    document.getElementById("reader").addEventListener("click", () => waitForBadge($("reader-help"), async (p) => {
+      saveMe(p);
+      const s = await venue;
+      document.querySelector("#step-found .room").textContent = s?.venue || "This room";
+      document.querySelector("#step-found .place").textContent = `Welcome back, ${p.name}`;
+      if (typeof UISound !== "undefined") UISound.ok();
       show("step-found");
-    });
+    }));
     document.querySelector("#step-found a.enter").addEventListener("click", joinRoom, { capture: true });
     $("host-pin").addEventListener("input", () => { $("pin-err").textContent = ""; });
     $("pin-form").addEventListener("submit", async (e) => {

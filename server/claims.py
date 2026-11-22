@@ -4,7 +4,7 @@ import secrets
 import time
 from dataclasses import dataclass
 
-CLAIM_SECONDS = float(os.environ.get("TAPIN_CLAIM", "30"))
+CLAIM_SECONDS = float(os.environ.get("TAPIN_CLAIM", "60"))   # 30 s was too short in practice: taps landed seconds late
 _ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"  # no 0/O/1/I
 
 
@@ -13,6 +13,7 @@ class Claim:
     code: str
     person_id: int
     expires: float
+    note: str = ""   # "owned": someone tapped a badge that already belongs to a person (the phone says so)
 
 
 current: "Claim | None" = None
@@ -40,6 +41,10 @@ def finish(claim: Claim) -> None:
     finished[claim.code] = "claimed"
     if current is claim:
         current = None
+
+
+def note(code: str) -> str:
+    return current.note if current and current.code == code else ""
 
 
 def status(code: str) -> str:

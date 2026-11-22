@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>People and badges · Tap In</title><link rel="icon" href="data:,">
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@800&family=DotGothic16&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  :root { --ink: #111; --paper: #fbf9f6; --rule: #e3d9d5; --muted: #6a5d61; --red: #DA291C; --orange: #ED8B00; --blue: #003DA5; --green: #00843D; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #ecd9d2; color: var(--ink); font: 400 15px/1.45 "IBM Plex Sans", system-ui, sans-serif; }
+  main { max-width: 980px; margin: 0 auto; padding: 24px max(16px, env(safe-area-inset-left, 0px)) 56px; display: grid; gap: 16px; }
+  h1 { margin: 0; font: 800 34px/1 "Bricolage Grotesque", system-ui, sans-serif; letter-spacing: -0.03em; }
+  .bar { margin: 0; padding: 8px 26px 7px 12px; background: var(--ink); color: #fff; font: 400 13px "DotGothic16", monospace; text-transform: uppercase; letter-spacing: .08em; box-shadow: inset -12px 0 0 var(--red); }
+  .card { background: var(--paper); border: 2px solid var(--ink); padding: 14px; display: grid; gap: 10px; }
+  .muted { color: var(--muted); margin: 0; }
+  input[type=search], input[type=password] { font: inherit; padding: 10px 12px; border: 0; border-bottom: 2px solid var(--ink); background: #f1efeb; width: 100%; }
+  button, a.btn { font: 400 13px/1 "DotGothic16", monospace; text-transform: uppercase; letter-spacing: .05em; padding: 9px 11px; border: 2px solid var(--ink); background: #fff; color: var(--ink); cursor: pointer; text-decoration: none; }
+  button:hover, button:focus-visible, a.btn:hover { background: var(--ink); color: #fff; outline: none; }
+  button.go { background: var(--ink); color: #ffb000; box-shadow: 4px 4px 0 var(--red); }
+  button.danger:hover, button.danger:focus-visible { background: var(--red); border-color: var(--red); }
+  button:disabled { opacity: .5; cursor: default; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .stats { display: flex; flex-wrap: wrap; gap: 18px; font-variant-numeric: tabular-nums; }
+  .stats b { font: 800 24px/1 "Bricolage Grotesque", system-ui, sans-serif; display: block; }
+  .wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; min-width: 720px; }
+  th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--rule); vertical-align: middle; }
+  th { font: 600 11px/1 "IBM Plex Sans", sans-serif; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+  td.acts { white-space: nowrap; display: flex; gap: 6px; }
+  .uid { font-family: ui-monospace, Consolas, monospace; font-size: 13px; }
+  .none { color: var(--muted); font-style: italic; }
+  .pill { font-size: 12px; padding: 2px 7px; border: 1.5px solid currentColor; }
+  .pill.here { color: var(--green); } .pill.role { color: var(--blue); }
+  .err { color: var(--red); margin: 0; min-height: 1.2em; }
+  .ok { color: var(--green); margin: 0; min-height: 1.2em; }
+  .confirm { display: flex; gap: 6px; align-items: center; }
+</style></head>
+<body>
+<main>
+  <h1>People and badges</h1>
+  <p class="muted">For the team only, on the venue network. Unlinking a badge frees it for someone new; the person keeps their profile, points and connections. "Link badge" makes the next blank badge tapped at any station theirs.</p>
+
+  <section class="card" id="signin" hidden>
+    <p class="bar">Host PIN</p>
+    <form id="pinform" class="row"><input id="pin" type="password" inputmode="numeric" autocomplete="current-password" placeholder="PIN" aria-label="Host PIN" style="max-width:200px"><button class="go" type="submit">Sign in</button></form>
+    <p class="err" id="pinerr" role="alert"></p>
+  </section>
+
+  <section class="card" id="panel" hidden>
+    <p class="bar">Everyone</p>
+    <div class="stats" id="stats"></div>
+    <div class="row"><input id="q" type="search" placeholder="Search by name or badge" aria-label="Search" style="max-width:320px"><button id="reload" type="button">Refresh</button><a class="btn" href="/wall/host.html">Back to the wall</a></div>
+    <p class="ok" id="msg" role="status"></p>
+    <div class="wrap"><table><thead><tr><th>#</th><th>Name</th><th>Badge</th><th>Table</th><th>Links</th><th>Points</th><th>Last tap in</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
+  </section>
+</main>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  let people = [];
+  const say = (t, bad) => { $("msg").textContent = t; $("msg").className = bad ? "err" : "ok"; };
+  const when = (iso) => { if (!iso) return "never"; const d = new Date(iso); return d.toLocaleString([], { weekday: "short", hour: "numeric", minute: "2-digit" }); };
+  const isHere = (iso) => iso && Date.now() - new Date(iso).getTime() < 3 * 3600 * 1000;
+
+  async function load() {
+    const r = await fetch("/api/admin/people");
+    if (r.status === 401) { $("panel").hidden = true; $("signin").hidden = false; $("pin").focus(); return; }
+    if (!r.ok) { $("signin").hidden = true; $("panel").hidden = false; say(r.status === 404 ? "The admin panel only works on the venue network." : "Couldn't load people (" + r.status + ").", true); return; }
+    people = await r.json();
+    $("signin").hidden = true; $("panel").hidden = false;
+    render();
+  }
+  function render() {
+    const q = $("q").value.trim().toLowerCase();
+    const list = people.filter((p) => !q || (p.name || "").toLowerCase().includes(q) || (p.uid || "").toLowerCase().includes(q));
+    const linked = people.filter((p) => p.uid).length;
+    $("stats").replaceChildren(...[[people.length, "profiles"], [linked, "with a badge"], [people.length - linked, "without a badge"], [people.filter((p) => isHere(p.last_checkin)).length, "here now"]]
+      .map(([n, t]) => { const d = el("div"); d.append(el("b", "", String(n)), el("span", "muted", t)); return d; }));
+    $("rows").replaceChildren(...list.map(row));
+  }
+  function row(p) {
+    const tr = el("tr");
+    const name = el("td"); name.append(el("span", "", p.name || "(no name)"), " ");
+    if (p.role !== "student") name.append(el("span", "pill role", p.role), " ");
+    if (isHere(p.last_checkin)) name.append(el("span", "pill here", "here"));
+    const badge = el("td"); badge.append(p.uid ? el("span", "uid", p.uid) : el("span", "none", "no badge"));
+    const acts = el("td", "acts");
+    const btn = (text, cls, fn) => { const b = el("button", cls, text); b.type = "button"; b.addEventListener("click", () => fn(b)); return b; };
+    if (p.uid) acts.append(btn("Unlink badge", "", () => act(p, "unlink", `${p.name}'s badge is free for someone new. Their profile stays.`)));
+    acts.append(btn(p.uid ? "New badge" : "Link badge", "", () => act(p, "link", null)));
+    acts.append(btn("Remove", "danger", (b) => confirmRemove(p, acts, b)));
+    tr.append(el("td", "", String(p.id)), name, badge, el("td", "", p.table_name || "—"), el("td", "", String(p.links)), el("td", "", String(p.points || 0)), el("td", "", when(p.last_checkin)), acts);
+    return tr;
+  }
+  function confirmRemove(p, acts, b) {
+    const box = el("span", "confirm"); box.append(el("span", "", "Remove " + p.name + "?"));
+    const yes = el("button", "danger", "Yes, remove"); yes.type = "button";
+    const no = el("button", "", "Keep"); no.type = "button";
+    box.append(yes, no); acts.replaceChildren(box); no.focus();
+    no.addEventListener("click", render);
+    yes.addEventListener("click", () => act(p, "delete", `${p.name} was removed.`));
+  }
+  async function act(p, what, done) {
+    say("");
+    const r = await fetch(`/api/admin/people/${p.id}/${what}`, { method: "POST" });
+    if (r.status === 401) return load();
+    if (r.status === 409) return say("Someone is signing up right now. Try again in a few seconds.", true);
+    if (!r.ok) return say("That didn't work (" + r.status + ").", true);
+    if (what === "link") { const d = await r.json(); say(`Tap a blank badge on any station within ${d.expires_in} s. It becomes ${p.name}'s.`); setTimeout(load, (d.expires_in + 2) * 1000); }
+    else say(done);
+    load();
+  }
+  $("pinform").addEventListener("submit", async (e) => {
+    e.preventDefault(); $("pinerr").textContent = "";
+    const r = await fetch("/api/host/login", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ pin: $("pin").value }) }).catch(() => null);
+    if (r && r.ok) { $("pin").value = ""; return load(); }
+    $("pinerr").textContent = !r ? "Couldn't reach the server." : r.status === 429 ? "Too many tries. Wait a minute." : r.status === 404 ? "The admin panel only works on the venue network." : "That PIN isn't right.";
+  });
+  $("q").addEventListener("input", render);
+  $("reload").addEventListener("click", load);
+  load();
+})();
+</script>
+<script src="/landing/ui-sound.js"></script>
+</body></html>
