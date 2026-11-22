@@ -19,6 +19,9 @@
   const VN = Math.min(11, Math.max(1, parseInt(qs.get("v"), 10) || 11)), V = VARIANTS[VN], LW = V.lw;
   if (VN > 1) document.documentElement.dataset.v = String(VN);
   document.documentElement.dataset.palette = VN > 1 ? "v" : qs.get("palette") || "sand";
+  if (qs.get("s")) document.documentElement.dataset.s = qs.get("s");
+  if (!qs.get("s") && !qs.get("h") && !qs.has("classic")) { document.documentElement.dataset.s = "1"; document.documentElement.dataset.h = "7"; }
+  if (qs.get("h")) { document.documentElement.dataset.h = qs.get("h"); if (!qs.get("s")) document.documentElement.dataset.s = "1"; }   // ?h=1..6: variations on draft 1 with the markers and heading rectangles of draft 2      // ?s=1..6: Boston T (MBTA) style drafts for the side column and bottom bar
   if (qs.get("logo")) document.documentElement.dataset.logo = qs.get("logo");
   const HOST = qs.get("server") || location.host;
   const HTTP = `${location.protocol}//${HOST}`;
@@ -132,7 +135,8 @@
     $("groups").innerHTML = top.length
       ? top.map((g, i) => {
         const full = S.groups.get(g.id);
-        return `<li class="${i === 0 && g.points > 0 ? "top" : ""}"><span class="t">${esc(g.name + (full?.working_on ? ", " + full.working_on : ""))}</span><span class="v ${chg("g:" + g.id, g.points) ? "bump" : ""}">${g.points}</span></li>`;
+        const tn = parseInt(String(g.name).replace(/\D+/g, ""), 10) || i + 1;
+        return `<li class="${i === 0 && g.points > 0 ? "top" : ""}" data-n="${tn}" data-l="${tn % 4}"><span class="t"><b>${esc(g.name)}</b>${full?.working_on ? `<small>${esc(full.working_on)}</small>` : ""}</span><span class="v ${chg("g:" + g.id, g.points) ? "bump" : ""}">${g.points}</span></li>`;
       }).join("")
       : `<li class="empty">No tables yet</li>`;
 
