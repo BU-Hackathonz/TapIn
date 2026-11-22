@@ -1,7 +1,7 @@
 # Tap In: Devpost story (paste into "About the project")
 
 <!-- Owner: Avery. Paste everything below the line into Devpost's "About the project". Layout: standard Devpost headings,
-Sponsor Notes with one section per track, prose paragraphs. People numbers come from tools/count.py (real people only). -->
+Sponsor Notes with one section per track, prose paragraphs. No attendee counts: we don't have enough real data to quote. -->
 
 ---
 
@@ -61,7 +61,7 @@ The wall's needs list shows what each open table is looking for and how long it 
 
 #### EVIDENCE
 
-Over 31 real taps the median time from tap to reply was 259 ms. Both stations ran a 40-minute soak with no failed polls, came back on their own within about a second after the server was down for 19 seconds, and rejoined Wi-Fi about 5 seconds after the router came back. Tonight 4 people claimed a badge and tapped in, formed 1 table and made 4 connections.
+Over 31 real taps the median time from tap to reply was 259 ms. Both stations ran a 40-minute soak with no failed polls, came back on their own within about a second after the server was down for 19 seconds, and rejoined Wi-Fi about 5 seconds after the router came back.
 
 ![The host wall](https://github.com/BU-Hackathonz/TapIn/blob/main/media/devpost/host-wall.png?raw=true)
 

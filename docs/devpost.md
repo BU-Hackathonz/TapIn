@@ -1,7 +1,7 @@
 # Devpost fields: Tap In (BostonHacks 2026)
 
 Owner: Avery. Every field except "About the project" (that one is `docs/devpost-story.md`). Devpost closes at 9:00 AM;
-we submit by **8:45 AM**. Items marked **(refresh 8:15)** come from `tools/count.py` and `media/devpost/src/pull_live.py`.
+we submit by **8:45 AM**. No attendee counts anywhere (David's call: not enough real data to quote).
 
 ## Submission checklist
 
@@ -13,7 +13,6 @@ we submit by **8:45 AM**. Items marked **(refresh 8:15)** come from `tools/count
 - [ ] Gallery: 14 images in the order below, each with its caption; the thumbnail stays as it is
 - [ ] Public GitHub link and tapin.boston both open
 - [ ] Gemini: the Google AI Studio project number, if the form asks for it
-- [ ] Numbers refreshed at 8:15 in this file, in `devpost-story.md` and on Devpost
 - [ ] Hardware photos added (shot list below), if there's time
 - [ ] Status says **Submitted**, not Draft, by 8:45 AM
 
