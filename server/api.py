@@ -1,7 +1,10 @@
 """Read endpoints for the wall and phone (Playbook: Wall <-> server)."""
 from typing import Literal
 
-from fastapi import APIRouter, HTTPException
+import base64
+import re
+
+from fastapi import APIRouter, HTTPException, Response
 from pydantic import BaseModel, Field
 
 from . import logins, claims, db, groups, matching
@@ -38,6 +41,7 @@ async def graph():
     p = pool()
     people = await p.fetch(
         f"""SELECT id, name, role, focus, points, note, skills, looking_for, working_on,
+                   CASE WHEN photo IS NOT NULL THEN '/api/photo/' || id || '?v=' || left(md5(photo), 8) END AS photo,
                    (last_checkin IS NOT NULL AND last_checkin > now() - interval '{P.HERE_HOURS} hours') AS here,
                    (SELECT group_id FROM group_members WHERE person_id = people.id
                     ORDER BY joined_at DESC LIMIT 1) AS group_id
@@ -189,3 +193,33 @@ async def set_mode(group_id: int, body: Mode):
         needs_now = await groups.list_needs(conn)
     await hub.broadcast("needs_updated", {"needs": needs_now})
     return {"ok": True}
+
+
+# Profile photos: a small picture each person sets on their phone (cut to 128 px there), shown to everyone on the walls.
+# Stored as a data URL in people.photo; /api/graph sends only a short URL (/api/photo/<id>?v=<hash>), so the graph stays small.
+PHOTO_RE = re.compile(r"^data:image/(jpeg|png|webp);base64,([A-Za-z0-9+/=]+)$")
+
+
+class Photo(BaseModel):
+    photo: str | None = Field(default=None, max_length=60000)   # None removes it
+
+
+@router.post("/me/{person_id}/photo")
+async def set_photo(person_id: int, body: Photo):
+    if body.photo is not None and not PHOTO_RE.match(body.photo):
+        raise HTTPException(422, "photo must be a data:image/jpeg|png|webp;base64 URL")
+    row = await pool().fetchrow("UPDATE people SET photo=$2 WHERE id=$1 RETURNING id", person_id, body.photo)
+    if row is None:
+        raise HTTPException(404, "unknown person")
+    await hub.broadcast("badges_changed", {"person_id": person_id})   # walls re-read the graph and show the new photo
+    return {"ok": True}
+
+
+@router.get("/photo/{person_id}")
+async def get_photo(person_id: int):
+    data = await pool().fetchval("SELECT photo FROM people WHERE id=$1", person_id)
+    m = PHOTO_RE.match(data or "")
+    if not m:
+        raise HTTPException(404, "no photo")
+    return Response(base64.b64decode(m.group(2)), media_type=f"image/{m.group(1)}",
+                    headers={"cache-control": "public, max-age=86400"})   # the ?v= hash changes when the photo does

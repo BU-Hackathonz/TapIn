@@ -57,3 +57,4 @@ SELECT add_continuous_aggregate_policy('scans_per_hour',
 
 -- Optional contact (Instagram or LinkedIn) from sign-up. Stored only; no API returns it during the event.
 ALTER TABLE people ADD COLUMN IF NOT EXISTS contact TEXT;
+ALTER TABLE people ADD COLUMN IF NOT EXISTS photo TEXT;   -- profile photo (data URL), set from the phone, shown on the walls

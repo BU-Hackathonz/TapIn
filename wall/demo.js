@@ -132,7 +132,7 @@ const Demo = (() => {
   let fixed = false;
   function person(name, skills, looking_for, photo, working_on) {
     const id = people.size + 1;
-    const p = { id, name, role: "student", group_id: null, here: true, focus: false, points: 0, note: `/wall/img/people/${photo}.jpg`,
+    const p = { id, name, role: "student", group_id: null, here: true, focus: false, points: 0, note: null, bot: true,   // demo people: plain nodes
                 skills, looking_for, working_on };
     people.set(id, p);
     return p;
@@ -152,7 +152,7 @@ const Demo = (() => {
   // Same shapes as the real GET endpoints.
   function snapshot(path) {
     if (path === "/api/graph") {
-      return { people: [...people.values()].map(({ id, name, role, group_id, here, focus, points, note, skills, looking_for, working_on }) => ({ id, name, role, group_id, here, focus, points, note, skills, looking_for, working_on })),
+      return { people: [...people.values()].map(({ id, name, role, group_id, here, focus, points, note, skills, looking_for, working_on }) => ({ id, name, role, group_id, here, focus, points, note: `/wall/img/people/demo-${id}`, skills, looking_for, working_on })),
                groups: [...groups.values()].map((g) => ({ ...g })), links: [...links.values()].map((l) => ({ ...l })) };
     }
     if (path === "/api/needs") return needsList();
