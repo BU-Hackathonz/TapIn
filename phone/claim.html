@@ -64,6 +64,8 @@
         clearInterval(timer);
         store.set("tapin_person", claim.person_id);
         store.del("tapin_claim", sessionStorage);
+        // the room map finds you by this browser's profile (wall.me): tie it to the badge you just claimed
+        store.set("wall.me", { ...(store.get("wall.me") || {}), person_id: claim.person_id, name: form.name, role: form.role || "student" });
         // Came here from Continue with Google / GitHub with no account yet: link that login to this new person
         if (store.get("tapin_oauth_pending", sessionStorage)) {
           store.del("tapin_oauth_pending", sessionStorage);
