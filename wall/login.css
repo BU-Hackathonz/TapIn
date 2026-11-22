@@ -1,0 +1,210 @@
+/* Sign-in prototype, in the wall's Minimal style. */
+:root {
+  --bg: #f6f6f6; --panel: #fff; --line: #e8e8e8; --text: #111; --soft: #444; --muted: #8a8a8a;
+  --font: "IBM Plex Sans", system-ui, sans-serif; --mono: "IBM Plex Mono", monospace;
+}
+* { box-sizing: border-box; margin: 0; }
+body { min-height: 100vh; background: var(--bg); color: var(--text); font: 16px/1.45 var(--font); }
+.card {
+  width: min(440px, 100%); background: var(--panel); border: 1px solid var(--line); border-radius: 24px;
+  padding: 22px 26px 26px; box-shadow: 0 16px 50px rgba(0, 0, 0, 0.07);
+}
+.top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; min-height: 24px; }
+.back { color: var(--muted); text-decoration: none; font-size: 14px; }
+.back:hover, .back:focus-visible { color: var(--text); }
+.dots { display: flex; gap: 6px; list-style: none; padding: 0; }
+.dots li { width: 22px; height: 4px; border-radius: 2px; background: var(--line); transition: background 0.3s; }
+.dots li.done { background: var(--text); }
+h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 8px; }
+.lead { color: var(--soft); margin-bottom: 20px; }
+.fine { color: var(--muted); font: 12px var(--mono); margin-top: 16px; }
+.step { animation: in 0.35s ease-out; }
+@keyframes in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+button, input { font: inherit; }
+.oauth {
+  width: 100%; min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 10px;
+  margin-bottom: 10px; font-weight: 600; color: var(--text); background: var(--panel);
+  border: 1px solid var(--line); border-radius: 999px; cursor: pointer;
+}
+.oauth:hover, .oauth:focus-visible { border-color: var(--text); outline: none; }
+.or { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 13px; margin: 14px 0; }
+.or::before, .or::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.row { display: flex; gap: 8px; }
+input[type="text"], input[type="email"] {
+  width: 100%; min-height: 46px; padding: 10px 16px; color: var(--text); background: var(--bg);
+  border: 1px solid transparent; border-radius: 14px;
+}
+input:focus { outline: none; border-color: var(--text); background: var(--panel); }
+.primary {
+  min-height: 46px; padding: 0 22px; font-weight: 600; color: #fff; background: var(--text);
+  border: 0; border-radius: 999px; cursor: pointer; text-decoration: none; display: inline-grid; place-items: center;
+}
+.primary.wide { width: 100%; margin-top: 18px; }
+.ghost {
+  min-height: 44px; padding: 0 18px; font-weight: 600; color: var(--text); background: transparent;
+  border: 1px solid var(--line); border-radius: 999px; cursor: pointer;
+}
+.primary:focus-visible, .ghost:focus-visible, .chip:focus-visible, .seg button:focus-visible, .connect:focus-visible {
+  outline: 2px solid var(--text); outline-offset: 2px;
+}
+.field { display: block; font-weight: 600; font-size: 14px; margin: 16px 0 6px; }
+.field small, .field + small { font-weight: 400; color: var(--muted); }
+label.field input { margin-top: 6px; font-weight: 400; }
+.err { color: #c62828; font-size: 13px; margin-top: 4px; }
+
+.face-row { display: flex; align-items: center; gap: 16px; }
+.face { width: 96px; height: 96px; border-radius: 50%; border: 1px solid var(--line); object-fit: cover; flex: none; }
+.pic-actions { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.pick { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; }
+.pick[hidden] { display: none; }
+/* the real file input sits invisibly over its label, so a tap anywhere on the button opens the picker */
+.pick { position: relative; overflow: hidden; }
+.pick input { position: absolute; inset: 0; opacity: 0; cursor: pointer; font-size: 0; }
+.pick:focus-within { outline: 2px solid var(--text); outline-offset: 2px; }
+.link { background: none; border: 0; padding: 4px 2px; color: var(--muted); font-size: 14px; text-decoration: underline; cursor: pointer; }
+.link:hover, .link:focus-visible { color: var(--text); }
+.seg { display: flex; background: var(--bg); border-radius: 999px; padding: 4px; }
+.seg button {
+  flex: 1; min-height: 38px; border: 0; border-radius: 999px; background: transparent; color: var(--muted);
+  font-weight: 600; cursor: pointer;
+}
+.seg button[aria-checked="true"] { background: var(--panel); color: var(--text); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12); }
+
+.suggest { list-style: none; padding: 0; margin-top: 4px; border-radius: 14px; overflow: hidden; }
+.suggest:not(:empty) { border: 1px solid var(--line); }
+.suggest li { padding: 10px 16px; cursor: pointer; }
+.suggest li:hover { background: var(--bg); }
+
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  min-height: 36px; padding: 0 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel);
+  color: var(--text); cursor: pointer; display: inline-grid; place-items: center; font-size: 14px;
+}
+.chip.on { background: var(--text); color: #fff; border-color: var(--text); }
+.chip:disabled { opacity: 0.35; cursor: not-allowed; }
+.chips.small { margin-top: 12px; gap: 6px; }
+.chips.small .chip { min-height: 28px; padding: 0 10px; font-size: 13px; cursor: default; }
+.chip.want { border-color: var(--text); }
+
+.apps { display: grid; gap: 8px; }
+.app {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px;
+  padding: 10px 12px; border: 1px solid var(--line); border-radius: 16px;
+}
+.app.linked { border-color: var(--text); }
+.app input { grid-column: 1 / -1; display: none; }
+.app.open input { display: block; }
+.logo { width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; }
+.logo.sm { width: 28px; height: 28px; border-radius: 8px; }
+.name b { display: block; }
+.name small { color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+.connect {
+  min-height: 36px; padding: 0 16px; border-radius: 999px; font-weight: 600; cursor: pointer;
+  background: var(--text); color: #fff; border: 0;
+}
+.app.linked .connect { background: transparent; color: var(--text); border: 1px solid var(--line); }
+
+.preview { padding: 16px; border: 1px solid var(--line); border-radius: 18px; }
+.pv-head { display: flex; align-items: center; gap: 14px; }
+.pv-head .face { width: 64px; height: 64px; }
+.pv-head b { display: block; font-size: 20px; }
+.pv-head span { color: var(--muted); font-size: 14px; }
+.mini-apps { display: flex; gap: 6px; margin-top: 12px; }
+.badge { display: flex; align-items: center; gap: 14px; margin-top: 16px; padding: 14px 16px; background: var(--bg); border-radius: 16px; }
+.badge b { display: block; }
+.badge span { color: var(--muted); font-size: 14px; }
+.pulse { width: 14px; height: 14px; border-radius: 50%; background: var(--text); flex: none; animation: pulse 1.4s ease-out infinite; }
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(17, 17, 17, 0.4); } 100% { box-shadow: 0 0 0 14px rgba(17, 17, 17, 0); } }
+
+.nav { display: flex; justify-content: space-between; margin-top: 26px; }
+.nav[hidden] { display: none; }
+
+@media (max-width: 480px) {
+  .card { padding: 18px 18px 24px; }
+}
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+.welcome { text-align: center; padding: 8px 0 4px; }
+.welcome .face { margin: 0 auto 14px; display: block; }
+.welcome h1 { margin-bottom: 4px; }
+.split { margin-top: 10px; }
+.split .ghost { flex: 1; }
+
+.skip {
+  display: block; width: 100%; margin-top: 14px; padding: 10px; background: none; border: 0;
+  color: var(--muted); font: 600 14px var(--font); text-decoration: underline; cursor: pointer;
+}
+.skip:hover, .skip:focus-visible { color: var(--text); outline: none; }
+
+#room-slot .room-card { margin-top: 14px; }
+#enter.ghost { width: 100%; margin-top: 14px; display: grid; place-items: center; text-decoration: none; }
+
+/* front page: logo, people drawing, then Find your people */
+.dots[hidden] { display: none; }
+.top:has(> .back[hidden]):has(> .dots[hidden]) { display: none; }   /* first screen: no empty row above the logo */
+
+/* ---------------------------------------------------------- layouts (?layout=1..5)
+   The page is the illustration's cream; the art has no box of its own and every shape shows whole, nothing cut at an edge. */
+body[class*="layout-"] { background: #fcf7ec; }
+body[class*="layout-"] input[type="text"], body[class*="layout-"] input[type="email"] { background: #ffffff; }
+.stage { min-height: 100vh; display: grid; }
+.art-panel { position: relative; display: flex; align-items: center; justify-content: center; }
+.art-fill { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+.art-fill .art.art-blend {
+  width: 100%; height: auto; max-height: 100%; border-radius: 0;
+}
+/* the photo with its cut-off shapes finished (TapArt.photo): no mask, nothing fades */
+.art-fill .art-photo { overflow: visible; }
+.art-brand { display: none; }
+.brand-top { display: flex; justify-content: center; margin: 8px 0 26px; }
+.brand-top .lg { font-size: 64px; }
+.card { align-self: center; justify-self: center; margin: 24px 16px; }
+.layout-1 .card, .layout-2 .card, .layout-5 .card { border: 0; box-shadow: none; background: transparent; }
+
+/* 1 · split: form left, art right */
+.layout-1 .stage { grid-template-columns: minmax(420px, 1fr) 1.15fr; }
+.layout-1 .art-panel { order: 2; }
+
+/* 2 · split mirrored: art left with the logo on it (no box), form right */
+.layout-2 .stage { grid-template-columns: 1.15fr minmax(420px, 1fr); }
+.layout-2 .art-panel { order: -1; flex-direction: column; height: 100vh; }
+.layout-2 .art-fill { height: auto; flex: 0 1 auto; min-height: 0; }
+.layout-2 .art-fill .art.art-blend { max-height: calc(100vh - 120px); width: auto; max-width: 100%; }
+.layout-2 .art-brand { display: block; order: 2; margin-top: 14px; }
+.layout-2 .art-brand .lg { font-size: 72px; }
+.layout-2 .brand-top { display: none; }
+
+/* 3 · banner: art across the top, logo and form below */
+.layout-3 .stage { grid-template-rows: auto auto; }
+.layout-3 .art-panel { max-height: 46vh; overflow: hidden; }
+.layout-3 .art-fill .art.art-blend { width: min(1100px, 100%); }
+.layout-3 .brand-top .lg { font-size: 64px; }
+
+/* 4 · card on art: the art behind, a white card in the middle */
+.layout-4 .stage { grid-template-areas: "all"; }
+.layout-4 .art-panel, .layout-4 .card { grid-area: all; }
+.layout-4 .art-panel { position: fixed; inset: 0; }
+.layout-4 .art-fill .art.art-blend { width: 100%; height: 100%; max-height: none; }
+.layout-4 .card { position: relative; z-index: 1; }
+
+/* 5 · logo first: big name, the art, then the form, one column */
+.layout-5 .stage { grid-template-columns: minmax(0, 1fr); justify-items: center; align-content: start; padding-top: 28px; }
+.layout-5 .art-panel { width: min(620px, 94vw); flex-direction: column; gap: 6px; }
+.layout-5 .art-brand { display: block; order: -1; }
+.layout-5 .art-brand .lg { font-size: 76px; }
+.layout-5 .card { margin-top: 0; }
+.layout-5 .brand-top { display: none; }
+
+/* phones: one column, the art on the first screen only, fading into the page */
+@media (max-width: 800px) {
+  .stage, .layout-1 .stage, .layout-2 .stage, .layout-3 .stage, .layout-5 .stage { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; align-content: start; }
+  .card { align-self: start; }
+  .art-panel { order: -1 !important; width: 100% !important; position: relative !important; max-height: none; }
+  body:not(.at-start) .art-panel { display: none; }
+  .layout-4 .stage { grid-template-areas: none; }
+  .layout-4 .art-panel, .layout-4 .card { grid-area: auto; }
+  .layout-4 .art-fill .art.art-blend { height: auto; }
+  .card, .layout-3 .card, .layout-4 .card { margin: 0; border: 0; border-radius: 0; box-shadow: none; background: transparent; min-height: auto; }
+  .brand-top .lg, .layout-2 .art-brand .lg, .layout-5 .art-brand .lg { font-size: 54px; }
+}

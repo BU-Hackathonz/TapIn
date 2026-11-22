@@ -1,0 +1,298 @@
+/* The sign-in steps and the join-or-host step in the style of David's host screen (host.css, its Boston T look:
+   ?s=1&h=7). Style only: the picture, the logo, the page layout and the tap animation are unchanged.
+   Helvetica, black label bars ending in a line color (red, orange, blue, green), black-on-white controls with small
+   sign-like corners, round route bullets. Only applies when hostlook.js sets data-look="host" (the default; ?look=classic
+   turns it off). */
+html[data-look="host"] {
+  --t-red: #DA291C; --t-orange: #ED8B00; --t-blue: #003DA5; --t-green: #00843D;
+  --t-red-l: #ff4b3e; --t-orange-l: #ffa21a; --t-blue-l: #4a86ff; --t-green-l: #2fbf6a;
+  --ink: #111; --rule: #d9d9d9; --paper: #f2f1ee;
+  --hv: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+html[data-look="host"] body {
+  --panel: #fff; --line: var(--rule); --text: var(--ink); --soft: #333; --muted: #555; --font: var(--hv);
+  color: var(--ink); font-family: var(--hv);
+}
+
+/* the card, where there is one (layouts 3 and 4): a flat white sign */
+html[data-look="host"] .card { border-radius: 0; box-shadow: none; }
+html[data-look="host"] .layout-3 .card, html[data-look="host"] .layout-4 .card { border: 0; }
+
+/* black label bar on every step, ending in that step's line color (hostlook.js adds it) */
+.hl-bar {
+  display: flex; align-items: center; margin: 0 0 16px; padding: 0.5em 1.6em 0.5em 0.85em; background: var(--ink); color: #fff;
+  font: 700 12.5px/1.2 var(--hv); text-transform: uppercase; letter-spacing: 0.08em;
+  box-shadow: inset -0.8em 0 0 var(--sc, var(--t-red-l));
+}
+.hl-bar span { margin-left: auto; color: #bbb; font-weight: 400; }
+
+html[data-look="host"] h1 { font: 700 28px/1.12 var(--hv); letter-spacing: -0.02em; margin-bottom: 8px; color: var(--ink); }
+html[data-look="host"] .lead { color: #333; }
+html[data-look="host"] .fine { color: #777; font-family: var(--hv); }
+html[data-look="host"] .back { color: var(--muted); }
+html[data-look="host"] .field { font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; font-size: 12px; color: var(--ink); }
+html[data-look="host"] .field small { text-transform: none; letter-spacing: 0; }
+
+/* buttons and fields: flat, black on white, small sign-like corners */
+html[data-look="host"] .oauth, html[data-look="host"] .ghost, html[data-look="host"] .primary, html[data-look="host"] .chip,
+html[data-look="host"] .seg, html[data-look="host"] .seg button, html[data-look="host"] .connect, html[data-look="host"] .app,
+html[data-look="host"] .preview, html[data-look="host"] .badge, html[data-look="host"] .suggest, html[data-look="host"] .logo,
+html[data-look="host"] input[type="text"], html[data-look="host"] input[type="email"] { border-radius: 0.25em; box-shadow: none; }
+html[data-look="host"] .oauth { background: #fff; color: var(--ink); border: 2px solid var(--ink); font-weight: 700; }
+html[data-look="host"] .oauth:hover { background: var(--paper); }
+html[data-look="host"] .oauth:focus-visible { outline: 2px solid var(--t-red); outline-offset: 2px; }
+html[data-look="host"] input[type="text"], html[data-look="host"] input[type="email"] {
+  background: #fff; color: var(--ink); border: 0; border-bottom: 2px solid var(--ink); border-radius: 0.25em 0.25em 0 0;
+}
+html[data-look="host"] input::placeholder { color: #888; }
+html[data-look="host"] input:focus { background: #fff; border-color: var(--t-red); }
+html[data-look="host"] .primary, html[data-look="host"] .connect, html[data-look="host"] .room-join { background: var(--ink); color: #fff; font-weight: 700; border-radius: 0.25em; }
+html[data-look="host"] .primary:hover, html[data-look="host"] .room-join:hover { background: var(--t-red); }
+html[data-look="host"] .ghost { color: var(--ink); border: 2px solid var(--ink); }
+html[data-look="host"] .chip { background: #fff; color: var(--ink); border: 1.5px solid var(--ink); font-weight: 700; }
+html[data-look="host"] .chip.on { background: var(--t-blue); color: #fff; border-color: var(--t-blue); }
+html[data-look="host"] .chip.want { border-color: var(--t-red); }
+html[data-look="host"] .seg { background: #fff; border: 2px solid var(--ink); padding: 3px; }
+html[data-look="host"] .seg button { border-radius: 0.2em; }
+html[data-look="host"] .seg button[aria-checked="true"] { background: var(--ink); color: #fff; }
+html[data-look="host"] .or { color: #777; }
+html[data-look="host"] .or::before, html[data-look="host"] .or::after { background: var(--rule); }
+html[data-look="host"] .app { border: 1px solid var(--rule); background: #fff; }
+html[data-look="host"] .app.linked { border-color: var(--t-green); }
+html[data-look="host"] .app.linked .connect { background: #fff; color: var(--t-green); border: 2px solid var(--t-green); }
+html[data-look="host"] .suggest { background: #fff; }
+html[data-look="host"] .suggest li:hover { background: var(--paper); }
+html[data-look="host"] .skip, html[data-look="host"] .link { color: var(--ink); }
+html[data-look="host"] .skip:hover, html[data-look="host"] .link:hover { color: var(--t-red); }
+html[data-look="host"] .face { border: 2px solid var(--ink); }
+html[data-look="host"] .primary:focus-visible, html[data-look="host"] .ghost:focus-visible, html[data-look="host"] .chip:focus-visible,
+html[data-look="host"] .seg button:focus-visible, html[data-look="host"] .connect:focus-visible { outline-color: var(--t-red); }
+
+/* progress: one segment per step in the four line colors */
+html[data-look="host"] .dots { gap: 4px; }
+html[data-look="host"] .dots li { width: 28px; height: 6px; border-radius: 0; background: var(--rule); }
+html[data-look="host"] .dots li.done:nth-child(4n + 1) { background: var(--t-red); }
+html[data-look="host"] .dots li.done:nth-child(4n + 2) { background: var(--t-orange); }
+html[data-look="host"] .dots li.done:nth-child(4n + 3) { background: var(--t-blue); }
+html[data-look="host"] .dots li.done:nth-child(4n + 4) { background: var(--t-green); }
+
+/* join or host, and the tap and found steps: rows with a round route bullet, flat frames */
+html[data-look="host"] .room-inline, html[data-look="host"] .room-window, html[data-look="host"] .room-card { border-radius: 0; border: 2px solid var(--ink); box-shadow: none; background: #fff; }
+html[data-look="host"] #room-slot.room-inline.choose { border: 0; background: transparent; }
+html[data-look="host"] .room-window { color: var(--ink); }
+html[data-look="host"] .room-option {
+  background: transparent; color: var(--ink); border: 0; border-bottom: 1px solid var(--rule); border-radius: 0; padding: 16px 2px; font-family: var(--hv);
+}
+html[data-look="host"] .room-option:last-child { border-bottom: 0; }
+html[data-look="host"] .room-option:hover, html[data-look="host"] .room-option:focus-visible { transform: translateX(4px); border-color: var(--rule); }
+html[data-look="host"] .room-option .room-option-icon { width: 46px; height: 46px; border-radius: 50%; color: #fff; background: var(--t-red); }
+html[data-look="host"] .room-option:nth-of-type(2) .room-option-icon { background: var(--t-orange); }
+html[data-look="host"] .room-option:nth-of-type(3) .room-option-icon { background: var(--t-blue); }
+html[data-look="host"] .room-option-text b { font-weight: 700; font-size: 17px; }
+html[data-look="host"] .room-option:hover b, html[data-look="host"] .room-option:focus-visible b { color: var(--t-red); }
+html[data-look="host"] .room-option-text small, html[data-look="host"] .room-sub { color: #555; }
+html[data-look="host"] .room-kicker { font: 700 11px var(--hv); letter-spacing: 0.1em; color: #555; }
+html[data-look="host"] .room-title { font-family: var(--hv); font-weight: 700; }
+html[data-look="host"] .room-make { color: var(--ink); }
+html[data-look="host"] .room-make:hover { color: var(--t-red); }
+html[data-look="host"] .done { color: var(--t-green); }
+html[data-look="host"] .room-form input { background: #fff; color: var(--ink); border: 0; border-bottom: 2px solid var(--ink); border-radius: 0.25em 0.25em 0 0; }
+html[data-look="host"] .room-form label { color: var(--ink); font-family: var(--hv); text-transform: uppercase; letter-spacing: 0.06em; }
+
+/* ---- the five mockups (tlook.js sets html[data-mk]); 1 Platform is everything above */
+/* 2 Wayfinding: the form is a black sign beside the picture, white Helvetica Bold, a red stripe on each heading */
+html[data-mk="2"] .stage .card { background: #111; color: #fff; padding: 30px 30px 32px; border-radius: 0; }
+html[data-mk="2"] .card .lg { color: #fff; }
+html[data-mk="2"] .card :is(h1, .field, .room-option, .room-option-text b, .room-title, .skip, .link, .back) { color: #fff; }
+html[data-mk="2"] .card :is(.lead, .room-sub, .room-option-text small) { color: #c4c4c4; }
+html[data-mk="2"] .card .fine { color: #8a8a8a; }
+html[data-mk="2"] .hl-bar { background: transparent; box-shadow: none; padding: 0.15em 0 0.15em 0.6em; border-left: 0.45em solid var(--sc); font-size: 13px; letter-spacing: 0.05em; }
+html[data-mk="2"] .card :is(.oauth, .ghost, .chip) { background: transparent; color: #fff; border-color: #fff; }
+html[data-mk="2"] .card :is(.primary, .room-join) { background: #fff; color: #111; }
+html[data-mk="2"] .card :is(input[type="text"], input[type="email"]) { background: #1e1e1e; color: #fff; border-bottom-color: #fff; }
+html[data-mk="2"] .card .oauth svg path[fill="currentColor"] { fill: #fff; }
+html[data-mk="2"] .card .seg { background: transparent; border-color: #fff; }
+html[data-mk="2"] .card .seg button { color: #c4c4c4; }
+html[data-mk="2"] .card .seg button[aria-checked="true"] { background: #fff; color: #111; }
+html[data-mk="2"] .card :is(.room-inline, .room-card) { background: #111; border-color: #fff; color: #fff; }
+html[data-mk="2"] .card .room-option { border-bottom-color: #2e2e2e; }
+html[data-mk="2"] .card .tap-btn { color: #fff; }
+html[data-mk="2"] .card :is(.tap-card) { fill: #111; }
+html[data-mk="2"] .card :is(.tap-crease) { stroke: #111; }
+html[data-mk="2"] .dots li { background: #2e2e2e; }
+
+/* 3 Line colours: no bars, a thick line-colour rule over each heading, blue actions */
+html[data-mk="3"] .hl-bar { background: transparent; color: #111; box-shadow: none; padding: 0.55em 0 0.2em; border-top: 5px solid var(--sc); font-size: 12.5px; letter-spacing: 0.05em; }
+html[data-mk="3"] .hl-bar span { color: #555; }
+html[data-mk="3"] :is(.primary, .room-join, .connect) { background: var(--t-blue); }
+html[data-mk="3"] .chip.on { background: var(--t-blue); }
+html[data-mk="3"] .room-option .room-option-icon { background: var(--t-blue); }
+html[data-mk="3"] .room-option:nth-of-type(2) .room-option-icon { background: var(--t-green); }
+
+/* 4 Red line: red heading bars, red actions, a red line along the top of the page */
+html[data-mk="4"] body { box-shadow: inset 0 8px 0 var(--t-red); }
+html[data-mk="4"] .hl-bar { background: var(--t-red); box-shadow: none; }
+html[data-mk="4"] .hl-bar span { color: #ffd0cc; }
+html[data-mk="4"] :is(.primary, .room-join, .connect) { background: var(--t-red); }
+html[data-mk="4"] :is(.primary, .room-join):hover { background: #111; }
+html[data-mk="4"] .dots li.done { background: var(--t-red) !important; }
+
+/* 5 Quiet: small spaced grey capitals with a green marker, warm-grey fields, black actions */
+html[data-mk="5"] .hl-bar { background: transparent; color: #6b6961; box-shadow: none; padding: 0; font-size: 11px; letter-spacing: 0.18em; }
+html[data-mk="5"] .hl-bar::before { content: ""; width: 0.75em; height: 0.75em; border-radius: 50%; background: var(--t-green); margin-right: 0.7em; flex: none; }
+html[data-mk="5"] .hl-bar span { color: #9a978f; }
+html[data-mk="5"] h1 { font-size: 32px; }
+html[data-mk="5"] :is(input[type="text"], input[type="email"]) { background: #f2f1ee; border-bottom-width: 1px; }
+html[data-mk="5"] .oauth { border-width: 1px; }
+html[data-mk="5"] .dots li.done { background: #111 !important; }
+
+/* ---- pixel touches from the host screen: dithered smoke, scanlines, dot-matrix lettering, stepped shadows */
+.hl-fume { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; image-rendering: pixelated; image-rendering: crisp-edges; }
+html[data-look="host"] .stage { position: relative; z-index: 1; }
+html[data-look="host"] body::after {
+  content: ""; position: fixed; inset: 0; z-index: 2; pointer-events: none;
+  background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.03) 0 1px, transparent 1px 3px);
+}
+html[data-look="host"] .hl-bar, html[data-look="host"] .fine, html[data-look="host"] .or,
+html[data-look="host"] .field, html[data-look="host"] .room-kicker {
+  font-family: "DotGothic16", monospace; font-weight: 400; letter-spacing: 0.06em;
+}
+html[data-look="host"] .hl-bar { font-size: 14px; }
+html[data-look="host"] .field { font-size: 13px; }
+html[data-look="host"] .fine { font-size: 12px; text-transform: uppercase; }
+/* buttons sit on a hard pixel shadow and press down into it */
+html[data-look="host"] :is(.oauth, .primary, .ghost, .room-join) { border-radius: 0; box-shadow: 4px 4px 0 #111; transition: transform 0.06s, box-shadow 0.06s; }
+html[data-look="host"] :is(.oauth, .primary, .ghost, .room-join):active { transform: translate(4px, 4px); box-shadow: 0 0 0 #111; }
+html[data-look="host"] :is(.primary, .room-join) { box-shadow: 4px 4px 0 var(--t-red); }
+html[data-look="host"] :is(.chip, .seg, .app, input[type="text"], input[type="email"]) { border-radius: 0; }
+html[data-look="host"] .chip.on { box-shadow: 3px 3px 0 #111; }
+/* progress: blocky pixel segments */
+html[data-look="host"] .dots { gap: 3px; }
+html[data-look="host"] .dots li { width: 24px; height: 8px; background: repeating-linear-gradient(90deg, var(--rule) 0 6px, transparent 6px 8px); }
+html[data-look="host"] .dots li.done { -webkit-mask: repeating-linear-gradient(90deg, #000 0 6px, transparent 6px 8px); mask: repeating-linear-gradient(90deg, #000 0 6px, transparent 6px 8px); }
+/* the inline room frames get the stepped shadow too */
+html[data-look="host"] :is(.room-inline, .room-card):not(#room-slot) { box-shadow: 6px 6px 0 #111; }
+/* the black bottom bar */
+.hl-board {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 3; display: flex; align-items: center; gap: 14px;
+  height: 46px; padding: 6px 22px 0; background: #111; color: #ffb000;
+  font: 400 15px/1 "DotGothic16", monospace; text-transform: uppercase; letter-spacing: 0.05em;
+}
+.hl-board::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 6px;
+  background: linear-gradient(90deg, #DA291C 0 25%, #ED8B00 25% 50%, #003DA5 50% 75%, #00843D 75% 100%); }
+.hl-board b { font-weight: 400; color: #fff; background: #DA291C; padding: 5px 9px 3px; }
+.hl-board span { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.hl-board i { font-style: normal; color: #b57a00; white-space: nowrap; }
+html[data-look="host"] .stage { padding-bottom: 46px; }
+@media (max-width: 800px) { .hl-board { height: 40px; font-size: 12px; padding: 6px 12px 0; } .hl-board i { display: none; } }
+@media (prefers-reduced-motion: reduce) { html[data-look="host"] :is(.oauth, .primary, .ghost, .room-join) { transition: none; } }
+/* keep the smoke on the form's side and fade it out before the picture, so the picture never shows an edge */
+.layout-1 .hl-fume { -webkit-mask-image: linear-gradient(to right, #000 30%, transparent 46%); mask-image: linear-gradient(to right, #000 30%, transparent 46%); }
+.layout-2 .hl-fume { -webkit-mask-image: linear-gradient(to left, #000 26%, transparent 42%); mask-image: linear-gradient(to left, #000 26%, transparent 42%); }
+.layout-3 .hl-fume, .layout-5 .hl-fume { -webkit-mask-image: linear-gradient(to top, #000 35%, transparent 52%); mask-image: linear-gradient(to top, #000 35%, transparent 52%); }
+.layout-4 .hl-fume { display: none; }
+@media (max-width: 800px) {
+  body[class*="layout-"] .hl-fume { -webkit-mask-image: linear-gradient(to top, #000 40%, transparent 62%); mask-image: linear-gradient(to top, #000 40%, transparent 62%); }
+}
+
+/* ---- the pixel front page (?scene=pixel, the default): the pixel Boston fills the screen, the sign-in is a pixel menu */
+body.scene-pixel .hl-fume { display: none; }
+body.scene-pixel .stage { grid-template-columns: minmax(0, 1fr); grid-template-areas: none; align-items: center; justify-items: start; }
+body.scene-pixel .art-panel { position: fixed; inset: 0 0 46px 0; z-index: 0; order: 0; width: auto; display: block; }
+body.scene-pixel .art-fill { width: 100%; height: 100%; display: block; }
+.px-scene { display: block; width: 100%; height: 100%; image-rendering: pixelated; image-rendering: crisp-edges; }
+body.scene-pixel .stage .card {
+  position: relative; z-index: 2; justify-self: start; align-self: center; margin: 5vh 0 calc(5vh + 46px) 7vw; width: min(430px, calc(100vw - 32px)); padding: 22px 24px 24px;
+  background: #fffdf6; border: 4px solid #111; border-radius: 0;
+  box-shadow: 0 0 0 4px #fffdf6, 0 0 0 8px #111, 12px 12px 0 8px rgba(17, 17, 17, 0.85);
+}
+body.scene-pixel .brand-top { justify-content: flex-start; margin-bottom: 14px; }
+body.scene-pixel .brand-top .lg { font-family: "DotGothic16", monospace; font-weight: 400; font-size: 52px; letter-spacing: 0; }
+/* the sign-in choices read as menu items: dot-matrix capitals, a ▶ cursor on the one you point at */
+body.scene-pixel :is(.oauth, .skip) {
+  justify-content: flex-start; padding-left: 34px; position: relative; box-shadow: none; border: 0; background: transparent;
+  font: 400 17px/1 "DotGothic16", monospace; text-transform: uppercase; letter-spacing: 0.04em; text-decoration: none; color: #111;
+}
+body.scene-pixel :is(.oauth, .skip)::before { content: "▶"; position: absolute; left: 10px; color: var(--t-red); opacity: 0; }
+body.scene-pixel :is(.oauth, .skip):is(:hover, :focus-visible) { background: #111; color: #ffb000; outline: none; }
+body.scene-pixel :is(.oauth, .skip):is(:hover, :focus-visible)::before { opacity: 1; }
+body.scene-pixel :is(.oauth, .skip):is(:hover, :focus-visible) svg path[fill="currentColor"] { fill: #ffb000; }
+body.scene-pixel .oauth { min-height: 44px; margin-bottom: 4px; }
+body.scene-pixel .skip { display: flex; align-items: center; min-height: 44px; width: 100%; margin-top: 6px; }
+body.scene-pixel h1 { font-size: 26px; }
+body.scene-pixel .lead { font-size: 15px; }
+@media (max-width: 800px) {
+  body.scene-pixel .art-panel { position: relative; inset: auto; height: 40vh; min-height: 220px; }
+  body.scene-pixel:not(.at-start) .art-panel { display: none; }
+  body.scene-pixel .stage { justify-items: stretch; }
+  body.scene-pixel .stage .card { margin: 14px 12px 70px; width: auto; box-shadow: 0 0 0 4px #fffdf6, 0 0 0 8px #111, 8px 8px 0 8px rgba(17, 17, 17, 0.85); }
+}
+
+/* Google-style sign-in: one centred card, logo on top, everything centred; David's wordmark */
+body.scene-pixel .stage .card { justify-self: center; margin-left: 0; text-align: center; width: min(450px, calc(100vw - 32px)); padding: 36px 40px 32px; }
+body.scene-pixel .brand-top { justify-content: center; margin-bottom: 10px; }
+body.scene-pixel .card :is(.lead, .fine) { text-align: center; }
+body.scene-pixel .card .hl-bar { display: none; }
+body.scene-pixel .card h1 { font-size: 24px; font-weight: 400; }
+body.scene-pixel :is(.oauth, .skip) { justify-content: center; padding-left: 0; border: 1px solid #111; }
+body.scene-pixel .skip { border: 0; }
+.wm { position: relative; display: inline-block; padding-top: 0.46em; font: 800 44px/1 "Bricolage Grotesque", sans-serif; letter-spacing: -0.04em; color: #111; }
+.ii { position: relative; display: inline-block; }
+.wifi { position: absolute; left: 50%; bottom: 0.66em; width: 0.62em; height: 0.52em; transform: translateX(-50%); overflow: visible; color: #DA291C; fill: none; stroke: currentColor; stroke-width: 2.3; stroke-linecap: round; }
+.wifi circle { fill: currentColor; stroke: none; }
+/* the pixel scene stays behind the whole sign-in, every step, phones too */
+@media (max-width: 800px) {
+  body.scene-pixel .art-panel, body.scene-pixel:not(.at-start) .art-panel { display: block; position: fixed; inset: 0 0 40px 0; height: auto; min-height: 0; }
+  body.scene-pixel .stage .card { margin: 30vh 12px 70px; }
+}
+
+/* ---- the sign-in as one rounded window: form on the left, the moving pixel scene on the right, on a dusk backdrop */
+html body.scene-pixel { background: radial-gradient(ellipse at 30% 20%, #f4cfc4, #c98f85 60%, #8f5f63); min-height: 100vh; }
+html body.scene-pixel::after { display: none; }
+html body.scene-pixel .stage {
+  width: min(1120px, calc(100vw - 32px)); min-height: min(660px, calc(100vh - 110px)); margin: 32px auto 78px; padding: 14px;
+  display: grid; grid-template-columns: minmax(340px, 0.9fr) 1.1fr; grid-template-areas: "form scene"; align-items: stretch; justify-items: stretch;
+  background: #fbf9f6; border-radius: 28px; box-shadow: 0 30px 80px rgba(60, 25, 30, 0.35);
+}
+html body.scene-pixel .art-panel {
+  grid-area: scene; position: relative; inset: auto; z-index: 0; height: auto; min-height: 0;
+  border-radius: 20px; overflow: hidden; background: #f4cfc4;
+}
+html body.scene-pixel .art-fill { position: absolute; inset: 0; }
+html body.scene-pixel .art-panel::after {
+  content: "Ride Comm Ave to your people.\A Tap in, and the room shows which table needs you.";
+  white-space: pre-line; position: absolute; left: 24px; right: 24px; bottom: 22px; z-index: 2;
+  color: #fff; font: 400 17px/1.5 "DotGothic16", monospace; text-shadow: 2px 2px 0 rgba(17, 17, 17, 0.75);
+}
+html body.scene-pixel .stage .card {
+  grid-area: form; justify-self: stretch; align-self: center; width: auto; max-width: 400px; margin: 0 auto; padding: 24px 28px;
+  background: transparent; border: 0; box-shadow: none; text-align: center;
+}
+html body.scene-pixel .wm { font-size: 48px; }
+html body.scene-pixel .card h1 { font-size: 28px; font-weight: 700; margin-top: 6px; }
+html body.scene-pixel :is(.oauth) { border: 1px solid #d9d4cf; border-radius: 12px; background: #fff; box-shadow: 0 4px 0 #e7e1dc; }
+html body.scene-pixel :is(.oauth):is(:hover, :focus-visible) { background: #111; border-color: #111; }
+html body.scene-pixel :is(input[type="text"], input[type="email"]) { border-radius: 12px; border: 1px solid #e2ddd8; background: #fff; }
+html body.scene-pixel :is(.primary, .room-join) { border-radius: 12px; background: #b0605f; box-shadow: 0 6px 16px rgba(176, 96, 95, 0.35); }
+html body.scene-pixel :is(.primary, .room-join):hover { background: #DA291C; }
+html body.scene-pixel .room-inline:not(#room-slot) { border-radius: 16px; box-shadow: none; border: 1px solid #e2ddd8; }
+@media (max-width: 800px) {
+  html body.scene-pixel .stage { grid-template-columns: minmax(0, 1fr); grid-template-areas: "scene" "form"; margin: 12px auto 60px; min-height: 0; border-radius: 22px; padding: 10px; }
+  html body.scene-pixel .art-panel, html body.scene-pixel:not(.at-start) .art-panel { display: block; position: relative; inset: auto; height: 34vh; min-height: 200px; }
+  html body.scene-pixel .art-panel::after { font-size: 13px; left: 14px; bottom: 12px; }
+  html body.scene-pixel .stage .card { margin: 0; padding: 18px 10px 20px; }
+}
+/* desktop: the window fills most of the screen */
+@media (min-width: 801px) {
+  html body.scene-pixel .stage { width: calc(100vw - 48px); max-width: 1600px; min-height: calc(100vh - 46px - 48px); margin: 24px auto 70px; }
+  html body.scene-pixel .stage .card { max-width: 440px; }
+  html body.scene-pixel .wm { font-size: 58px; }
+  html body.scene-pixel .card h1 { font-size: 32px; }
+}
+/* the logo shows on the first screen only */
+html body.scene-pixel:not(.at-start) .brand-top { display: none; }
+/* the whole background is the moving pixel Boston, softened so the window stays in front */
+.px-backdrop { position: fixed; inset: 0; z-index: 0; pointer-events: none; filter: saturate(0.85) brightness(0.88); }
+.px-backdrop::after { content: ""; position: absolute; inset: 0; background: rgba(60, 25, 30, 0.18); }
+html body.scene-pixel { background: #8f5f63; }
+html body.scene-pixel .stage { position: relative; z-index: 1; }

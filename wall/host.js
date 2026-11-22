@@ -260,6 +260,30 @@
 
   // ------------------------------------------------------------ drawing
   const rgbOf = (hex) => { const h = String(hex).replace("#", ""); return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]; };
+  // The depth look: every table and person sits at a fixed depth (from its id). Near things are a little bigger, brighter and
+  // lit like a sphere with a soft shadow; far things are smaller and fainter; a tiny parallax follows the mouse. ?flat turns it off.
+  const FLAT = !qs.has("shade");          // ?shade brings back the shaded spheres and glass shells
+  const SKETCH = !qs.has("clean");        // the hand-drawn look of Jun's Sketch theme: every stroke drawn twice with a small steady wobble. ?clean turns it off
+  const seeded = (n) => { let x = (n * 2654435761) >>> 0; return () => ((x = Math.imul(x ^ (x >>> 15), 2246822507) >>> 0) / 4294967296 - 0.5); };
+  let lineN = 0;                           // lines are numbered in drawing order each frame, so a line keeps its wobble from frame to frame
+  function wobbleLine(x1, y1, x2, y2, seed) {
+    const r = seeded(seed), len = Math.hypot(x2 - x1, y2 - y1) || 1, nx = -(y2 - y1) / len, ny = (x2 - x1) / len;
+    for (let pass = 0; pass < 2; pass++) {
+      const bow = r() * Math.min(6, len * 0.04), mx = (x1 + x2) / 2 + nx * bow, my = (y1 + y2) / 2 + ny * bow;
+      ctx.moveTo(x1 + r() * 2, y1 + r() * 2); ctx.quadraticCurveTo(mx, my, x2 + r() * 2, y2 + r() * 2);
+    }
+  }
+  function wobbleRing(x, y, rad, seed) {
+    const r = seeded(seed);
+    for (let pass = 0; pass < 2; pass++) {
+      const a0 = r() * 6, rx = rad * (1 + r() * 0.06), ry = rad * (1 + r() * 0.06);
+      ctx.moveTo(x + Math.cos(a0) * rx + r() * 2, y + Math.sin(a0) * ry);
+      ctx.ellipse(x + r() * 2, y + r() * 2, rx, ry, r() * 0.4, a0, a0 + Math.PI * 2.08);
+    }
+  }
+  const depthOf = (id, salt = 0) => { const h = Math.sin((id + salt) * 12.9898 + 4.1) * 43758.5453; return h - Math.floor(h); };   // 0 far .. 1 near
+  const mix = (hex, to, k) => { const a = rgbOf(hex), b = to; return "rgb(" + a.map((v, i) => Math.round(v + (b[i] - v) * k)).join(",") + ")"; };
+  const parallax = (z) => FLAT ? [0, 0] : [((mouse.x < 0 ? 0.5 : mouse.x / innerWidth) - 0.5) * 18 * (z - 0.5) * K, ((mouse.y < 0 ? 0.5 : mouse.y / innerHeight) - 0.5) * 12 * (z - 0.5) * K];
   const withAlpha = (hex, a) => { const [r, g, b] = rgbOf(hex); return "rgba(" + r + "," + g + "," + b + "," + a + ")"; };
 
   // ---- the pixel fume: a small canvas of value noise, warped and drifting, posterized with an ordered (Bayer) dither so it
@@ -379,7 +403,7 @@
 
   function line(x1, y1, x2, y2, color, alpha, width) {
     ctx.globalAlpha = alpha; ctx.strokeStyle = color; ctx.lineWidth = width;
-    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    ctx.beginPath(); if (SKETCH) wobbleLine(x1, y1, x2, y2, ++lineN); else { ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); } ctx.stroke();
   }
 
   function curve(x1, y1, x2, y2, color, alpha, width) {    // a gentle arc, so a line between tables does not cut straight through a third one
@@ -424,6 +448,7 @@
   const tableBox = (R) => { const r = R + 34 * K; return { x0: r + 14 * K, x1: W - r - 14 * K, y0: r + 52 * K, y1: H - r - 14 * K }; };
 
   function draw(t) {
+    lineN = 0;
     ctx.clearRect(0, 0, W, H);
     const pos = layout.positions();
     if (!pos.length) {
@@ -526,7 +551,7 @@
       const segs = edges.map(([i, j]) => [pt(i), pt(j)]);
       ctx.globalAlpha = 0.9; ctx.strokeStyle = C.deep; ctx.lineWidth = 2.3 * K * LW; ctx.lineCap = "round";
       ctx.beginPath();
-      for (const [a, b] of segs) { ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); }
+      for (const [a, b] of segs) { if (SKETCH) wobbleLine(a.x, a.y, b.x, b.y, ++lineN); else { ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); } }
       ctx.stroke();
       segs.forEach(([a, b], i) => {                                   // a small light travels along each line
         const f = (t / 3400 + i * 0.37 + tb.id * 0.19) % 1, sz = 2.6 * K;
@@ -583,6 +608,15 @@
       const g = S.groups.get(gid);
       if (!g) continue;
       const ringR = tb.R + 34 * K, hi = gid === hiGroup, quiet = g.mode === "heads_down";
+      if (!FLAT) {                                                    // a glass shell: tinted toward the edge, a bright rim light up and to the left
+        const z = depthOf(gid, 7), [px0, py0] = parallax(z), cx0 = tb.x + px0, cy0 = tb.y + py0, rs = ringR * tb.sc * (0.94 + 0.12 * z);
+        const tint = hi ? hiColor : quiet ? C.dim : C.green;
+        const gg = ctx.createRadialGradient(cx0 - rs * 0.3, cy0 - rs * 0.35, rs * 0.1, cx0, cy0, rs);
+        gg.addColorStop(0, withAlpha("#ffffff", 0.16 + 0.1 * z)); gg.addColorStop(0.62, withAlpha(tint, 0.03)); gg.addColorStop(1, withAlpha(tint, 0.14 + 0.08 * z));
+        ctx.globalAlpha = 0.5 + 0.5 * z; ctx.fillStyle = gg; ctx.beginPath(); ctx.arc(cx0, cy0, rs, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = withAlpha("#ffffff", 0.55); ctx.lineWidth = 2 * K; ctx.beginPath(); ctx.arc(cx0, cy0, rs * 0.94, Math.PI * 1.08, Math.PI * 1.45); ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
       ctx.save();
       ctx.lineWidth = (hi ? 3.4 : 2.5) * K * LW;
       ctx.setLineDash(V.ring === "solid" ? [] : V.ring === "dot" ? [0.1, 8 * K] : hi ? [14 * K, 9 * K] : [7 * K, 8 * K]);
@@ -597,6 +631,17 @@
         k ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
       }
       ctx.closePath(); ctx.stroke();
+      if (SKETCH) {                                                   // a second pass, slightly off, like going over it with the pen again
+        const rr2 = seeded(gid * 977);
+        ctx.beginPath();
+        const off = 1 + rr2() * 0.06, ox = rr2() * 3 * K, oy = rr2() * 3 * K;
+        for (let k = 0; k <= 72; k++) {
+          const a = (k / 72) * Math.PI * 2, rr = ringR * tb.sc * off * (1 + 0.1 * Math.sin(2 * a + t / 2600 + gid * 1.9 + 0.2) + 0.07 * Math.sin(3 * a - t / 3300 + gid * 0.8));
+          const px = tb.x + ox + Math.cos(a) * rr, py = tb.y + oy + Math.sin(a) * rr;
+          k ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+        }
+        ctx.closePath(); ctx.globalAlpha *= 0.6; ctx.lineWidth *= 0.7; ctx.stroke();
+      }
       ctx.restore();
 
       const needs = S.needs.filter((n) => n.group_id === gid && n.handled_by == null).map((n) => n.need);
@@ -623,8 +668,9 @@
       ctx.globalAlpha = 0.2 + 0.8 * age;
       // A little life: each person drifts a couple of pixels and breathes; people still gliding leave a fading trail; a new
       // arrival sends out one ripple.
-      const nx = p.x, ny = p.y;
-      const r = p.r * (newest ? 1.9 : 1) * (1 + 0.07 * Math.sin(t / 650 + p.id));
+      const z = FLAT ? 0.5 : depthOf(p.id), [px1, py1] = parallax(z);
+      const nx = p.x + px1, ny = p.y + py1;
+      const r = p.r * (newest ? 1.9 : 1) * (1 + 0.07 * Math.sin(t / 650 + p.id)) * (FLAT ? 1 : 0.86 + 0.28 * z);
       const col = newest ? C.pink : quiet ? C.dim : C.green;
       const tr = trails.get(p.id);
       if (tr && tr.length > 1) {
@@ -643,13 +689,23 @@
         ctx.beginPath(); ctx.rect(nx - r, ny - r, r * 2, r * 2); ctx.fill(); ctx.stroke();
       } else if (quiet) {
         ctx.strokeStyle = col; ctx.fillStyle = C.bg;
-        ctx.beginPath(); ctx.arc(nx, ny, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); if (SKETCH) wobbleRing(nx, ny, r, p.id + 31); else ctx.arc(nx, ny, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
       } else {
         if (V.node === "ring") { ctx.strokeStyle = col; ctx.fillStyle = C.bg; ctx.lineWidth = 2.6 * K; ctx.beginPath(); ctx.arc(nx, ny, r + 1 * K, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
         else {
           if (V.node === "glow") { ctx.shadowColor = col; ctx.shadowBlur = 14 * K; }
-          ctx.fillStyle = col;
-          ctx.beginPath(); ctx.arc(nx, ny, r, 0, Math.PI * 2); ctx.fill();
+          if (FLAT) ctx.fillStyle = col;
+          else {                                                      // lit sphere: highlight up-left, darker rim, and a soft shadow below
+            const a0 = ctx.globalAlpha;
+            ctx.globalAlpha = a0 * 0.28; ctx.fillStyle = "#000"; ctx.beginPath(); ctx.ellipse(nx + r * 0.25, ny + r * 1.05, r * 0.9, r * 0.32, 0, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = a0 * (0.78 + 0.22 * z);
+            const sg = ctx.createRadialGradient(nx - r * 0.4, ny - r * 0.45, r * 0.08, nx, ny, r * 1.05);
+            sg.addColorStop(0, mix(col, [255, 255, 255], 0.62)); sg.addColorStop(0.45, col); sg.addColorStop(1, mix(col, [0, 0, 0], 0.38));
+            ctx.fillStyle = sg;
+          }
+          if (SKETCH && FLAT) {
+            const a1 = ctx.globalAlpha; ctx.beginPath(); wobbleRing(nx, ny, r, p.id + 31); ctx.globalAlpha = a1 * 0.85; ctx.fill();
+            ctx.globalAlpha = a1; ctx.strokeStyle = col; ctx.lineWidth = 1.6 * K; ctx.stroke();
+          } else { ctx.beginPath(); ctx.arc(nx, ny, r, 0, Math.PI * 2); ctx.fill(); }
           ctx.shadowBlur = 0;
         }
       }

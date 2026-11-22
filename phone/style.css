@@ -136,3 +136,36 @@ footer a { color: var(--ink); text-underline-offset: 3px; }
 .picks .pick:hover { background: var(--white); }
 .picks .pick[aria-pressed=true] { border-style: solid; background: var(--ink); color: var(--amber); }
 .picks .pick[aria-pressed=true]::before { content: "✓"; width: auto; height: auto; background: none; clip-path: none; margin-right: 6px; }
+
+/* ---- the sign-up page (body.signup): one rounded window on a dusk backdrop, the form on the left and the moving
+   pixel Boston (pixel.js: a train running down Comm Ave past BU) on the right; on phones the scene sits on top.
+   The .wm element and the colour variables stay as they are (the sign-in intro reads them). */
+html:has(body.signup) { background: radial-gradient(ellipse at 30% 20%, #f4cfc4, #c98f85 60%, #8f5f63) fixed; min-height: 100%; }
+body.signup {
+  background: #fbf9f6; max-width: 1280px; margin: 24px auto; padding: 12px; border-radius: 28px;
+  box-shadow: 0 30px 80px rgba(60, 25, 30, 0.35);
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); grid-template-areas: "form scene"; gap: 12px; align-items: start;
+}
+body.signup .scene {
+  grid-area: scene; position: sticky; top: 24px; max-width: none; margin: 0; height: calc(100vh - 72px); min-height: 420px;
+  border-radius: 20px; overflow: hidden; background: #f4cfc4;
+}
+body.signup .scene .px-scene { display: block; width: 100%; height: 100%; image-rendering: pixelated; image-rendering: crisp-edges; }
+body.signup .scene::after {
+  content: "Ride Comm Ave to your people.\A Tap in, and the room shows which table needs you.";
+  white-space: pre-line; position: absolute; left: 22px; right: 22px; bottom: 20px; color: #fff;
+  font: 400 16px/1.5 var(--dot); text-shadow: 2px 2px 0 rgba(17, 17, 17, 0.75); pointer-events: none;
+}
+body.signup .card { grid-area: form; max-width: 460px; margin: 12px auto; padding: 22px 20px; background: transparent; border: 0; box-shadow: none; }
+body.signup .wm { font: 800 50px/1 "Bricolage Grotesque", var(--sans); letter-spacing: -0.04em; border-bottom: 0; padding: 14px 0 4px; }
+body.signup .wifi { color: var(--red); stroke-linecap: round; }
+body.signup input[type=text] { border: 1px solid #e2ddd8; border-radius: 12px; }
+body.signup input[type=text]:focus { outline: 3px solid var(--amber); }
+body.signup button[type=submit] { border-radius: 12px; }
+@media (max-width: 800px) {
+  body.signup { grid-template-columns: minmax(0, 1fr); grid-template-areas: "scene" "form"; margin: 10px; padding: 8px; border-radius: 22px; }
+  body.signup .scene { position: relative; top: 0; height: 34vh; min-height: 200px; }
+  body.signup .scene::after { font-size: 12.5px; left: 12px; bottom: 10px; }
+  body.signup .card { margin: 0; padding: 14px 8px 20px; }
+  body.signup .wm { font-size: 42px; }
+}

@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Join a space</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Bricolage+Grotesque:wght@800&display=swap">
+<style>
+  /* Join a space: its own page, in the sign-in's pixel style. A rounded window over the moving pixel Boston:
+     join steps on the left (tap your badge, then you're in), the scene on the right. Prototype: the tap is simulated. */
+  :root { --ink: #111; --paper: #fbf9f6; --rule: #e2ddd8; --red: #DA291C; --orange: #ED8B00; --blue: #003DA5; --green: #00843D;
+          --amber: #ffb000; --rosebtn: #b0605f; --hv: "Helvetica Neue", Helvetica, Arial, sans-serif; --dot: "DotGothic16", monospace; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body { background: #8f5f63; color: var(--ink); font: 16px/1.45 var(--hv); }
+  .backdrop { position: fixed; inset: 0; z-index: 0; filter: saturate(0.85) brightness(0.88); }
+  .backdrop::after { content: ""; position: absolute; inset: 0; background: rgba(60, 25, 30, 0.18); }
+  .px-scene { display: block; width: 100%; height: 100%; image-rendering: pixelated; image-rendering: crisp-edges; }
+
+  .window {
+    position: relative; z-index: 1; width: calc(100vw - 48px); max-width: 1600px; min-height: calc(100vh - 46px - 48px);
+    margin: 24px auto 70px; padding: 14px; display: grid; grid-template-columns: minmax(340px, 0.9fr) 1.1fr; gap: 14px;
+    background: var(--paper); border-radius: 28px; box-shadow: 0 30px 80px rgba(60, 25, 30, 0.35);
+  }
+  .scene { position: relative; border-radius: 20px; overflow: hidden; background: #f4cfc4; min-height: 320px; }
+  .scene::after {
+    content: "Next stop: your table.\A Tap your badge and the room finds you."; white-space: pre-line;
+    position: absolute; left: 24px; right: 24px; bottom: 22px; color: #fff; font: 400 17px/1.5 var(--dot); text-shadow: 2px 2px 0 rgba(17, 17, 17, 0.75);
+  }
+  .panel { align-self: center; justify-self: center; width: 100%; max-width: 440px; padding: 24px 28px; text-align: center; }
+
+  .wm { position: relative; display: inline-block; padding-top: 0.46em; font: 800 58px/1 "Bricolage Grotesque", sans-serif; letter-spacing: -0.04em; }
+  .ii { position: relative; display: inline-block; }
+  .wifi { position: absolute; left: 50%; bottom: 0.66em; width: 0.62em; height: 0.52em; transform: translateX(-50%); overflow: visible; color: var(--red); fill: none; stroke: currentColor; stroke-width: 2.3; stroke-linecap: round; }
+  .wifi circle { fill: currentColor; stroke: none; }
+  h1 { font: 700 32px/1.1 var(--hv); letter-spacing: -0.02em; margin: 12px 0 6px; }
+  .lead { margin: 0 0 22px; color: #444; }
+  .bar { display: flex; align-items: center; margin: 0 0 14px; padding: 0.5em 1.6em 0.5em 0.85em; background: var(--ink); color: #fff;
+         font: 400 14px/1.2 var(--dot); text-transform: uppercase; letter-spacing: 0.06em; text-align: left; box-shadow: inset -0.8em 0 0 var(--sc, #ff4b3e); }
+
+  /* the badge reader: a pixel station that pulses; tap it (demo) to join */
+  .reader {
+    width: 100%; display: grid; justify-items: center; gap: 10px; padding: 22px 16px 18px; cursor: pointer;
+    background: #fff; border: 2px solid var(--ink); border-radius: 0; box-shadow: 6px 6px 0 var(--ink); font: inherit; color: inherit;
+    transition: transform 0.06s, box-shadow 0.06s;
+  }
+  .reader:active { transform: translate(6px, 6px); box-shadow: 0 0 0 var(--ink); }
+  .reader:focus-visible { outline: 3px solid var(--red); outline-offset: 4px; }
+  .station { position: relative; width: 84px; height: 108px; background: #1d2a33; image-rendering: pixelated;
+             clip-path: polygon(0 8px, 8px 8px, 8px 0, calc(100% - 8px) 0, calc(100% - 8px) 8px, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 8px calc(100% - 8px), 0 calc(100% - 8px)); }
+  .station::before { content: ""; position: absolute; left: 20px; top: 22px; width: 44px; height: 44px; background: #2fb5a3;
+                     clip-path: polygon(0 12px, 12px 12px, 12px 0, 32px 0, 32px 12px, 44px 12px, 44px 32px, 32px 32px, 32px 44px, 12px 44px, 12px 32px, 0 32px); }
+  .station::after { content: ""; position: absolute; left: 36px; bottom: 16px; width: 12px; height: 8px; background: var(--amber); animation: blink 1.2s steps(1) infinite; }
+  .waves { position: absolute; left: 50%; top: -6px; width: 120px; height: 120px; transform: translateX(-50%); pointer-events: none; }
+  .waves i { position: absolute; inset: 0; border: 4px dashed var(--red); border-radius: 50%; opacity: 0; animation: wave 1.8s steps(6) infinite; }
+  .waves i:nth-child(2) { animation-delay: 0.6s; } .waves i:nth-child(3) { animation-delay: 1.2s; }
+  /* the pixel badge and station (drawn in code, 3x crisp); the badge glides up to the reader and taps it */
+  .tapart { display: flex; align-items: flex-end; justify-content: center; gap: 6px; height: 200px; }
+  .px-badge, .px-reader { image-rendering: pixelated; image-rendering: crisp-edges; }
+  .px-badge { width: 120px; height: 192px; animation: tapgo 2.4s steps(12) infinite; transform-origin: 50% 0; }
+  .px-reader-wrap { position: relative; display: grid; place-items: center; }
+  .px-reader { width: 102px; height: 144px; }
+  .px-reader-wrap .waves { top: -10px; width: 130px; height: 130px; }
+  @keyframes tapgo { 0%, 15% { transform: translateX(-10px) rotate(-6deg); } 45%, 62% { transform: translateX(22px) rotate(0deg); } 90%, 100% { transform: translateX(-10px) rotate(-6deg); } }
+  @media (max-width: 800px) { .tapart { height: 160px; } .px-badge { width: 90px; height: 144px; } .px-reader { width: 78px; height: 110px; } }
+  @keyframes wave { 0% { transform: scale(0.4); opacity: 0.9; } 100% { transform: scale(1.1); opacity: 0; } }
+  @keyframes blink { 50% { opacity: 0.2; } }
+  .reader b { font: 400 18px var(--dot); text-transform: uppercase; letter-spacing: 0.04em; }
+  .reader small { color: #666; }
+
+  .found { display: grid; justify-items: center; gap: 4px; padding: 20px 16px; background: #fff; border: 2px solid var(--ink); box-shadow: 6px 6px 0 var(--green); }
+  .found .kicker { font: 400 13px var(--dot); text-transform: uppercase; letter-spacing: 0.08em; color: var(--green); }
+  .found .room { font: 700 24px var(--hv); }
+  .found .place { color: #555; }
+  .btn { display: inline-grid; place-items: center; min-height: 48px; padding: 0 26px; margin-top: 14px; border: 0; border-radius: 12px; cursor: pointer;
+         background: var(--rosebtn); color: #fff; font: 700 16px var(--hv); text-decoration: none; box-shadow: 0 6px 16px rgba(176, 96, 95, 0.35); }
+  .btn:hover { background: var(--red); }
+  .alt { display: inline-block; margin-top: 18px; color: var(--ink); font: 400 15px var(--dot); text-transform: uppercase; letter-spacing: 0.04em; }
+  .alt:hover { color: var(--red); }
+  .choices { display: grid; gap: 12px; text-align: left; }
+  .choice { display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; padding: 16px 18px; cursor: pointer; font: inherit; color: var(--ink);
+            background: #fff; border: 2px solid var(--ink); box-shadow: 6px 6px 0 var(--ink); transition: transform 0.06s, box-shadow 0.06s; }
+  .choice:hover, .choice:focus-visible { background: #111; color: #fff; outline: none; }
+  .choice:hover small, .choice:focus-visible small { color: #ffb000; }
+  .choice:active { transform: translate(6px, 6px); box-shadow: 0 0 0 var(--ink); }
+  .choice .bul { display: grid; place-items: center; flex: none; width: 44px; height: 44px; border-radius: 50%; color: #fff; font: 400 20px var(--dot); }
+  .choice span:not(.bul) { flex: 1; }
+  .choice b { display: block; font: 400 22px var(--dot); text-transform: uppercase; letter-spacing: 0.04em; }
+  .choice small { display: block; color: #555; font-size: 14px; }
+  .choice i { font-style: normal; color: var(--red); }
+  .more { border: 2px solid var(--ink); background: #fff; padding: 0 14px; }
+  .more summary { cursor: pointer; padding: 12px 0; font: 400 15px var(--dot); text-transform: uppercase; letter-spacing: 0.05em; list-style: none; }
+  .more summary::before { content: "+ "; color: var(--red); } .more[open] summary::before { content: "− "; }
+  .more summary small { text-transform: none; letter-spacing: 0; color: #888; font: 12px var(--hv); margin-left: 6px; }
+  .more[open] { padding-bottom: 14px; }
+  .lbl { display: block; margin: 12px 0 6px; font: 400 13px var(--dot); text-transform: uppercase; letter-spacing: 0.06em; }
+  .lbl small { text-transform: none; letter-spacing: 0; color: #888; font: 12px var(--hv); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { display: inline-grid; place-items: center; min-height: 34px; padding: 0 12px; border: 1.5px solid var(--ink); background: #fff; font: 600 13px var(--hv); cursor: pointer; color: var(--ink); }
+  .chip[aria-pressed="true"] { background: var(--blue); border-color: var(--blue); color: #fff; box-shadow: 3px 3px 0 var(--ink); }
+  .chip:disabled { opacity: 0.35; cursor: default; }
+  .chip.ro { cursor: default; }
+  .link { display: grid; grid-template-columns: 84px 1fr; align-items: center; gap: 8px; margin-top: 6px; font: 600 13px var(--hv); text-transform: none; letter-spacing: 0; }
+  .link input { min-height: 40px; }
+  .profile { text-align: left; background: #fff; border: 2px solid var(--ink); box-shadow: 6px 6px 0 var(--green); padding: 16px 18px; }
+  .pf-head { display: flex; align-items: center; gap: 14px; }
+  .pf-av { display: grid; place-items: center; flex: none; width: 60px; height: 60px; background: var(--orange); color: #fff; font: 400 30px var(--dot);
+           clip-path: polygon(0 6px, 6px 6px, 6px 0, calc(100% - 6px) 0, calc(100% - 6px) 6px, 100% 6px, 100% calc(100% - 6px), calc(100% - 6px) calc(100% - 6px), calc(100% - 6px) 100%, 6px 100%, 6px calc(100% - 6px), 0 calc(100% - 6px)); }
+  .pf-av { position: relative; cursor: pointer; overflow: visible; clip-path: none; background: transparent; }
+  .pf-av > #pf-av, .pf-av img { display: grid; place-items: center; width: 60px; height: 60px; background: var(--orange); color: #fff; font: 400 30px var(--dot); object-fit: cover;
+    clip-path: polygon(0 6px, 6px 6px, 6px 0, calc(100% - 6px) 0, calc(100% - 6px) 6px, 100% 6px, 100% calc(100% - 6px), calc(100% - 6px) calc(100% - 6px), calc(100% - 6px) 100%, 6px 100%, 6px calc(100% - 6px), 0 calc(100% - 6px)); }
+  .pf-av img[hidden], .pf-av > #pf-av[hidden] { display: none; }
+  .pf-edit { position: absolute; right: -6px; bottom: -6px; display: grid; place-items: center; width: 24px; height: 24px; background: #111; color: #ffb000; font-size: 13px; border: 2px solid #fff; }
+  .pf-av input { position: absolute; inset: 0; opacity: 0; cursor: pointer; font-size: 0; }
+  .pf-av:focus-within .pf-edit, .pf-av:hover .pf-edit { background: var(--red); color: #fff; }
+  .pf-err { color: var(--red); font-size: 13px; margin: 6px 0 0; }
+  .avatar-pick { position: relative; display: block; width: 128px; height: 128px; margin: 0 auto 6px; cursor: pointer; }
+  .avatar-blank, .avatar-pick img { display: block; width: 128px; height: 128px; border-radius: 50%; object-fit: cover; }
+  .avatar-pick img[hidden] { display: none; }
+  .avatar-badge { position: absolute; right: -4px; bottom: -2px; display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%;
+                  background: #0a66c2; border: 4px solid var(--paper); transition: transform 0.15s; }
+  .avatar-badge svg { width: 24px; height: 24px; }
+  .avatar-pick:hover .avatar-badge, .avatar-pick:focus-within .avatar-badge { transform: scale(1.08); background: #0b5cad; }
+  .avatar-pick:focus-within { outline: 3px solid var(--amber); outline-offset: 6px; border-radius: 50%; }
+  .avatar-pick input { position: absolute; inset: 0; opacity: 0; cursor: pointer; font-size: 0; }
+  /* the sign-up steps show the picture instead of the logo */
+  .panel.signup > .wm { display: none; }
+  .pf-head b { display: block; font: 700 22px var(--hv); } .pf-head small { display: block; color: #555; }
+  .pf-sec { margin-top: 4px; } .pf-sec[hidden] { display: none; }
+  .pf-links { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pf-links span { padding: 4px 10px; color: #fff; font: 600 13px var(--hv); }
+  .pf-empty { color: #888; font-size: 14px; margin: 10px 0 0; }
+  .profile .place { margin: 12px 0 0; color: #555; font-size: 14px; }
+  #step-linked .linkbtn { display: block; margin: 14px auto 0; }
+  /* every button (Next, Enter the room, ...): the host screen's arrival board, a black sign with amber dot lettering on a red pixel shadow */
+  .btn, a.btn {
+    display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 54px; border-radius: 0;
+    background: #111; color: var(--amber); font: 400 18px var(--dot); text-transform: uppercase; letter-spacing: 0.06em;
+    box-shadow: 6px 6px 0 var(--red); transition: transform 0.06s, box-shadow 0.06s, background 0.15s;
+  }
+  .btn::before { content: "▶"; color: var(--red); font-size: 14px; }
+  .btn:hover, .btn:focus-visible { background: var(--red); color: #fff; outline: none; }
+  .btn:hover::before, .btn:focus-visible::before { color: #fff; }
+  .btn:active { transform: translate(6px, 6px); box-shadow: 0 0 0 var(--red); }
+  .linkbtn { background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; }
+  .fine { margin-top: 18px; color: #888; font: 400 12px var(--dot); text-transform: uppercase; letter-spacing: 0.05em; }
+  [hidden] { display: none !important; }
+  .form { display: grid; gap: 12px; text-align: left; }
+  .form label { display: grid; gap: 6px; font: 400 13px var(--dot); text-transform: uppercase; letter-spacing: 0.06em; }
+  .form label small { text-transform: none; letter-spacing: 0; color: #888; font: 12px var(--hv); }
+  .form input { min-height: 48px; padding: 10px 14px; font: 16px var(--hv); color: var(--ink); background: #fff; border: 1px solid var(--rule); border-radius: 12px; }
+  .form input:focus { outline: 3px solid var(--amber); border-color: var(--ink); }
+  .form .btn { justify-self: stretch; margin-top: 6px; }
+  .err { color: var(--red); font-size: 14px; min-height: 1.2em; margin: 0; }
+  .card-id { font: 400 15px var(--dot); letter-spacing: 0.08em; color: #555; }
+  .steps { display: flex; justify-content: center; gap: 4px; margin: 0 0 16px; }
+  .steps i { width: 28px; height: 8px; background: repeating-linear-gradient(90deg, #ddd 0 6px, transparent 6px 8px); }
+  .steps i.on { background: repeating-linear-gradient(90deg, var(--c) 0 6px, transparent 6px 8px); }
+
+  .board { position: fixed; left: 0; right: 0; bottom: 0; z-index: 3; display: flex; align-items: center; gap: 14px; height: 46px; padding: 6px 22px 0;
+           background: #111; color: var(--amber); font: 400 15px/1 var(--dot); text-transform: uppercase; letter-spacing: 0.05em; }
+  .board::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 6px; background: linear-gradient(90deg, #DA291C 0 25%, #ED8B00 25% 50%, #003DA5 50% 75%, #00843D 75% 100%); }
+  .board b { font-weight: 400; color: #fff; background: var(--red); padding: 5px 9px 3px; }
+  .board span { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .board i { font-style: normal; color: #b57a00; white-space: nowrap; }
+
+  @media (max-width: 800px) {
+    .window { grid-template-columns: minmax(0, 1fr); width: auto; min-height: 0; margin: 12px 12px 60px; padding: 10px; border-radius: 22px; }
+    .scene { height: 32vh; min-height: 190px; order: -1; }
+    .scene::after { font-size: 12.5px; left: 14px; bottom: 12px; }
+    .panel { padding: 16px 8px 20px; }
+    .wm { font-size: 44px; }
+    .board { height: 40px; font-size: 12px; padding: 6px 12px 0; } .board i { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { .waves i, .station::after, .px-badge { animation: none; } }
+</style>
+</head>
+<body>
+<div class="backdrop" id="backdrop" aria-hidden="true"></div>
+<div class="window">
+  <main class="panel">
+    <span class="wm" role="img" aria-label="Tap In">tap <span class="ii">&#305;<svg class="wifi" viewBox="0 0 24 20" aria-hidden="true"><circle cx="12" cy="16.6" r="2.3"/><path d="M6.6 11.6a7.6 7.6 0 0 1 10.8 0"/><path d="M2.9 7.4a12.8 12.8 0 0 1 18.2 0"/></svg></span>n</span>
+
+    <section id="step-start">
+      <h1>Join a space</h1>
+      <p class="lead">New here, or back again? Your badge is your login. No passwords.</p>
+      <div class="choices">
+        <button type="button" class="choice" data-to="step-account">
+          <span class="bul" style="background:var(--red)">1</span>
+          <span><b>Sign up</b><small>Make an account and connect a blank badge</small></span><i>▶</i>
+        </button>
+        <button type="button" class="choice" data-to="step-tap">
+          <span class="bul" style="background:var(--green)">2</span>
+          <span><b>Log in</b><small>Already have a badge? Just tap it</small></span><i>▶</i>
+        </button>
+      </div>
+    </section>
+
+    <section id="step-tap" hidden>
+      <h1>Log in</h1>
+      <p class="lead">Tap the badge you already have at any station and you're in.</p>
+      <p class="bar" style="--sc:#2fbf6a">Tap your badge</p>
+      <button type="button" class="reader" id="reader" aria-describedby="reader-help">
+        <span class="tapart" aria-hidden="true"><canvas class="px-badge" width="40" height="64"></canvas><span class="px-reader-wrap"><span class="waves"><i></i><i></i><i></i></span><canvas class="px-reader" width="34" height="48"></canvas></span></span>
+        <b>Hold your badge flat on the reader</b>
+        <small id="reader-help">Prototype: tap here to stand in for a real tap.</small>
+      </button>
+      <button type="button" class="alt linkbtn" data-to="step-start">Back</button>
+    </section>
+
+    <section id="step-found" hidden aria-live="polite">
+      <h1>You're in</h1>
+      <p class="lead" id="found-lead">Welcome back.</p>
+      <div class="found">
+        <span class="kicker">You joined</span>
+        <span class="room">BostonHacks 2026</span>
+        <span class="place">GSU Metcalf Ballroom</span>
+      </div>
+      <a class="btn" href="index.html">Enter the room</a><br>
+      <button type="button" class="alt linkbtn" data-to="step-tap">Not you? Tap again</button>
+    </section>
+
+
+    <section id="step-account" hidden>
+      <label class="avatar-pick" title="Add a profile picture">
+        <svg class="avatar-blank" viewBox="0 0 120 120" aria-hidden="true">
+          <circle cx="60" cy="60" r="58" fill="#e6e6e6"/>
+          <clipPath id="av-clip"><circle cx="60" cy="60" r="58"/></clipPath>
+          <g clip-path="url(#av-clip)" fill="#b3b3b3"><circle cx="60" cy="46" r="22"/><ellipse cx="60" cy="112" rx="40" ry="36"/></g>
+        </svg>
+        <img id="acc-img" alt="Your picture" hidden>
+        <span class="avatar-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 16.5 15.5 6l2.5 2.5L7.5 19H5z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><path d="M5 21.5h10M17 21.5h2" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+        <input type="file" id="acc-file" accept="image/*" aria-label="Add a profile picture">
+      </label>
+      <h1>Make an account</h1>
+      <p class="lead">Just your first name to start. Your card does the signing in after this.</p>
+      <div class="steps" aria-hidden="true"><i class="on" style="--c:var(--red)"></i><i></i><i></i></div>
+      <p class="bar" style="--sc:#ff4b3e">1 · About you</p>
+      <form class="form" id="account-form" novalidate>
+        <label>First name <input id="acc-name" maxlength="30" autocomplete="given-name" placeholder="e.g. Maya" required></label>
+        <label>School <small>optional</small> <input id="acc-school" maxlength="60" placeholder="Boston University"></label>
+        <label>Email <small>optional, for a receipt</small> <input id="acc-email" type="email" maxlength="80" placeholder="you@bu.edu" autocomplete="email"></label>
+        <details class="more" id="more">
+          <summary>More about you <small>optional, add now or later</small></summary>
+          <span class="lbl">What I'm good at <small id="sk-n">up to 3</small></span>
+          <div class="chips" id="sk"></div>
+          <span class="lbl">Looking for <small id="lf-n">up to 2</small></span>
+          <div class="chips" id="lf"></div>
+          <span class="lbl">Links <small>so people can find you after tonight</small></span>
+          <label class="link"><span>LinkedIn</span><input id="ln-linkedin" maxlength="80" placeholder="linkedin.com/in/…" autocomplete="off"></label>
+          <label class="link"><span>GitHub</span><input id="ln-github" maxlength="60" placeholder="github username" autocomplete="off"></label>
+          <label class="link"><span>Instagram</span><input id="ln-instagram" maxlength="60" placeholder="@handle" autocomplete="off"></label>
+          <label class="link"><span>Website</span><input id="ln-web" maxlength="80" placeholder="yoursite.com" autocomplete="off"></label>
+        </details>
+        <p class="err" id="acc-err" role="alert"></p>
+        <button type="submit" class="btn">Next: connect your card</button>
+      </form>
+      <button type="button" class="alt linkbtn" data-back>Back</button>
+    </section>
+
+    <section id="step-connect" hidden>
+      <h1>Connect your card</h1>
+      <p class="lead" id="connect-lead">Take a blank badge from the table and tap it on any station. It becomes yours.</p>
+      <div class="steps" aria-hidden="true"><i class="on" style="--c:var(--red)"></i><i class="on" style="--c:var(--orange)"></i><i></i></div>
+      <p class="bar" style="--sc:#ffa21a">2 · Tap a blank badge</p>
+      <button type="button" class="reader" id="reader-new" aria-describedby="reader-new-help">
+        <span class="tapart" aria-hidden="true"><canvas class="px-badge" width="40" height="64"></canvas><span class="px-reader-wrap"><span class="waves"><i></i><i></i><i></i></span><canvas class="px-reader" width="34" height="48"></canvas></span></span>
+        <b>Tap the blank badge</b>
+        <small id="reader-new-help">Prototype: tap here to stand in for a real tap.</small>
+      </button>
+      <button type="button" class="alt linkbtn" data-to="step-account">Back</button>
+    </section>
+
+    <section id="step-linked" hidden aria-live="polite">
+      <h1>Card connected</h1>
+      <p class="lead" id="linked-lead">You're all set.</p>
+      <div class="steps" aria-hidden="true"><i class="on" style="--c:var(--red)"></i><i class="on" style="--c:var(--orange)"></i><i class="on" style="--c:var(--green)"></i></div>
+      <p class="bar" style="--sc:#2fbf6a">3 · Your profile</p>
+      <article class="profile" aria-label="Your profile">
+        <div class="pf-head">
+          <label class="pf-av" title="Change your picture">
+            <span id="pf-av" aria-hidden="true">M</span>
+            <img id="pf-img" alt="Your picture" hidden>
+            <span class="pf-edit" aria-hidden="true">✎</span>
+            <input type="file" id="pf-file" accept="image/*" aria-label="Change your profile picture">
+          </label>
+          <div><b id="linked-name">Maya</b><small id="pf-sub"></small><span class="card-id" id="linked-id">CARD ····</span></div>
+        </div>
+        <div class="pf-sec" id="pf-skills-sec"><span class="lbl">Good at</span><div class="chips" id="pf-skills"></div></div>
+        <div class="pf-sec" id="pf-look-sec"><span class="lbl">Looking for</span><div class="chips" id="pf-look"></div></div>
+        <div class="pf-sec" id="pf-links-sec"><span class="lbl">Links</span><div class="pf-links" id="pf-links"></div></div>
+        <p class="pf-err" id="pf-err" role="alert" hidden>That file couldn't be read as a picture. Try another one.</p>
+        <p class="pf-empty" id="pf-empty">No skills or links yet. Add them any time.</p>
+        <p class="place">Joined BostonHacks 2026 · GSU Metcalf Ballroom</p>
+      </article>
+      <a class="btn" href="index.html">Enter the room</a>
+      <button type="button" class="alt linkbtn" data-to="step-account">Edit profile</button>
+      <p class="lead" style="margin-top:10px">Next time, just tap this card to log in.</p>
+    </section>
+    <p class="fine">Prototype: nothing is sent anywhere.</p>
+  </main>
+  <aside class="scene" id="scene" aria-label="Pixel Boston: a train running down Comm Ave past BU"></aside>
+</div>
+<footer class="board"><b>NEXT</b><span>Tap your badge · join the space · find your table</span><i>Prototype · sample data</i></footer>
+
+<script src="pixel.js"></script>
+<script>
+  // Join a space (prototype). Tapping the reader stands in for a real badge tap: it marks you as in the room
+  // (localStorage "wall.room", the same key the wall reads) and shows where you are, then Enter the room opens the map.
+  (() => {
+    // ---- pixel art for the badge and the station, drawn pixel by pixel with shading and a dark outline
+    const P = (g, x, y, c) => { g.fillStyle = c; g.fillRect(x, y, 1, 1); };
+    const R = (g, x, y, w, h, c) => { g.fillStyle = c; g.fillRect(x, y, w, h); };
+    function outline(cv, col) {
+      const g = cv.getContext("2d"), d = g.getImageData(0, 0, cv.width, cv.height).data, w = cv.width, h = cv.height;
+      const on = (x, y) => x >= 0 && y >= 0 && x < w && y < h && d[(y * w + x) * 4 + 3] > 0, edge = [];
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (!on(x, y) && (on(x - 1, y) || on(x + 1, y) || on(x, y - 1) || on(x, y + 1))) edge.push([x, y]);
+      for (const [x, y] of edge) P(g, x, y, col);
+    }
+    const ROUND = (g, x, y, w, h, c) => { R(g, x + 1, y, w - 2, h, c); R(g, x, y + 1, w, h - 2, c); };
+    function badge(cv) {
+      const g = cv.getContext("2d");
+      // lanyard strap and metal clip
+      R(g, 17, 0, 6, 10, "#c62828"); R(g, 17, 0, 1, 10, "#e85a4f"); R(g, 22, 0, 1, 10, "#8e1b1b");
+      for (let y = 1; y < 10; y += 3) R(g, 19, y, 2, 1, "#f4f4f4");
+      R(g, 15, 9, 10, 4, "#9aa3ad"); R(g, 15, 9, 10, 1, "#d7dde3"); R(g, 15, 12, 10, 1, "#6b737d"); R(g, 18, 10, 4, 2, "#4b525b");
+      // card body with a red band, slot, shading
+      ROUND(g, 3, 13, 34, 50, "#f7f7f4");
+      R(g, 4, 14, 32, 1, "#ffffff"); R(g, 36, 15, 1, 46, "#d9d9d3"); R(g, 4, 62, 32, 1, "#cfcfc8");
+      R(g, 4, 14, 32, 9, "#DA291C"); R(g, 4, 14, 32, 1, "#f05a4c"); R(g, 4, 22, 32, 1, "#a81d13");
+      R(g, 15, 16, 10, 2, "#7a160f");                                             // the slot
+      for (const [x, c] of [[6, "#ff4b3e"], [9, "#ffa21a"], [12, "#4a86ff"], [27, "#2fbf6a"], [30, "#ffffff"]]) R(g, x, 19, 2, 2, c);
+      // photo with a person
+      R(g, 7, 26, 12, 14, "#bcd8f2"); R(g, 7, 26, 12, 1, "#d8eaf9");
+      R(g, 11, 29, 5, 5, "#9b6243"); R(g, 11, 28, 5, 2, "#2b2b2b"); P(g, 12, 31, "#2b2b2b"); P(g, 14, 31, "#2b2b2b");
+      R(g, 9, 35, 9, 5, "#2f6fe0"); R(g, 10, 34, 7, 1, "#2f6fe0"); R(g, 12, 34, 3, 1, "#ffffff");
+      // name and role lines
+      R(g, 21, 27, 13, 2, "#1d1d1f"); R(g, 21, 31, 10, 2, "#8a8a8a"); R(g, 21, 35, 12, 1, "#c4c4c4"); R(g, 21, 37, 8, 1, "#c4c4c4");
+      // gold chip with contacts
+      R(g, 7, 44, 9, 7, "#d9a520"); R(g, 7, 44, 9, 1, "#f4cd5a"); R(g, 7, 50, 9, 1, "#a87a12");
+      R(g, 11, 44, 1, 7, "#a87a12"); R(g, 7, 47, 9, 1, "#a87a12");
+      // contactless mark
+      for (const [r, c] of [[3, "#1d1d1f"], [6, "#1d1d1f"], [9, "#1d1d1f"]]) for (let a = -0.9; a <= 0.9; a += 0.08) P(g, Math.round(22 + Math.cos(a) * r), Math.round(48 + Math.sin(a) * r), c);
+      P(g, 22, 48, "#1d1d1f");
+      // bottom stripe in the four line colours
+      ["#DA291C", "#ED8B00", "#003DA5", "#00843D"].forEach((c, i) => R(g, 4 + i * 8, 57, 8, 3, c));
+      outline(cv, "#1d2a33");
+    }
+    function reader(cv) {
+      const g = cv.getContext("2d");
+      ROUND(g, 2, 2, 30, 44, "#2b3440");
+      R(g, 3, 3, 28, 1, "#4a5666"); R(g, 3, 3, 1, 42, "#3c4756"); R(g, 30, 4, 1, 41, "#1f262f"); R(g, 3, 44, 28, 1, "#1a2028");
+      ROUND(g, 6, 7, 22, 22, "#2fb5a3"); R(g, 7, 8, 20, 1, "#7fe0cf"); R(g, 7, 27, 20, 1, "#1f8a7c");
+      for (const r of [3, 6, 9]) for (let a = -0.9; a <= 0.9; a += 0.07) P(g, Math.round(14 + Math.cos(a) * r), Math.round(18 + Math.sin(a) * r), "#eafffb");
+      P(g, 14, 18, "#eafffb");
+      R(g, 9, 33, 16, 4, "#1a2028"); R(g, 10, 34, 14, 2, "#3c4756");                 // little screen
+      R(g, 15, 40, 4, 3, "#ffb000"); P(g, 15, 40, "#ffe08a");                         // amber light
+      R(g, 0, 46, 34, 2, "#5a5f68");                                                  // the stand
+      outline(cv, "#11161c");
+    }
+    document.querySelectorAll(".px-badge").forEach(badge);
+    document.querySelectorAll(".px-reader").forEach(reader);
+
+    if (typeof PixelBoston !== "undefined") {
+      PixelBoston.mount(document.getElementById("scene"));
+      PixelBoston.mount(document.getElementById("backdrop"));
+    }
+    let name = "";
+    try { name = (JSON.parse(localStorage.getItem("wall.me") || "null") || {}).name || ""; } catch { /* private mode */ }
+    const $ = (id) => document.getElementById(id);
+    const STEPS = ["step-start", "step-tap", "step-found", "step-account", "step-connect", "step-linked"];
+    const show = (id) => { for (const s of STEPS) $(s).hidden = s !== id; document.querySelector(".panel").classList.toggle("signup", ["step-account", "step-connect", "step-linked"].includes(id)); const f = document.querySelector(`#${id} input:not([type=file])`); if (f) f.focus(); };
+    const joinRoom = () => { try { localStorage.setItem("wall.room", JSON.stringify({ status: "in", name: "BostonHacks 2026", place: "GSU Metcalf Ballroom", time: Date.now() })); } catch { /* private mode */ } };
+    document.querySelectorAll("[data-back]").forEach((b) => b.addEventListener("click", () => show("step-start")));
+    document.querySelectorAll("[data-to]").forEach((b) => b.addEventListener("click", () => show(b.dataset.to)));
+    const SKILLS = ["hardware", "firmware", "frontend", "backend", "design", "ml", "data", "mobile", "pitch", "research"];
+    const LINKS = [["linkedin", "LinkedIn", "#0a66c2"], ["github", "GitHub", "#24292f"], ["instagram", "Instagram", "#d6249f"], ["web", "Website", "#555"]];
+    const picked = { sk: [], lf: [] };
+    function chipGroup(id, key, max, countId) {
+      const box = $(id);
+      const render = () => {
+        box.replaceChildren(...SKILLS.map((k) => {
+          const b = document.createElement("button");
+          b.type = "button"; b.className = "chip"; b.textContent = k;
+          const on = picked[key].includes(k);
+          b.setAttribute("aria-pressed", String(on));
+          b.disabled = !on && picked[key].length >= max;
+          b.addEventListener("click", () => { picked[key] = on ? picked[key].filter((x) => x !== k) : [...picked[key], k]; render(); });
+          return b;
+        }));
+        $(countId).textContent = `${picked[key].length} of ${max}`;
+      };
+      render();
+      return render;
+    }
+    const renderSk = chipGroup("sk", "sk", 3, "sk-n"), renderLf = chipGroup("lf", "lf", 2, "lf-n");
+    // prefill from a saved profile, so Edit profile and returning visitors see what they had
+    try {
+      const saved = JSON.parse(localStorage.getItem("wall.me") || "null");
+      if (saved) {
+        $("acc-name").value = saved.name || ""; $("acc-school").value = saved.school || ""; $("acc-email").value = saved.email || "";
+        picked.sk = (saved.skills || []).filter((k) => SKILLS.includes(k)).slice(0, 3); picked.lf = (saved.looking_for || []).filter((k) => SKILLS.includes(k)).slice(0, 2);
+        for (const [k] of LINKS) $(`ln-${k}`).value = (saved.links || {})[k] || "";
+        renderSk(); renderLf();
+      }
+    } catch { /* private mode */ }
+    // the profile picture: click the avatar to take or pick a photo; it is shrunk to a 256 px square JPEG
+    function showPhoto(src) { $("pf-img").hidden = !src; $("pf-av").hidden = !!src; if (src) $("pf-img").src = src; }
+    function readPhoto(f, done, fail) {
+      const url = URL.createObjectURL(f), img = new Image();
+      img.onload = () => {
+        const c = document.createElement("canvas"); c.width = c.height = 256;
+        const k = Math.min(img.width, img.height), g = c.getContext("2d");
+        g.drawImage(img, (img.width - k) / 2, (img.height - k) / 2, k, k, 0, 0, 256, 256);
+        URL.revokeObjectURL(url);
+        done(c.toDataURL("image/jpeg", 0.85));
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); fail(); };
+      img.src = url;
+    }
+    const savePhoto = (data) => { try { const me = JSON.parse(localStorage.getItem("wall.me") || "{}"); localStorage.setItem("wall.me", JSON.stringify({ ...me, photo: data })); } catch { /* private mode or full */ } };
+    const showAccPhoto = (src) => { $("acc-img").hidden = !src; document.querySelector(".avatar-blank").style.display = src ? "none" : ""; if (src) $("acc-img").src = src; };
+    $("pf-file").addEventListener("change", (e) => {
+      const f = e.target.files && e.target.files[0];
+      if (f) readPhoto(f, (data) => { $("pf-err").hidden = true; showPhoto(data); showAccPhoto(data); savePhoto(data); }, () => { $("pf-err").hidden = false; });
+      e.target.value = "";
+    });
+    $("acc-file").addEventListener("change", (e) => {
+      const f = e.target.files && e.target.files[0];
+      if (f) readPhoto(f, (data) => { $("acc-err").textContent = ""; showAccPhoto(data); savePhoto(data); }, () => { $("acc-err").textContent = "That file couldn't be read as a picture. Try another one."; });
+      e.target.value = "";
+    });
+    try { showAccPhoto((JSON.parse(localStorage.getItem("wall.me") || "null") || {}).photo || null); } catch { /* private mode */ }
+    function renderProfile(p, id) {
+      $("pf-av").textContent = (p.name || "?").slice(0, 1).toUpperCase();
+      let photo = null;
+      try { photo = (JSON.parse(localStorage.getItem("wall.me") || "null") || {}).photo || null; } catch { /* private mode */ }
+      showPhoto(photo);
+      $("linked-name").textContent = p.name;
+      $("pf-sub").textContent = p.school || "";
+      $("linked-id").textContent = `CARD ${id.slice(0, 2)}··${id.slice(-2)}`;
+      const chips = (box, list) => $(box).replaceChildren(...list.map((k) => { const c = document.createElement("span"); c.className = "chip ro"; c.textContent = k; return c; }));
+      chips("pf-skills", p.skills); chips("pf-look", p.looking_for);
+      $("pf-links").replaceChildren(...LINKS.filter(([k]) => p.links[k]).map(([k, label, col]) => { const t = document.createElement("span"); t.textContent = label; t.style.background = col; return t; }));
+      $("pf-skills-sec").hidden = !p.skills.length; $("pf-look-sec").hidden = !p.looking_for.length; $("pf-links-sec").hidden = !Object.keys(p.links).length;
+      $("pf-empty").hidden = p.skills.length || p.looking_for.length || Object.keys(p.links).length;
+    }
+    let draft = null;
+    $("account-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const n = $("acc-name").value.trim();
+      if (!n) { $("acc-err").textContent = "Add your first name so people know who you are."; $("acc-name").focus(); return; }
+      $("acc-err").textContent = "";
+      const links = {};
+      for (const [k] of LINKS) { const v = $(`ln-${k}`).value.trim(); if (v) links[k] = v.slice(0, 80); }
+      draft = { name: n.slice(0, 30), school: $("acc-school").value.trim(), email: $("acc-email").value.trim(),
+                skills: [...picked.sk], looking_for: [...picked.lf], links };
+      $("connect-lead").textContent = `${draft.name}, take a blank badge from the table and tap it on any station. It becomes yours.`;
+      show("step-connect");
+    });
+    $("reader-new").addEventListener("click", () => {
+      // a made-up card id stands in for the badge's UID
+      const id = Array.from(crypto.getRandomValues(new Uint8Array(4)), (b) => b.toString(16).padStart(2, "0")).join("").toUpperCase();
+      let prev = {};
+      try { prev = JSON.parse(localStorage.getItem("wall.me") || "null") || {}; } catch { /* private mode */ }
+      try { localStorage.setItem("wall.me", JSON.stringify({ ...prev, ...draft, role: prev.role || "student", card: id, face: prev.face || `face-${Date.now()}` })); } catch { /* private mode */ }
+      joinRoom();
+      name = draft.name;
+      renderProfile(draft, id);
+      $("linked-lead").textContent = `Welcome, ${draft.name}. Your card is linked to you.`;
+      show("step-linked");
+    });
+    document.getElementById("reader").addEventListener("click", () => {
+      joinRoom();
+      document.getElementById("found-lead").textContent = name ? `Welcome back, ${name}.` : "Welcome back.";
+      show("step-found");
+    });
+  })();
+</script>
+</body>
+</html>
