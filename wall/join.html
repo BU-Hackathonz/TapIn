@@ -669,14 +669,12 @@
     else if (QS.has("profile")) {
       try { const m = JSON.parse(localStorage.getItem("wall.me") || "null"); if (m) { renderProfile({ skills: [], looking_for: [], links: {}, ...m }, m.card || "0000"); $("linked-title").textContent = "Your profile"; $("linked-lead").textContent = "Your card is your login."; document.querySelector(".ok-line").hidden = true; show("step-linked"); } } catch { /* private mode */ }
     }
-    // Log in (Google, GitHub or your badge; prototype: nothing is checked): you're signed in, then the front page offers
-    // Join a room / Host a room, just like after signing up
+    // Log in with Google or GitHub: the real sign-in runs on tapin.boston (/api/auth/<provider>, Vercel functions), which
+    // saves your name and photo on this browser and lands you on the front page (Join a room / Host a room).
+    // The venue address can't take a Google or GitHub callback (a private IP), so from there the sign-in goes to tapin.boston.
     const logIn = (via) => {
-      try {
-        const m = JSON.parse(localStorage.getItem("wall.me") || "null");
-        localStorage.setItem("wall.me", JSON.stringify(m || { name: "Guest", role: "student", via, face: `face-${Date.now()}` }));
-      } catch { /* private mode */ }
-      location.href = "/landing/";
+      const path = `/api/auth/${via.toLowerCase()}?next=/landing/`;
+      location.href = /(^|\.)tapin\.boston$/i.test(location.hostname) ? path : "https://www.tapin.boston" + path;
     };
     document.querySelectorAll("[data-login]").forEach((b) => b.addEventListener("click", () => logIn(b.dataset.login)));
     // Tap your badge (log in, and join a room): the server tells this page who taps next at any station. The tap is also a
