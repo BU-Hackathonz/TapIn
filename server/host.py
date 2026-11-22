@@ -68,8 +68,8 @@ def require_host(tapin_host: str | None = Cookie(default=None)) -> None:
         raise HTTPException(401, "Host sign-in needed")
 
 
-@router.post("/api/host/login")
-async def login(body: Login, request: Request, response: Response):
+def _check_pin(body: Login, request: Request) -> None:
+    """The host PIN, with the lockout: five wrong tries a minute per address, then wait."""
     pin = _pin()
     if not pin:
         raise HTTPException(503, "Host sign-in is off: set HOST_PIN on the server")
@@ -82,6 +82,12 @@ async def login(body: Login, request: Request, response: Response):
         _fails[who] = recent + [now]
         raise HTTPException(401, "That PIN is not right")
     _fails.pop(who, None)
+
+
+@router.post("/api/host/login")
+async def login(body: Login, request: Request, response: Response):
+    _check_pin(body, request)
+    now = time.time()
     token = secrets.token_urlsafe(32)
     _sessions[token] = now + SESSION_SECONDS
     response.set_cookie(COOKIE, token, max_age=SESSION_SECONDS, httponly=True, samesite="lax", path="/")
@@ -118,6 +124,35 @@ async def save_settings(body: Settings, tapin_host: str | None = Cookie(default=
 # Unlinking frees a badge for someone new while the person keeps their profile, points and connections. "Link a badge" starts
 # a claim for an existing person, so the next blank badge tapped becomes theirs. Remove deletes a profile (test sign-ups).
 
+ADMIN_COOKIE = "tapin_admin"
+ADMIN_SECONDS = 15 * 60                      # the admin panel asks again after 15 minutes, and on every visit
+_admin: dict[str, float] = {}
+
+
+def require_admin(tapin_admin: str | None = Cookie(default=None)) -> None:
+    exp = _admin.get(tapin_admin or "")
+    if exp is None or exp < time.time():
+        _admin.pop(tapin_admin or "", None)
+        raise HTTPException(401, "Admin PIN needed")
+
+
+@router.post("/api/admin/login")
+async def admin_login(body: Login, request: Request, response: Response):
+    _check_pin(body, request)
+    token = secrets.token_urlsafe(32)
+    _admin[token] = time.time() + ADMIN_SECONDS
+    # no max_age: the cookie ends with the browser session; the server ends it after 15 minutes anyway
+    response.set_cookie(ADMIN_COOKIE, token, httponly=True, samesite="strict", path="/api/admin")
+    return {"ok": True}
+
+
+@router.post("/api/admin/logout")
+async def admin_logout(response: Response, tapin_admin: str | None = Cookie(default=None)):
+    _admin.pop(tapin_admin or "", None)
+    response.delete_cookie(ADMIN_COOKIE, path="/api/admin")
+    return {"ok": True}
+
+
 def _pool():
     from . import db   # imported here so the host checks run without a database driver
     if db.pool is None:
@@ -126,8 +161,8 @@ def _pool():
 
 
 @router.get("/api/admin/people")
-async def admin_people(tapin_host: str | None = Cookie(default=None)):
-    require_host(tapin_host)
+async def admin_people(tapin_admin: str | None = Cookie(default=None)):
+    require_admin(tapin_admin)
     rows = await _pool().fetch(
         """SELECT p.id, p.name, p.role, p.uid, p.points, p.created_at, p.last_checkin,
                   (SELECT count(*) FROM connections c WHERE c.person_a = p.id OR c.person_b = p.id) AS links,
@@ -139,8 +174,8 @@ async def admin_people(tapin_host: str | None = Cookie(default=None)):
 
 
 @router.post("/api/admin/people/{person_id}/unlink")
-async def admin_unlink(person_id: int, tapin_host: str | None = Cookie(default=None)):
-    require_host(tapin_host)
+async def admin_unlink(person_id: int, tapin_admin: str | None = Cookie(default=None)):
+    require_admin(tapin_admin)
     row = await _pool().fetchrow("UPDATE people SET uid=NULL WHERE id=$1 RETURNING id", person_id)
     if row is None:
         raise HTTPException(404, "No such person")
@@ -148,8 +183,8 @@ async def admin_unlink(person_id: int, tapin_host: str | None = Cookie(default=N
 
 
 @router.post("/api/admin/people/{person_id}/link")
-async def admin_link(person_id: int, tapin_host: str | None = Cookie(default=None)):
-    require_host(tapin_host)
+async def admin_link(person_id: int, tapin_admin: str | None = Cookie(default=None)):
+    require_admin(tapin_admin)
     from . import claims
     if claims.waiting():
         raise HTTPException(409, detail={"error": "claim_busy", "retry_in": 5})
@@ -161,8 +196,8 @@ async def admin_link(person_id: int, tapin_host: str | None = Cookie(default=Non
 
 
 @router.post("/api/admin/people/{person_id}/delete")
-async def admin_delete(person_id: int, tapin_host: str | None = Cookie(default=None)):
-    require_host(tapin_host)
+async def admin_delete(person_id: int, tapin_admin: str | None = Cookie(default=None)):
+    require_admin(tapin_admin)
     async with _pool().acquire() as conn:
         async with conn.transaction():
             await conn.execute("DELETE FROM group_members WHERE person_id=$1", person_id)
