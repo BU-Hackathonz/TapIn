@@ -44,21 +44,21 @@ const Theme = (() => {
       c: { regionFill: "rgba(0,0,0,0)", region: "#1b4a33", link: "#8a7a7c", inner: "#1b4a33", accent: "#d4151b",
            title: "#2b1f23", need: "#7a6066", dim: "#a88f93", name: "#3a2b2b",
            student: "#2f6d4e", mentor: "#2f6d4e", away: "#c9a99f", join: "#2f6d4e", help: "#ED8B00",
-           font: HV, avatar: "face", rough: false, known: "#00843D", linkAlpha: 1.3, ringDash: [7, 6], ringWidth: 2.4 },
+           font: HV, avatar: "face", rough: true, host: true, known: "#00843D", linkAlpha: 1.3, ringDash: [7, 6], ringWidth: 2.4 },
     },
     t2: {
       label: "T · Wayfinding", swatch: ["#1b1b1c", "#ffffff", "#ff4b3e"],
       c: { regionFill: "rgba(255,255,255,0.02)", region: "#8a8a8a", link: "#6a6a6a", inner: "#bdbdbd", accent: "#ff4b3e",
            title: "#ffffff", need: "#c4c4c4", dim: "#7a7a7a", name: "#e6e6e6",
            student: "#ffffff", mentor: "#ffa21a", away: "#4a4a4a", join: "#ffffff", help: "#ffa21a",
-           font: HV, avatar: "face", rough: false, known: "#3ec777", linkAlpha: 1.2, ringDash: [7, 6], ringWidth: 2 },
+           font: HV, avatar: "face", rough: true, host: true, known: "#3ec777", linkAlpha: 1.2, ringDash: [7, 6], ringWidth: 2 },
     },
     t3: {
       label: "T · Line colours", swatch: ["#f4f3ef", "#003DA5", "#ED8B00"],
       c: { regionFill: "rgba(0,0,0,0)", region: "#111111", link: "#b5b3ac", inner: "#555555", accent: "#DA291C",
            title: "#111111", need: "#555555", dim: "#9a978f", name: "#222222",
            student: "#111111", mentor: "#111111", away: "#cfccc4", join: "#111111", help: "#ED8B00",
-           font: HV, avatar: "face", rough: false, known: "#00843D", linkAlpha: 1.2, ringDash: [8, 5], ringWidth: 3,
+           font: HV, avatar: "face", rough: true, host: true, known: "#00843D", linkAlpha: 1.2, ringDash: [8, 5], ringWidth: 3,
            lines: ["#DA291C", "#ED8B00", "#003DA5", "#00843D"] },
     },
     t4: {
@@ -66,14 +66,14 @@ const Theme = (() => {
       c: { regionFill: "rgba(218,41,28,0.03)", region: "#111111", link: "#c4c4c4", inner: "#111111", accent: "#DA291C",
            title: "#111111", need: "#DA291C", dim: "#9a9a9a", name: "#222222",
            student: "#111111", mentor: "#DA291C", away: "#d4d4d4", join: "#111111", help: "#DA291C",
-           font: HV, avatar: "face", rough: false, known: "#00843D", linkAlpha: 1.1, ringDash: [6, 6], ringWidth: 2 },
+           font: HV, avatar: "face", rough: true, host: true, known: "#00843D", linkAlpha: 1.1, ringDash: [6, 6], ringWidth: 2 },
     },
     t5: {
       label: "T · Quiet", swatch: ["#e9e7e1", "#111111", "#00843D"],
       c: { regionFill: "rgba(255,255,255,0.35)", region: "#b9b6ad", link: "#c9c6bd", inner: "#8f8c84", accent: "#DA291C",
            title: "#111111", need: "#555555", dim: "#9a978f", name: "#333333",
            student: "#111111", mentor: "#111111", away: "#cfccc4", join: "#111111", help: "#ED8B00",
-           font: HV, avatar: "face", rough: false, known: "#00843D", linkAlpha: 1, ringDash: [3, 5], ringWidth: 2 },
+           font: HV, avatar: "face", rough: true, host: true, known: "#00843D", linkAlpha: 1, ringDash: [3, 5], ringWidth: 2 },
     },
   };
 

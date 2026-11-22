@@ -231,3 +231,51 @@ body[data-theme^="t"] .wall-icebreaker { border-radius: 0; font-family: var(--fo
 body[data-theme="t1"] .wall-icebreaker { background: #111; color: #ffb000; border: 0; box-shadow: inset 0 4px 0 var(--t-red); font: 400 15px "DotGothic16", monospace; text-transform: uppercase; letter-spacing: 0.04em; padding-top: 14px; }
 body[data-theme="t2"] .wall-icebreaker { background: #111; color: #fff; border-left: 0.35em solid var(--t-red); }
 body[data-theme="t4"] .wall-icebreaker { border: 2px solid #111; border-top: 6px solid var(--t-red); background: #fff; }
+
+/* ---- your page as the host wall: the room plan with David's side column (Room activity) and bottom bar, for everyone */
+body.hw #room-insights, body.hw .count { display: block !important; }
+body.hw #room-insights { width: clamp(360px, 25vw, 560px); }
+@media (min-width: 801px) {
+  body.plan-side #map3d { width: calc(100% - clamp(360px, 25vw, 560px)) !important; }
+  body.plan-side .profile, body.plan-side .count { right: calc(clamp(360px, 25vw, 560px) + 24px) !important; }
+}
+body.hw .plan-key { display: grid; }
+.plan-key { display: none; position: fixed; left: 24px; top: 74px; z-index: 2; gap: 8px; pointer-events: none; font-family: var(--font); }
+.plan-key b { font: 600 18px var(--font); color: var(--text); }
+.plan-key ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 16px; font: 500 13px var(--font); color: var(--muted); }
+.plan-key li { display: inline-flex; align-items: center; gap: 7px; }
+.plan-key i { display: inline-block; width: 11px; height: 11px; }
+.plan-key .dot { border-radius: 50%; background: #2f6d4e; } .plan-key .sq { border: 2px solid #2f6d4e; } .plan-key .ring { border-radius: 50%; border: 2px solid #7a6066; }
+.plan-key .dash, .plan-key .line { width: 20px; height: 0; border-top: 2.5px dashed #1b4a33; } .plan-key .line { border-top-style: solid; }
+.plan-key .you { border-radius: 50%; background: #d4151b; }
+body.hw .plan-bar { display: flex; }
+.plan-bar { display: none; position: fixed; left: 0; bottom: 0; z-index: 3; width: calc(100% - clamp(360px, 25vw, 560px)); height: 56px; align-items: center; gap: 14px; padding: 6px 24px 0;
+  background: #111; color: #ffb000; font: 400 15px "DotGothic16", monospace; text-transform: uppercase; letter-spacing: 0.05em; }
+.plan-bar::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 6px; background: linear-gradient(90deg, #DA291C 0 25%, #ED8B00 25% 50%, #003DA5 50% 75%, #00843D 75% 100%); }
+.plan-bar b { font-weight: 400; color: #fff; }
+body.hw.demo .demo-tag { bottom: 70px; }
+@media (max-width: 800px) { .plan-bar { width: 100%; height: 44px; font-size: 12px; } .plan-key { top: 70px; left: 14px; } .plan-key ul { display: none; } }
+@media (max-width: 800px) {
+  body.hw .plan-key b { font-size: 14px; max-width: 58vw; }
+  body.hw .plan-key { top: 76px; }
+  body.hw .count b { font-size: 34px; }
+  body.hw #room-insights { bottom: 52px !important; }
+  body.hw.demo .demo-tag { bottom: auto; top: 152px; left: auto; right: 12px; transform: none; }
+}
+
+/* ---- David's host wall on every wall view (plan, 3D, projector): his pixel smoke behind the map, his wordmark in the bar */
+#fume { display: none; }
+body[data-theme^="t"] #fume { display: block; position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; image-rendering: pixelated; image-rendering: crisp-edges; }
+body[data-theme^="t"] #map3d { position: fixed; z-index: 1; background: transparent; }
+body[data-theme="t1"] { --bg: #ecd9d2; }
+.plan-bar .pb-text { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.pb-wm { position: relative; flex: none; padding-top: 0.46em; font: 800 34px/1 "Bricolage Grotesque", sans-serif; letter-spacing: -0.04em; color: #f1e0d3; text-transform: none; }
+.pb-wm .ii { position: relative; display: inline-block; }
+.pb-wm .wifi { position: absolute; left: 50%; bottom: 0.66em; width: 0.62em; height: 0.52em; transform: translateX(-50%); overflow: visible; color: #ff3b36; fill: none; stroke: currentColor; stroke-width: 2.3; stroke-linecap: round; }
+.pb-wm .wifi circle { fill: currentColor; stroke: none; }
+body.kiosk .pb-you, body:not(.kiosk) .pb-room { display: none; }
+@media (max-width: 800px) { .pb-wm { font-size: 24px; } }
+
+body.kiosk .me { display: none; }
+body.kiosk .k-you { display: none !important; }
+.arrive { position: fixed; left: 0; top: 0; z-index: 40; pointer-events: none; image-rendering: pixelated; }

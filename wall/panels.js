@@ -11,9 +11,11 @@ const Panels = (() => {
   let current;
   let hideTimer;
 
+  // tables read by letter, like the room plan and the host wall: "Table 3" shows as "Table C"
+  const byLetter = (t) => String(t ?? "").replace(/\bTable (\d+)\b/g, (m, d) => "Table " + String.fromCharCode(64 + (((+d - 1) % 26) + 1)));
   function element(tag, text) {
     const node = document.createElement(tag);
-    node.textContent = text;
+    node.textContent = byLetter(text);
     return node;
   }
 

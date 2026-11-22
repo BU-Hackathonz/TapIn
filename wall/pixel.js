@@ -216,5 +216,5 @@ const PixelBoston = (() => {
     requestAnimationFrame(loop);
     return { leave };
   }
-  return { mount };
+  return { mount, train };   // train(): the train sprite on its own canvas (the wall's arrival uses it)
 })();
