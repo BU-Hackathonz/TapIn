@@ -36,7 +36,7 @@
 <body>
 <main>
   <h1>People and badges</h1>
-  <p class="muted">For the team only, on the venue network. Unlinking a badge frees it for someone new; the person keeps their profile, points and connections. "Link badge" makes the next blank badge tapped at any station theirs.</p>
+  <p class="muted">For the team only, on the venue network. The PIN is asked every time this page opens. Unlinking a badge frees it for someone new; the person keeps their profile, points and connections. "Link badge" makes the next blank badge tapped at any station theirs.</p>
 
   <section class="card" id="signin" hidden>
     <p class="bar">Host PIN</p>
@@ -111,13 +111,15 @@
   }
   $("pinform").addEventListener("submit", async (e) => {
     e.preventDefault(); $("pinerr").textContent = "";
-    const r = await fetch("/api/host/login", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ pin: $("pin").value }) }).catch(() => null);
+    const r = await fetch("/api/admin/login", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ pin: $("pin").value }) }).catch(() => null);
     if (r && r.ok) { $("pin").value = ""; return load(); }
     $("pinerr").textContent = !r ? "Couldn't reach the server." : r.status === 429 ? "Too many tries. Wait a minute." : r.status === 404 ? "The admin panel only works on the venue network." : "That PIN isn't right.";
   });
   $("q").addEventListener("input", render);
   $("reload").addEventListener("click", load);
-  load();
+  // every visit starts at the PIN: any earlier admin session ends when the page opens
+  fetch("/api/admin/logout", { method: "POST" }).catch(() => {}).finally(() => { $("signin").hidden = false; $("pin").focus(); });
+  addEventListener("pagehide", () => { try { navigator.sendBeacon("/api/admin/logout"); } catch { /* best effort */ } });
 })();
 </script>
 <script src="/landing/ui-sound.js"></script>

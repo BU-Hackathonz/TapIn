@@ -1,5 +1,5 @@
 """Host sign-in and room settings, without a database: only the host router is mounted.
-Run: uv run --no-project --with fastapi --with httpx python tests/host_checks.py
+Run: uv run --no-project --with fastapi --with httpx --with asyncpg python tests/host_checks.py
 """
 import os
 import sys
@@ -62,5 +62,17 @@ host._fails.clear()
 os.environ["HOST_PIN"] = '"1234"'
 check("quoted HOST_PIN still takes 1234", c.post("/api/host/login", json={"pin": "1234"}).status_code == 200)
 check("spaces around the typed PIN are fine", c.post("/api/host/login", json={"pin": " 1234 "}).status_code == 200)
+# admin: its own session, only from the PIN typed on the admin page
+host._fails.clear()
+a = TestClient(app)
+check("admin list without the admin PIN: 401", a.get("/api/admin/people").status_code == 401)
+a.post("/api/host/login", json={"pin": "1234"})
+check("a host session alone doesn't open admin (401)", a.get("/api/admin/people").status_code == 401)
+check("admin actions without the admin PIN: 401", a.post("/api/admin/people/1/unlink").status_code == 401)
+check("wrong admin PIN: 401", a.post("/api/admin/login", json={"pin": "0000"}).status_code == 401)
+check("right admin PIN: 200", a.post("/api/admin/login", json={"pin": "1234"}).status_code == 200)
+check("admin list passes the PIN check (503 here: no database in this test)", a.get("/api/admin/people").status_code == 503)
+a.post("/api/admin/logout")
+check("after admin logout: 401 again", a.get("/api/admin/people").status_code == 401)
 print("\n%d failed" % fails if fails else "\nall passed")
 sys.exit(1 if fails else 0)
