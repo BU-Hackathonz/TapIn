@@ -168,6 +168,27 @@ async def resolve(conn, station_id: int, person_ids: list[int]):
             ],
         }))
         kind, state = "checkin", "checked_in"
+        # A solo tap puts a student at this station's table on their own (David, for the demo): onto the station's table if it
+        # has one, otherwise a new table here with just them. Mentors and staff stay floating (they help tables, not join them).
+        if rows[pid]["role"] == "student":
+            gid = await conn.fetchval(
+                f"""SELECT g.id FROM groups g WHERE g.station_id=$1 AND EXISTS (
+                      SELECT 1 FROM group_members m JOIN people p ON p.id=m.person_id
+                      WHERE m.group_id=g.id AND p.last_checkin > now() - interval '{HERE}')
+                    ORDER BY g.created_at DESC LIMIT 1""", station_id)
+            if gid is None:
+                gid = await _new_group(conn, station_id, rows[pid])
+                await conn.execute("INSERT INTO group_members (group_id, person_id) VALUES ($1,$2)", gid, pid)
+                await conn.execute("DELETE FROM group_members WHERE person_id=$1 AND group_id<>$2", pid, gid)
+                events.append(("group_formed", {"group_id": gid, "member_ids": [pid], "station_id": station_id}))
+                events.append(("needs_updated", {"needs": await list_needs(conn)}))
+            elif pid not in await _members(conn, gid):
+                members = await _members(conn, gid)
+                await conn.execute("INSERT INTO group_members (group_id, person_id) VALUES ($1,$2)", gid, pid)
+                await conn.execute("DELETE FROM group_members WHERE person_id=$1 AND group_id<>$2", pid, gid)
+                award["people"][pid] = award["people"].get(pid, 0) + P.JOIN_GROUP
+                award["groups"][gid] = award["groups"].get(gid, 0) + P.MEMBER_WELCOME * len(members)
+                events.append(("group_joined", {"group_id": gid, "new_member_ids": [pid], "new_links": []}))
     else:
         counts = {
             i: await conn.fetchval("SELECT count(*) FROM connections WHERE person_a=$1 OR person_b=$1", i) for i in ids

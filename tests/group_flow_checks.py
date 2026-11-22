@@ -25,6 +25,8 @@ class FakeDB:
         self.people = {i: {"id": i, "role": "student", "looking_for": ["design"], "working_on": "", "points": 0, "here": True}
                        for i in range(1, 9)}
         self.people[8]["role"] = "mentor"
+        for i in (11, 12, 13):
+            self.people[i] = {"id": i, "role": "student", "looking_for": [], "working_on": "", "points": 0, "here": True}
         self.groups, self.members, self.links, self.next_gid, self.t = {}, [], {}, 100, 0
 
     def active(self, pid):
@@ -56,6 +58,10 @@ class FakeDB:
     async def fetchval(self, sql, *a):
         if "gm.group_id FROM group_members gm" in sql:
             return self.active(a[0])
+        if sql.startswith("SELECT g.id FROM groups g WHERE g.station_id"):
+            live = [g for g, v in self.groups.items() if v["station"] == a[0]
+                    and any(self.people[p]["here"] for (gg, p, _) in self.members if gg == g)]
+            return max(live) if live else None
         if sql.startswith("SELECT station_id FROM groups"):
             return self.groups[a[0]]["station"]
         if sql.startswith("SELECT count(*) FROM connections"):
@@ -134,6 +140,29 @@ async def main():
     check("help never leaves a student in two tables", len(tables_of_1) == 1, tables_of_1)
 
 
+async def solo():
+    async def no_matching(conn):
+        return None
+    groups.matching.load = no_matching                     # suggestions aren't what these checks are about
+    groups.matching.suggested_groups = lambda ms, pid: []
+    db = FakeDB()
+    k, s, ev, d = await scan(db, 5, [11])
+    S = d.get("group_formed", {}).get("group_id")
+    check("a solo tap at a station with no table starts a table with just them", S and db.table_of(11) == S and s == "checked_in", (k, s, ev))
+    k, s, ev, d = await scan(db, 5, [12])
+    check("a second solo tap at that station joins that table on their own", db.table_of(12) == S and "group_joined" in ev, (ev, db.table_of(12)))
+    check("...and gets the +10 join points", db.people[12]["points"] == 10, db.people[12]["points"])
+    k, s, ev, d = await scan(db, 6, [11])
+    T = d.get("group_formed", {}).get("group_id")
+    check("a solo tap at another station moves you to a table there", T and db.table_of(11) == T and all(not (g == S and p == 11) for (g, p, _) in db.members), (ev,))
+    k, s, ev, d = await scan(db, 5, [12])
+    check("tapping again at your own table is just a check-in", not any(e in ev for e in ("group_joined", "group_formed")), ev)
+    db.people[13]["role"] = "mentor"
+    k, s, ev, d = await scan(db, 5, [13])
+    check("a mentor tapping solo stays floating (no table)", db.table_of(13) is None, db.table_of(13))
+
+
 asyncio.run(main())
+asyncio.run(solo())
 print("\n%d failed" % fails if fails else "\nall passed")
 sys.exit(1 if fails else 0)
