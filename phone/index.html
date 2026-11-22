@@ -22,7 +22,7 @@
     <label class="field" for="name">First name</label>
     <input type="text" id="name" name="name" maxlength="30" autocomplete="given-name" autocapitalize="words" placeholder="e.g. Maya" required>
 
-    <label class="field" for="photo">Profile photo <small>(optional, shows as you on the room map)</small></label>
+    <label class="field" for="photo">Profile photo <small>(optional, everyone in the room sees it)</small></label>
     <div class="photo-row">
       <img id="photo-preview" alt="" hidden>
       <label class="button secondary photo-btn"><input type="file" id="photo" accept="image/*"><span id="photo-label">Add a photo</span></label>
@@ -159,6 +159,7 @@
       if (status !== 200) { err.textContent = signupError(status, data); return; }
       store.set("tapin_claim", data, sessionStorage);
       keepPhoto();
+      if (photo && data && data.person_id != null) api("POST", `/me/${data.person_id}/photo`, { photo }).catch(() => {});   // everyone sees it on the walls
       location.href = "claim.html";
     } catch (_) {
       err.textContent = signupError(0);

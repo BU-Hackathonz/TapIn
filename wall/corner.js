@@ -40,7 +40,9 @@ const Corner = (() => {
     // profile keeps its old table and never moves to the one you just formed or joined.
     if (real) {
       if (!(meObj && meObj.src === p && meObj.real === real)) meObj = { src: p, real, person: {} };
-      return Object.assign(meObj.person, p, real, { id: real.id });
+      Object.assign(meObj.person, p, real, { id: real.id });
+      if (!real.photo && p.photo) meObj.person.photo = p.photo;     // not uploaded yet: keep the photo saved on this device
+      return meObj.person;
     }
     if (p) return (meObj && meObj.src === p) ? meObj.person
       : (meObj = { src: p, person: { id: -1, role: "student", points: 0, here: true, group_id: null, ...p } }).person;
