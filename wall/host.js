@@ -70,7 +70,7 @@
   const labelOf = (p) => (p.role !== "student" ? `${p.name}, ${p.role}` : p.focus ? `${p.name} (focus)` : p.name);
 
   // Only the leading tables are drawn, so the plan stays calm. A table keeps its place unless another one clearly overtakes it.
-  const MAXT = qs.has("tables") ? parseInt(qs.get("tables"), 10) : 5;
+  let MAXT = qs.has("tables") ? parseInt(qs.get("tables"), 10) : 5;
   const shownT = new Set();
   let hiddenT = 0;
   const onPlan = (gid) => !MAXT || shownT.size === 0 || shownT.has(gid);
@@ -777,7 +777,15 @@
 
   // ------------------------------------------------------------ boot
   if (qs.has("silent")) $("start").classList.add("gone");
-  $("start-btn").addEventListener("click", async () => {
+  // The host's settings (host/settings.html): place name, how many tables, table names, sound. The URL still wins.
+  fetch("/api/room-settings").then((r) => (r.ok ? r.json() : null)).then((s) => {
+    if (!s) return;
+    if (!qs.get("venue") && s.venue) { $("locname").textContent = s.venue; $("venue").textContent = ""; }
+    if (!qs.has("tables") && Number.isFinite(s.tables)) { MAXT = s.tables; if (graphRaw) applyGraph(graphRaw); }
+    if (!qs.get("mk")) { document.documentElement.dataset.mk = s.marker === "numbers" ? "num" : "let"; if (graphRaw) renderSide(); }
+    if (s.sound === false && window.Sound && Sound.setMuted) Sound.setMuted(true);
+  }).catch(() => {});
+  async function begin() {
     $("start").classList.add("gone");
     try { await Sound.start(); } catch (e) { console.error("sound", e); }
     // Avery's intro (intro/): the room fills up, then lands on this plan. Never blocks the data or the WebSocket.
@@ -788,7 +796,19 @@
                  people: layout.positions().map((p) => ({ x: r.left + p.x, y: r.top + p.y, table: p.gid })) };
       } }).catch(() => {});
     } catch (e) { console.error("intro", e); }
-  });
+  }
+  $("start-btn").addEventListener("click", begin);
+  // Coming from the host's Start button: no second Start screen. The intro plays at once (quietly: browsers only allow sound after a click on
+  // this page), and the first click anywhere turns the sound on.
+  if (qs.has("start")) {
+    $("start").classList.add("gone");
+    try { if (window.TapInIntro) TapInIntro.map(document.body, { quiet: true, target: () => {
+      const r = $("room").getBoundingClientRect();
+      return { tables: [...layout.tables()].map(([id, t]) => ({ id, x: r.left + t.x, y: r.top + t.y, r: t.R })),
+               people: layout.positions().map((p) => ({ x: r.left + p.x, y: r.top + p.y, table: p.gid })) };
+    } }).catch(() => {}); } catch (e) { console.error("intro", e); }
+    addEventListener("pointerdown", () => { try { Sound.start(); } catch {} }, { once: true });
+  }
   buildLayout();
   let rt = 0;
   new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(buildLayout, 250); }).observe($("stage"));

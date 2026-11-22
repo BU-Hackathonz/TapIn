@@ -1,0 +1,23 @@
+:root { --bg: #ecd9d2; --ink: #2b1f23; --muted: #6a4f55; --red: #d4151b; }
+* { box-sizing: border-box; }
+html, body { min-height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 400 18px/1.4 "IBM Plex Sans", system-ui, sans-serif; display: grid; place-items: center; min-height: 100vh; padding: 24px 16px 40px; }
+body::before { content: ""; position: fixed; inset: 0; pointer-events: none; background: repeating-linear-gradient(to bottom, rgba(0,0,0,.04) 0 1px, transparent 1px 3px); }
+.stripe { position: fixed; left: 0; right: 0; bottom: 0; height: 8px; background: linear-gradient(90deg, #DA291C 0 25%, #ED8B00 25% 50%, #003DA5 50% 75%, #00843D 75% 100%); }
+.wm { font: 800 56px/1 "Bricolage Grotesque", sans-serif; letter-spacing: -.05em; margin: 0 0 22px; }
+.wm i { font-style: normal; color: var(--red); }
+.sign { width: min(460px, 100%); background: #fff; border-top: 6px solid #111; padding: 22px 22px 24px; }
+.sign h1 { margin: 0 0 14px; padding: .45em .8em; background: #111; color: #fff; font: 700 13px/1.2 "Helvetica Neue", Helvetica, Arial, sans-serif; text-transform: uppercase; letter-spacing: .1em; box-shadow: inset -10px 0 0 var(--bar, #003DA5); }
+label { display: block; margin: 16px 0 6px; font: 700 12px/1 "Helvetica Neue", Helvetica, Arial, sans-serif; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+input[type=text], input[type=password], input[type=number], select { width: 100%; padding: 12px 14px; font: 500 18px "IBM Plex Sans", sans-serif; border: 2px solid #111; background: #fff; border-radius: 0; }
+input:focus-visible, select:focus-visible, button:focus-visible { outline: 3px solid #003DA5; outline-offset: 2px; }
+.btn { display: block; width: 100%; margin-top: 22px; padding: 16px 20px; border: 0; background: #111; color: #fff; font: 800 20px/1 "Bricolage Grotesque", sans-serif; text-align: left; cursor: pointer; box-shadow: inset -14px 0 0 var(--bar, #DA291C); }
+.btn:disabled { opacity: .5; cursor: default; }
+.btn.go { --bar: #00843D; font-size: 24px; }
+.ghost { background: none; border: 0; color: var(--muted); font: 600 14px "IBM Plex Sans", sans-serif; cursor: pointer; text-decoration: underline; margin-top: 14px; padding: 0; }
+.err { min-height: 1.4em; margin: 12px 0 0; color: var(--red); font-weight: 600; font-size: 15px; }
+.hint { color: var(--muted); font-size: 14px; margin: 6px 0 0; }
+.switch { display: flex; align-items: center; gap: 10px; font: 500 18px "IBM Plex Sans", sans-serif; text-transform: none; letter-spacing: 0; color: var(--ink); margin-top: 16px; }
+.switch input { width: 22px; height: 22px; accent-color: #00843D; }
+.fade { position: fixed; inset: 0; background: var(--bg); opacity: 0; pointer-events: none; transition: opacity .35s ease; z-index: 9; }
+.fade.on { opacity: 1; }
