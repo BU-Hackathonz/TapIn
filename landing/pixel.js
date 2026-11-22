@@ -1,6 +1,6 @@
-// Copied from Jun's PR #108 (phone/pixel.js): the pixel Boston scene running down Comm Ave. The train is now a route 57 bus in a red bus lane.
+// Copied from Jun's PR #108 (phone/pixel.js): the pixel Boston scene with the train running down Comm Ave. Only the train's colors changed (Green Line).
 // The pixel front page: a small pixel-art Boston at dusk (Hancock and Prudential towers, the Custom House, brownstones,
-// the Zakim bridge, the Charles) with an original pixel bus running down Commonwealth Ave through BU. Drawn in code on a
+// the Zakim bridge, the Charles) with an original pixel train running down Commonwealth Ave through BU. Drawn in code on a
 // low-resolution canvas (180 px tall) and scaled up with hard pixels, stepping about 12 times a second.
 // PixelBoston.mount(el) fills el with the scene. No images, no outside art.
 const PixelBoston = (() => {
@@ -41,30 +41,39 @@ const PixelBoston = (() => {
     for (const [x, y] of edge) px(g, x, y, col);
   }
 
-  // ---------------------------------------------------------------- the bus (an original design: an MBTA-style route 57 bus, side view)
+  // ---------------------------------------------------------------- the train (an original design, 3/4 view)
   function train() {
-    const c = document.createElement("canvas"); c.width = 118; c.height = 32;
+    const c = document.createElement("canvas"); c.width = 124; c.height = 34;
     const g = c.getContext("2d");
-    const BODY = "#f7f5f0", TOP = "#ffffff", SHADE = "#e4e1da", GOLD = "#ffc72c", BLUE = "#1c3f94";
+    const BODY = "#00843D", TOP = "#2fbf6a", SHADE = "#005c2a", STRIPE = "#f3e4dc", DOOR = "#006b30";   // Green Line (Jun's sprite is teal)
     const WIN = "#f2b33d", WIN_HI = "#ffe28f", WIN_LO = "#d9822b", UNDER = "#2a2f36";
-    rect(g, 4, 2, 104, 2, SHADE);                                                              // roof pods
-    rect(g, 2, 4, 112, 22, BODY); rect(g, 2, 4, 112, 1, TOP);                                  // body
-    rect(g, 112, 6, 3, 19, SHADE);                                                             // rounded front corner
-    rect(g, 2, 19, 113, 2, GOLD); rect(g, 2, 21, 113, 4, BLUE);                                // gold and blue skirt
-    for (let wx = 6; wx < 72; wx += 13) { rect(g, wx, 7, 10, 8, WIN); line(g, wx + 1, 13, wx + 5, 8, WIN_HI); px(g, wx + 9, 13, WIN_LO); }
-    rect(g, 75, 6, 11, 18, "#1c2a40"); rect(g, 80, 6, 1, 18, "#5b7090");                       // doors
-    rect(g, 90, 7, 8, 8, WIN); line(g, 91, 13, 95, 8, WIN_HI);
-    rect(g, 100, 5, 14, 5, "#111111");                                                         // route sign
-    const dots = (x0, rows) => rows.forEach((r, j) => [...r].forEach((ch, i) => ch === "1" && px(g, x0 + i, 6 + j, "#ffb000")));
-    dots(103, ["111", "100", "011"]); dots(108, ["111", "001", "010"]);                       // "57"
-    rect(g, 101, 10, 13, 9, "#2b3a55"); line(g, 103, 17, 109, 11, "#5b7090");                 // windscreen
-    rect(g, 113, 21, 2, 2, "#ffe9a8"); rect(g, 2, 21, 1, 2, "#d4151b");                        // lights
-    rect(g, 4, 25, 108, 2, UNDER);
-    for (const wx of [18, 94]) {                                                               // wheels
-      rect(g, wx - 5, 24, 13, 3, "#3a3436");
-      rect(g, wx - 3, 25, 9, 7, "#1b1b1b"); rect(g, wx - 4, 26, 11, 5, "#1b1b1b");
-      rect(g, wx - 1, 27, 5, 3, "#9a8f92"); px(g, wx + 1, 28, "#4a4446");
-    }
+    const car = (x0, x1, lead) => {
+      poly(g, [[x0, 14], [x1, 14], [x1 + 4, 10], [x0 + 4, 10]], TOP);                         // roof
+      if (lead) {
+        poly(g, [[x0, 14], [x1 - 6, 14], [x1 + 3, 20], [x1 + 5, 27], [x0, 27]], BODY);        // side, sloping nose
+        poly(g, [[x1 - 6, 14], [x1 + 4, 10], [x1 + 12, 17], [x1 + 3, 20]], "#a9e2e6");        // nose top
+        poly(g, [[x1 + 3, 20], [x1 + 12, 17], [x1 + 14, 24], [x1 + 5, 27]], SHADE);           // nose front
+        poly(g, [[x1 - 3, 14], [x1 + 3, 11], [x1 + 9, 16], [x1 + 3, 19]], WIN);               // windscreen
+        line(g, x1 - 1, 15, x1 + 3, 13, WIN_HI); line(g, x1 + 2, 18, x1 + 7, 16, WIN_LO);
+        rect(g, x1 + 10, 22, 2, 1, "#ffd36b"); rect(g, x1 + 6, 24, 2, 1, "#ffd36b");          // headlights
+        px(g, x1 + 10, 22, "#ffffff");
+      } else {
+        rect(g, x0, 14, x1 - x0, 13, BODY);
+      }
+      rect(g, x0, 24, (lead ? x1 + 3 : x1) - x0, 2, STRIPE);                                  // the stripe
+      for (let wx = x0 + 4; wx + 7 < (lead ? x1 - 7 : x1 - 2); wx += 11) {                     // windows
+        rect(g, wx, 16, 8, 4, WIN);
+        line(g, wx + 1, 19, wx + 4, 16, WIN_HI); px(g, wx + 7, 19, WIN_LO);
+        rect(g, wx + 9, 15, 1, 9, DOOR);
+      }
+      rect(g, x0 + 3, 27, (lead ? x1 : x1 - 3) - x0 - 3, 3, UNDER);                           // underframe
+      for (const wx of [x0 + 7, x0 + 15, (lead ? x1 : x1 - 4) - 14, (lead ? x1 : x1 - 4) - 6]) {
+        rect(g, wx - 2, 29, 5, 3, "#1b1b1b"); px(g, wx, 30, "#6b6b6b");                        // wheels
+      }
+    };
+    car(2, 50, false);
+    rect(g, 50, 22, 4, 2, "#2a2f36");                                                          // coupler
+    car(54, 104, true);
     outline(c, "#1d2a33");
     return c;
   }
@@ -146,10 +155,10 @@ const PixelBoston = (() => {
       bx += w + 1;
     }
 
-    // Commonwealth Ave through BU: the bus runs in the red bus lane, with the avenue below it
-    rect(g, 0, TRACK, W, 7, "#9b4a43");                                                       // red-painted bus lane
-    rect(g, 0, TRACK, W, 1, "#b35a52");
-    for (let tx = 0; tx < W; tx += 48) { rect(g, tx + 8, TRACK + 3, 3, 2, "#f1e3d6"); rect(g, tx + 13, TRACK + 3, 3, 2, "#f1e3d6"); }   // lane markings
+    // Commonwealth Ave through BU: the train runs on rails in the grassy median, with the avenue below it
+    rect(g, 0, TRACK + 2, W, 5, "#7da35a");                                                   // median grass
+    for (let tx = 0; tx < W; tx += 4) rect(g, tx, TRACK + 1, 2, 2, "#7a5a45");                // ties
+    rect(g, 0, TRACK, W, 1, "#c9ccd3"); rect(g, 0, TRACK + 3, W, 1, "#9aa0a8");               // rails
     rect(g, 0, TRACK + 7, W, 2, "#d8d2c8");                                                   // curb
     rect(g, 0, TRACK + 9, W, H - TRACK - 21, "#5b5d63");                                      // asphalt
     for (let tx = 0; tx < W; tx += 14) rect(g, tx, TRACK + 9 + ((H - TRACK - 21) >> 1), 7, 1, "#f2d27a");   // centre line
@@ -171,7 +180,7 @@ const PixelBoston = (() => {
     const cv = document.createElement("canvas");
     cv.className = "px-scene";
     cv.setAttribute("role", "img");
-    cv.setAttribute("aria-label", "Pixel Boston at dusk: towers, brownstones and a bridge, with a bus running along Commonwealth Avenue through Boston University");
+    cv.setAttribute("aria-label", "Pixel Boston at dusk: towers, brownstones and a bridge, with a train running along Commonwealth Avenue through Boston University");
     el.replaceChildren(cv);
     const g = cv.getContext("2d"), sprite = train();
     let bg = null, W = 0, tx = 0, last = 0, scroll = 0;
