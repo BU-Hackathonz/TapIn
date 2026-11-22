@@ -255,16 +255,25 @@
   }
 
   let backoff = 1000;
+  // Live updates come over the WebSocket. Where it can't open (the public site serves the room through plain web requests,
+  // and Vercel doesn't carry WebSockets) the map refreshes every 5 s instead, and goes back to live as soon as the socket opens.
+  let polling = null;
+  const startPolling = () => { if (!polling) polling = setInterval(() => { queue = queue.then(syncAll).catch(() => {}); }, 5000); };
+  const stopPolling = () => { clearInterval(polling); polling = null; };
   function connect() {
-    const ws = new WebSocket(WS);
+    let ws;
+    try { ws = new WebSocket(WS); } catch { startPolling(); setTimeout(connect, backoff); backoff = Math.min(backoff * 2, 30000); return; }
+    const giveUp = setTimeout(startPolling, 4000);                  // no socket after 4 s: refresh by polling meanwhile
     ws.onopen = () => {
+      clearTimeout(giveUp); stopPolling();
       backoff = 1000;
       queue = queue.then(syncAll).catch((e) => console.error("sync", e));  // catch up before processing new events
     };
     ws.onmessage = (e) => { try { handle(JSON.parse(e.data)); } catch (err) { console.error(err); } };
     ws.onclose = () => {
+      clearTimeout(giveUp); startPolling();
       setTimeout(connect, backoff);
-      backoff = Math.min(backoff * 2, 8000);
+      backoff = Math.min(backoff * 2, 30000);
     };
   }
 
