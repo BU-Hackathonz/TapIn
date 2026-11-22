@@ -76,3 +76,31 @@ The server must also serve `intro/` (for example a `StaticFiles` mount at `/intr
 | `reducedMotion` | the OS setting | Force the 300 ms fade on or off |
 | `graphUrl` | `"/api/graph"` | `map` only. `null` means always use the generic room |
 | `zIndex` | `50` | Stacking order of the intro layer |
+| `target` | none | `map` only. A function returning where the page draws its room, so the intro can land on it (see below) |
+
+## Handing over to David's host screen (`wall/host.html`)
+
+On a page with a room-plan canvas `#room` and a side column `#side` (and optionally a bottom strip `#moment`),
+the map intro:
+
+- wears the page's own colours (`--bg`, `--green`, `--deep`, `--pink`, `--forest`, `--fg`, `--muted`, `--line`)
+- frames its camera on the plan, and puts the door bottom left, where the Entrance station is
+- paints the side column and strip in place from the first frame, and leaves them empty for the page's own numbers
+
+With `target`, the last ~0.8 s glides the intro's overhead room onto the page's own tables and people, then
+dissolves, so the live plan appears with everything already in place. `target` returns screen (CSS px) positions:
+
+```js
+// inside host.js, in the Start handler (layout is the RoomLayout instance)
+TapInIntro.map(document.body, {
+  quiet: Sound.muted,
+  target: () => {
+    const r = $("room").getBoundingClientRect();
+    return {
+      tables: [...layout.tables()].map(([id, t]) => ({ id, x: r.left + t.x, y: r.top + t.y, r: t.R })),
+      people: layout.positions().map((p) => ({ x: r.left + p.x, y: r.top + p.y, table: p.gid })),
+    };
+  },
+});
+```
+
