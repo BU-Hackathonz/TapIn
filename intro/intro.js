@@ -186,6 +186,13 @@
     // wall/themes.js and wall/sound.js declare `const Theme` / `const Sound` at the top level: global bindings that
     // are not properties of window, so look them up by name.
     const T = typeof Theme !== "undefined" ? Theme : global.Theme, c = (T && T.c) || null;
+    const root = document.documentElement, hv = (n) => cssVar(root, n);
+    if (!c && hv("--green") && hv("--pink")) {        // David's host screen (wall/host.css): use its live palette
+      const bg = (opts && opts.bg) || hv("--bg") || C.bg, fg = hv("--fg") || C.text;
+      return { bg, table: hv("--deep") || hv("--green"), outline: hv("--line"), link: hv("--forest") || hv("--green"), person: fg,
+               solo: hv("--dim") || C.grey, text: fg, dim: hv("--muted") || C.textDim, accent: hv("--pink"),
+               floor: mix(bg, fg, 0.09), lit: hv("--green"), mono: hv("--mono") || MONO, sans: hv("--sans") || SANS, host: true };
+    }
     if (!c) {
       return { bg: C.bg, table: C.mint, outline: "#3a3a3a", link: "#8a8a8a", person: C.text, solo: C.grey, text: C.text,
                dim: "#8a8a8a", accent: C.you, floor: "#222222", lit: C.mint, mono: MONO, sans: SANS };
@@ -716,7 +723,10 @@
         let spec = countRoom(data);
         if (!spec || (!spec.tables.length && !spec.solos)) spec = { tables: [4, 3, 3, 2, 2], solos: 4, generic: true };
         if (soundOn) Audio.warm(["pluckC4", "pluckD4", "pluckE4", "pluckG4", "pluckA4", "pluckC5", "pluckD5", "pluckE5"]);
-        const P = planRoom(spec);
+        const page = pageLayout(L);
+        const P = planRoom(spec, page ? "left" : "centre");
+        P.page = page;
+        P.target = typeof opts.target === "function" ? opts.target : null;
         const cam = camera();
         const t0 = now(), belled = new Set(), ran = new Set(), crossed = new Set();
         let lastBell = -1e9, bells = 0, tapped = false;
@@ -746,8 +756,9 @@
   }
 
   // Lay the room out in metres and give every element its moment.
-  function planRoom(spec) {
-    const W = 24, D = 15, PITCH = 0.6, DOOR = { x: 0, z: D / 2 }, READER = { x: 1.3, z: D / 2 + 0.25 };
+  function planRoom(spec, doorAt) {
+    const W = 24, D = 15, PITCH = 0.6, dx = doorAt === "left" ? -W / 2 + 2.6 : 0;
+    const DOOR = { x: dx, z: D / 2 }, READER = { x: dx + 1.3, z: D / 2 + 0.25 };
     const TAP = 320, WAVE = { x: READER.x, z: READER.z, t0: TAP + 40, v: 16, amp: 2.4, decay: 0.6 };
     const n = spec.tables.length;
     const cols = Math.max(1, Math.ceil(Math.sqrt(n * 1.8))), rows = Math.max(1, Math.ceil(n / cols));
@@ -769,7 +780,7 @@
     });
     for (let k = 0; k < spec.solos; k++) {
       const side = k % 2 ? 1 : -1, j = Math.floor(k / 2);
-      people.push({ x: side * (3.2 + j * 1.3), z: 5.0, table: null });
+      people.push({ x: dx * 0.3 + side * (3.2 + j * 1.3), z: 5.0, table: null });
     }
     // Taps at the reader, one after another; each person then walks from the door to their seat.
     const start = 900, span = Math.min(1500, people.length * 85), stagger = people.length > 1 ? span / (people.length - 1) : 0;
@@ -799,11 +810,74 @@
     last = Math.max(last, ...people.map((p) => p.t1));
     const tFade = Math.min(Math.max(last + 200, 3500), 4000);
     // Camera: from floor level by the door, up and round, to straight overhead.
-    const A = { tx: 0.6, ty: 0.5, tz: 5.6, yaw: -0.7, pitch: 0.1, dist: 8 };
-    const B = { tx: 0, ty: 0, tz: 1.5, yaw: -0.3, pitch: 0.55, dist: 19 };
+    const A = { tx: dx + 0.6, ty: 0.5, tz: 5.6, yaw: dx ? -0.35 : -0.7, pitch: 0.1, dist: 8 };
+    const B = { tx: dx * 0.4, ty: 0, tz: 1.5, yaw: -0.3, pitch: 0.55, dist: 19 };
     const C = { tx: 0, ty: 0, tz: -0.6, yaw: 0, pitch: 1.36, dist: 23 };
     return { W, D, PITCH, DOOR, READER, TAP, cells: makeCells(W, D, PITCH), waves, tables, people, cross, spec,
-             A, B, C, tFade, tEnd: tFade + 500 };
+             A, B, C, tFade, tEnd: tFade + 500, tMorph: tFade - 850 };
+  }
+
+  // When the page underneath has a plan area and a side column (David's host screen: #room, #side, #moment), frame
+  // the camera on the plan and paint the side column and strip in place, so the intro dissolves straight into it.
+  function pageLayout(L) {
+    const o = L.root.getBoundingClientRect();
+    const box = (id) => {
+      const el = document.getElementById(id);
+      if (!el || el.offsetParent === null) return null;
+      const r = el.getBoundingClientRect();
+      if (r.width < 40 || r.height < 30) return null;
+      const cs = global.getComputedStyle(el), v = (n) => cs.getPropertyValue(n).trim();
+      return { x: r.left - o.left, y: r.top - o.top, w: r.width, h: r.height, bg: cs.backgroundColor,
+               fg: v("--fg"), muted: v("--muted"), line: v("--line"), pink: v("--pink") };
+    };
+    const plan = box("room"), side = box("side");
+    return plan && side ? { plan, side, strip: box("moment") } : null;
+  }
+
+  // Pair the intro's tables and people with the page's own (largest table with largest table, seat with seat), in
+  // the layer's pixel space. Anything without a partner fades out or in where it stands.
+  function matchTarget(P, snap, L) {
+    if (!snap || !Array.isArray(snap.tables) || !Array.isArray(snap.people)) return null;
+    const o = L.root.getBoundingClientRect();
+    const tt = snap.tables.map((T) => ({ ...T, x: T.x - o.left, y: T.y - o.top })).sort((a, b) => (b.r || 0) - (a.r || 0));
+    const tp = snap.people.map((q) => ({ ...q, x: q.x - o.left, y: q.y - o.top }));
+    const mine = [...P.tables].sort((a, b) => b.seats.length - a.seats.length);
+    const pairsT = [], pairsP = [], used = new Set();
+    mine.forEach((tb, i) => {
+      const T = tt[i] || null;
+      pairsT.push({ from: tb, to: T });
+      const theirs = T ? tp.filter((q) => q.table === T.id) : [];
+      tb.seats.forEach((seat, k) => { const q = theirs[k] || null; if (q) used.add(q); pairsP.push({ from: seat, to: q }); });
+      theirs.slice(tb.seats.length).forEach((q) => { used.add(q); pairsP.push({ from: null, to: q }); });
+    });
+    tt.slice(mine.length).forEach((T) => pairsT.push({ from: null, to: T }));
+    const solos = P.people.filter((p) => !p.table), rest = tp.filter((q) => !used.has(q));
+    solos.forEach((p, k) => { const q = rest[k] || null; if (q) used.add(q); pairsP.push({ from: p, to: q }); });
+    rest.filter((q) => !used.has(q)).forEach((q) => pairsP.push({ from: null, to: q }));
+    return { tables: pairsT, people: pairsP };
+  }
+  function drawMorph(g, cam, P, K, M) {
+    const at = (x, z) => cam.p(x, 0, z);
+    for (const { from, to } of P.snap.tables) {
+      const a = from && at(from.x, from.z), ar = a && from ? Math.hypot(at(from.x + from.r, from.z).x - a.x, at(from.x + from.r, from.z).y - a.y) : 0;
+      const x = a && to ? lerp(a.x, to.x, M) : a ? a.x : to.x, y = a && to ? lerp(a.y, to.y, M) : a ? a.y : to.y;
+      const r = a && to ? lerp(ar, to.r || ar, M) : a ? ar : (to.r || 20);
+      const alpha = from && to ? 1 : from ? 1 - M : M;
+      ring(g, x, y, Math.max(1, r), K.table, alpha, 1.5);
+    }
+    for (const tb of P.tables) {                    // the intro's own links let go as the page's take over
+      for (const [a, b] of tb.pairs) {
+        const pa = at(a.x, a.z), pb = at(b.x, b.z);
+        if (pa && pb) { hairline(g, K.table, 0.8 * (1 - M)); g.beginPath(); g.moveTo(pa.x, pa.y); g.lineTo(pb.x, pb.y); g.stroke(); }
+      }
+    }
+    for (const { from, to } of P.snap.people) {
+      const a = from && at(from.x, from.z);
+      const x = a && to ? lerp(a.x, to.x, M) : a ? a.x : to.x, y = a && to ? lerp(a.y, to.y, M) : a ? a.y : to.y;
+      const alpha = from && to ? 1 : from ? 1 - M : M;
+      dot(g, x, y, lerp(a ? Math.max(2, 0.16 * a.k) : 4, 5, M), from && !from.table ? K.solo : K.person, alpha);
+    }
+    g.globalAlpha = 1;
   }
 
   function drawRoom(g, L, cam, P, K, t) {
@@ -813,12 +887,14 @@
     g.globalAlpha = 1; g.fillStyle = K.bg; g.fillRect(0, 0, w, h);
 
     const k1 = easeInOut(seg(t, 0, 1900)), k2 = easeInOut(seg(t, 1500, P.tFade + 250));
-    Object.assign(cam, { cx: w * 0.44, cy: h * 0.52, f: h * 1.05 });
+    const PL = P.page && P.page.plan;
+    Object.assign(cam, PL ? { cx: PL.x + PL.w / 2, cy: PL.y + PL.h * 0.52, f: Math.min(PL.h * 1.12, PL.w * 0.62) }
+                          : { cx: w * 0.44, cy: h * 0.52, f: h * 1.05 });
     cam.pose(lerpPose(lerpPose(P.A, P.B, k1), P.C, k2));
 
     const front = (t - P.waves[0].t0) / 1000 * P.waves[0].v;
     const lightTap = Math.min(1, t / 250);
-    drawFloor(g, cam, P.cells, P.PITCH, t, P.waves, { dot: mix(K.bg, K.text, 0.2), hot: K.accent, cool: K.table },
+    drawFloor(g, cam, P.cells, P.PITCH, t, P.waves, { dot: mix(K.bg, K.text, 0.2), hot: K.accent, cool: K.lit || K.table },
       (c) => (Math.hypot(c.x - READER.x, c.z - READER.z) <= Math.max(front, 2.2 * lightTap) ? 1 : 0.25 * lightTap));
 
     // the room's edge, the door gap and the reader
@@ -832,8 +908,17 @@
     reader(g, cam, READER.x, READER.z, K.dim, flash, K.accent);
     text3(g, cam, typed("ENTRANCE", seg(t, 300, 800)), READER.x + 0.5, 0.05, READER.z + 0.2, 0.42, K.mono, K.dim, 1, "left");
 
+    let linksNow = 0, hereNow = 0;
+    if (P.target && !P.snap && t >= P.tMorph) {
+      try { P.snap = matchTarget(P, P.target(), L); } catch (e) { P.target = null; }
+    }
+    const M = P.snap ? easeInOut(seg(t, P.tMorph, P.tFade)) : 0;
+    if (M > 0) {            // the floor gives way to the page's ground, and the room glides onto the page's own plan
+      g.globalAlpha = M; g.fillStyle = K.bg; g.fillRect(0, 0, w, h); g.globalAlpha = 1;
+      drawMorph(g, cam, P, K, M);
+      hereNow = people.length; linksNow = tables.reduce((n, tb) => n + tb.pairs.length, 0) + P.cross.length;
+    } else {
     // tables lift out of the floor as the wave reaches them, then settle; labels type in
-    let linksNow = 0;
     for (const tb of tables) {
       const k = easeInOut(seg(t, tb.tOn, tb.tOn + 550));
       if (k <= 0) continue;
@@ -861,7 +946,6 @@
     }
 
     // people: tap, walk in with a trail, land with a ring on the floor
-    let hereNow = 0;
     const live = people.filter((p) => t >= p.t0).map((p) => {
       const k = easeOut(seg(t, p.t0, p.t1));
       return { p, k, q: walkAt(p, k) };
@@ -874,26 +958,39 @@
       if (pk > 0 && pk < 1) circle3(g, cam, p.x, 0, p.z, 0.15 + easeOut(pk) * 0.9, 0, Math.PI * 2, p.table ? K.table : K.solo, 0.9 * (1 - pk));
       if (p.table && pk >= 1) circle3(g, cam, p.x, 0, p.z, 0.22, 0, Math.PI * 2, K.table, 0.8);
     }
+    }
 
-    // the wall's big "here now" number, top right, counting what actually walked in
+    // the wall's big "here now" number, counting what actually walked in: top right, or in the page's side column
     g.setTransform(L.dpr, 0, 0, L.dpr, 0, 0);
     const s = Math.min(w / 1600, h / 900) * 1.15;
-    const hk = seg(t, 200, 600), rx = w * 0.95;
+    const SD = P.page && P.page.side, ST = P.page && P.page.strip;
+    if (SD) {                       // the side column and the strip, already in place, in the page's own colours
+      g.globalAlpha = 1; g.fillStyle = SD.bg && SD.bg !== "rgba(0, 0, 0, 0)" ? SD.bg : K.bg;
+      g.fillRect(SD.x, SD.y, SD.w, SD.h);
+      hairline(g, SD.line || K.outline, 1); g.beginPath(); g.moveTo(SD.x + 0.5, SD.y); g.lineTo(SD.x + 0.5, SD.y + SD.h); g.stroke();
+      if (ST) {
+        g.globalAlpha = 1; g.fillStyle = ST.bg && ST.bg !== "rgba(0, 0, 0, 0)" ? ST.bg : K.bg; g.fillRect(ST.x, ST.y, ST.w, ST.h);
+        hairline(g, ST.line || K.outline, 1); g.beginPath(); g.moveTo(ST.x, ST.y + 0.5); g.lineTo(ST.x + ST.w, ST.y + 0.5); g.stroke();
+      }
+    }
+    if (SD) { g.globalAlpha = 1; return; }
+    const HT = SD ? { text: SD.fg || K.text, dim: SD.muted || K.dim, line: SD.line || K.outline } : { text: K.text, dim: K.dim, line: K.outline };
+    const hk = seg(t, 200, 600), rx = SD ? SD.x + SD.w - SD.w * 0.08 : w * 0.95, lx = SD ? SD.x + SD.w * 0.08 : w * 0.85;
     g.globalAlpha = hk; g.textAlign = "right";
-    g.fillStyle = K.text; g.font = `600 ${Math.max(30, 52 * s)}px ${K.mono}`;
-    g.fillText(String(hereNow), rx, h * 0.13);
-    g.fillStyle = K.dim; g.font = `400 ${Math.max(13, 17 * s)}px ${K.sans}`;
-    g.fillText("here now", rx, h * 0.13 + Math.max(18, 24 * s));
+    g.fillStyle = HT.text; g.font = `600 ${Math.max(30, 52 * s)}px ${K.mono}`;
+    g.fillText(String(hereNow), rx, (SD ? SD.y : 0) + h * 0.13);
+    g.fillStyle = HT.dim; g.font = `400 ${Math.max(13, 17 * s)}px ${K.sans}`;
+    g.fillText("here now", rx, (SD ? SD.y : 0) + h * 0.13 + Math.max(18, 24 * s));
     const tablesNow = tables.filter((tb) => t >= tb.tOn + 300).length;
     g.font = `500 ${Math.max(11, 13 * s)}px ${K.mono}`;
     [["TABLES", tablesNow], ["LINKS", linksNow], ["TAPS", people.filter((p) => t >= p.tap).length + (t >= P.TAP ? 1 : 0)]].forEach(([label, v], i) => {
-      const y = h * 0.27 + i * Math.max(22, 30 * s);
-      g.fillStyle = K.dim; g.textAlign = "left"; g.fillText(label, w * 0.85, y);
-      g.fillStyle = K.text; g.textAlign = "right"; g.fillText(String(v).padStart(2, "0"), rx, y);
-      hairline(g, K.outline, 0.8 * hk); g.beginPath(); g.moveTo(w * 0.85, y + 9 * s); g.lineTo(rx, y + 9 * s); g.stroke();
+      const y = (SD ? SD.y : 0) + h * 0.27 + i * Math.max(22, 30 * s);
+      g.fillStyle = HT.dim; g.textAlign = "left"; g.fillText(label, lx, y);
+      g.fillStyle = HT.text; g.textAlign = "right"; g.fillText(String(v).padStart(2, "0"), rx, y);
+      hairline(g, HT.line, 0.8 * hk); g.beginPath(); g.moveTo(lx, y + 9 * s); g.lineTo(rx, y + 9 * s); g.stroke();
     });
-    g.textAlign = "left"; g.fillStyle = K.dim; g.font = `500 ${Math.max(11, 12 * s)}px ${K.mono}`;
-    g.fillText(typed(P.spec.generic ? "TAP IN · ROOM" : "TAP IN · LIVE ROOM", seg(t, 150, 650)), w * 0.05, h * 0.965);
+    g.textAlign = "left"; g.fillStyle = ST ? (ST.muted || HT.dim) : K.dim; g.font = `500 ${Math.max(11, 12 * s)}px ${K.mono}`;
+    g.fillText(typed(P.spec.generic ? "TAP IN · ROOM" : "TAP IN · LIVE ROOM", seg(t, 150, 650)), ST ? ST.x + 24 : w * 0.05, ST ? ST.y + ST.h / 2 + 4 : h * 0.965);
     g.globalAlpha = 1;
   }
 
