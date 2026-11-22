@@ -784,6 +784,12 @@
     if (!qs.has("silent")) {
       const loud = () => { try { return Promise.resolve(Sound.start()).catch(() => {}); } catch { return null; } };
       loud(); addEventListener("pointerdown", loud, { once: true }); addEventListener("keydown", loud, { once: true });
+      setTimeout(() => {                                                // the browser held the sound back: a small note until the first click
+        if (window.Sound && Sound.started) return;
+        const n = document.createElement("div"); n.className = "soundnote"; n.textContent = "Click anywhere to turn on sound"; document.body.append(n);
+        const gone = () => n.remove(); addEventListener("pointerdown", gone, { once: true }); addEventListener("keydown", gone, { once: true });
+        setTimeout(gone, 15000);
+      }, 900);
     }
   }
   // The host's settings (host/settings.html): place name, how many tables, table names, sound. The URL still wins.

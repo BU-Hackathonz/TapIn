@@ -21,7 +21,6 @@
   </form>
 </main>
 <i class="stripe"></i><div class="fade" id="fade"></div>
-<script src="/landing/opening.js"></script>
 <script>
 const $ = (id) => document.getElementById(id), err = $("err");
 (async () => {
@@ -37,8 +36,8 @@ $("f").addEventListener("submit", async (e) => {
     const r = await fetch("/api/host/settings", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
     if (r.status === 401) return location.replace("index.html");
     if (!r.ok) { err.textContent = "Could not save: check the place name"; $("start").disabled = false; return; }
-    $("fade").classList.add("on");                                   // everything fades out quickly, the opening animation plays, then the wall opens
-    setTimeout(async () => { try { await OpeningScene.play({ venue: body.venue }); } catch (e) { console.error("opening", e); } location.assign("/wall/host.html"); }, 380);
+    $("fade").classList.add("on");                                   // everything fades out quickly, then the wall opens and Avery's intro plays
+    setTimeout(() => location.assign("/wall/host.html?start"), 380);
   } catch { err.textContent = "Could not reach the server"; $("start").disabled = false; }
 });
 $("out").addEventListener("click", async () => { await fetch("/api/host/logout", { method: "POST" }).catch(() => {}); location.replace("index.html"); });
