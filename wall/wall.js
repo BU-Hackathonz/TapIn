@@ -1,7 +1,15 @@
 // Tap In wall: a full-screen 3D map of the room. Rebuilds from /api/graph and /api/needs, then follows /ws events.
-// ?server=host:port points the wall at another server (default: same origin). ?silent skips the Start screen.
+// ?server=host:port points the wall at another server (default: same origin). ?kiosk skips sign-in (projector).
 (() => {
   const qs = new URLSearchParams(location.search);
+  // Sign in first. The venue projector has nobody to sign in, so it opens the wall with ?kiosk.
+  let signedIn = false;
+  try { signedIn = !!localStorage.getItem("wall.me"); } catch { /* private mode: treat as signed out */ }
+  if (qs.has("kiosk")) document.body.classList.add("kiosk");
+  if (!signedIn && !qs.has("kiosk")) {
+    location.replace(`login.html${location.search}`);
+    return;
+  }
   const host = qs.get("server") || location.host;
   const HTTP = `${location.protocol === "https:" ? "https" : "http"}://${host}`;
   const WS = `${location.protocol === "https:" ? "wss" : "ws"}://${host}/ws`;
@@ -29,6 +37,7 @@
     for (const id of [...S.people.keys()]) if (!seen.has(id)) S.people.delete(id);
     S.groups = new Map(g.groups.map((x) => [x.id, x]));
     S.links = new Map(g.links.map((l) => [lk(l.a, l.b), { ...l }]));
+    TableServer.applyEdits(S);   // table settings changed on this screen survive a refresh
   }
 
   async function syncGraph() {
@@ -46,6 +55,7 @@
     const [g, needs] = await Promise.all([getJSON("/api/graph"), getJSON("/api/needs")]);
     applyGraph(g);
     S.needs = needs;
+    TableServer.applyEdits(S);
     render();
     Panels.needs(S.needs);
     Panels.tables(rankedTables());
@@ -156,7 +166,8 @@
       freshen(keys);
       glow(d.group_id);
       d.member_ids.forEach((id) => ripple(id, "join"));
-      Sound.links(keys.length);
+      Hub.note(d.group_id, `${d.member_ids.map((id) => S.people.get(id)?.name).filter(Boolean).join(", ")} started the table`);
+      if (!S.groups.get(d.group_id)?.muted) Sound.links(keys.length);
       const group = S.groups.get(d.group_id);
       if (group) Panels.log(`${group.name} formed`);
       updateTables();
@@ -171,12 +182,14 @@
       freshen(d.new_links.map(([a, b]) => lk(a, b)));
       glow(d.group_id);
       d.new_member_ids.forEach((id) => ripple(id, "join"));
-      Sound.links(d.new_links.length);
+      Hub.note(d.group_id, `${d.new_member_ids.map((id) => S.people.get(id)?.name).filter(Boolean).join(", ")} joined the table`);
+      if (!S.groups.get(d.group_id)?.muted) Sound.links(d.new_links.length);
       const group = S.groups.get(d.group_id);
       if (group) Panels.log(`${group.name} welcomed ${d.new_member_ids.length === 1 ? "a member" : "new members"}`);
     },
     help(d) {
       ripple(d.mentor_id, "help");
+      Hub.note(d.group_id, `${S.people.get(d.mentor_id)?.name || "A mentor"} came over to help`);
       glow(d.group_id);
       const mentor = S.people.get(d.mentor_id), group = S.groups.get(d.group_id);
       if (mentor && group) Panels.log(`${mentor.name} helped ${group.name}`);
@@ -207,6 +220,7 @@
     icebreaker: Panels.icebreaker,
     needs_updated(d) {
       S.needs = d.needs || [];
+      TableServer.applyEdits(S);
       Panels.needs(S.needs);
       render();
     },
@@ -241,14 +255,22 @@
 
   // ------------------------------------------------------------ boot
 
-  if (qs.has("silent")) $("start").classList.add("gone");
-  $("start-btn").addEventListener("click", async () => {
-    $("start").classList.add("gone");
-    try { await Sound.start(); } catch (e) { console.error("sound", e); }
-  });
   Theme.set(Theme.initial());
   Corner.mount(() => S);
-  View3D.init(() => ({ visible, shownGroups, S, radius, needLine }));
+  Hub.mount(() => S);
+  // The host's screen (and the projector, ?kiosk) is the room's main display: a flat, minimal 2D map with no
+  // personal layer (no "You" in the middle, no green known-people lines).
+  let mainScreen = false;
+  const applyMainScreen = () => {
+    mainScreen = qs.has("kiosk") || (Room.current.status === "in" && !!Room.current.host);
+    document.body.classList.toggle("main-screen", mainScreen);
+    View3D.setOption("flat", mainScreen);
+  };
+  View3D.init(() => ({ visible, shownGroups, S, radius, needLine,
+                       me: Corner.signedIn() && !mainScreen ? Corner.me() : null, known: mainScreen ? new Set() : Corner.known() }));
+  applyMainScreen();
+  View3D.onMe(() => Corner.show("you"));
+  Room.onChange(() => { Corner.refresh(); applyMainScreen(); });
   View3D.setActive(true);
 
   // ?demo, or no Tap In server behind this page (e.g. hosted on its own): run the built-in demo room.

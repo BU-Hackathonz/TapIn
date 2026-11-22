@@ -1,0 +1,141 @@
+/* ?look=host: the sign-in steps and the join-or-host step in the style of David's host screen (host.css, default red look).
+   Rose ground for the room plan, a dark plum column for the form, a dark strip along the bottom for the latest moment.
+   Flat and square: no cards, no rounded pills, no shadows. Plex Sans for words, Plex Mono for times and labels,
+   the heavy Bricolage wordmark with a red Wi-Fi dot. Only applies when hostlook.js sets data-look="host". */
+html[data-look="host"] {
+  --ground: #ecd9d2; --g-ink: #2b1f23; --g-muted: #7a6066;
+  --plum: #2a1f24; --plum-2: #34272d; --plum-line: #3d2d34;
+  --red: #d4151b; --red-soft: #ff3b36; --sage: #a9d9b1; --deep: #1b4a33; --sandtx: #f1e0d3;
+  --u: clamp(15px, 1.042vw, 20px);
+  --side-w: clamp(380px, 30vw, 520px);
+  --strip-h: clamp(64px, 8vh, 96px);
+}
+html[data-look="host"] body.look-host {
+  /* the form column takes the host screen's dark panel colours */
+  --bg: var(--plum-2); --panel: var(--plum); --line: var(--plum-line); --text: #f6ece8; --soft: #e2d3d6; --muted: #cdbcc0;
+  background: var(--plum); color: var(--text); font: 400 var(--u)/1.45 var(--font);
+}
+
+/* grid: plan top left, strip bottom left, form column on the right, full height */
+html[data-look="host"] .stage {
+  min-height: 100vh; display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--side-w);
+  grid-template-rows: minmax(0, 1fr) var(--strip-h);
+  grid-template-areas: "plan side" "strip side";
+}
+html[data-look="host"] .art-panel { grid-area: plan; position: relative; display: block; background: var(--ground); overflow: hidden; min-height: 0; }
+html[data-look="host"] .art-panel::after {      /* faint scanlines and vignette over the plan only, as on the host screen */
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 3;
+  background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.04) 0 1px, transparent 1px 3px),
+              radial-gradient(ellipse at 50% 45%, transparent 60%, rgba(0, 0, 0, 0.1) 100%);
+}
+.hl-fume { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; image-rendering: pixelated; image-rendering: crisp-edges; }
+.hl-plan { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; display: block; }
+.hl-legend { position: absolute; left: 1.7vw; top: 2.6vh; z-index: 2; display: grid; gap: 1.1vh; max-width: 80%; pointer-events: none; }
+.hl-lede { margin: 0; font: 600 calc(var(--u) * 1.15)/1.2 var(--font); letter-spacing: -0.01em; color: var(--g-ink); }
+.hl-legend ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.5em 1.3em; font: 500 calc(var(--u) * 0.8)/1 var(--font); color: var(--g-muted); }
+.hl-legend li { display: inline-flex; align-items: center; gap: 0.55em; }
+.hl-legend .k { display: inline-block; width: 0.8em; height: 0.8em; flex: none; }
+.hl-legend .k.dot { border-radius: 50%; background: #2f6d4e; }
+.hl-legend .k.sq { border: 2px solid #2f6d4e; }
+.hl-legend .k.red { border-radius: 50%; background: var(--red); }
+.hl-legend .k.dash, .hl-legend .k.line { width: 1.5em; height: 0; border-top: 2.5px dashed var(--deep); }
+.hl-legend .k.line { border-top-style: solid; }
+
+/* the bottom strip: time in red mono, the moment, and the prototype label at the right end */
+.hl-strip {
+  grid-area: strip; display: flex; align-items: center; gap: 1.6vw; padding: 0 2vw 0 2.5%; min-width: 0;
+  background: var(--plum); border-top: 1px solid var(--plum-line); color: var(--text); font-variant-numeric: tabular-nums;
+}
+.hl-strip time { font: 400 calc(var(--u) * 1.1)/1 var(--mono); color: var(--red-soft); white-space: nowrap; }
+.hl-strip p { margin: 0; font-size: calc(var(--u) * 1.05); min-width: 0; flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.hl-strip p b { font-weight: 600; }
+.hl-strip p span { color: var(--muted); }
+.hl-tag { font: 500 calc(var(--u) * 0.72)/1 var(--mono); letter-spacing: 0.08em; color: #a08e93; white-space: nowrap; }
+
+/* the form column */
+html[data-look="host"] .card {
+  grid-area: side; align-self: stretch; justify-self: stretch; width: auto; margin: 0; min-height: 100vh;
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 4vh 2.4vw; background: var(--plum); border: 0; border-left: 1px solid var(--plum-line); border-radius: 0; box-shadow: none;
+}
+html[data-look="host"] .card > * { width: 100%; max-width: 420px; margin-left: auto; margin-right: auto; }
+html[data-look="host"] .brand-top { display: flex; justify-content: flex-start; margin: 0 auto 4.5vh; }
+.hl-wm {
+  position: relative; display: inline-block; padding-top: 0.46em;
+  font: 800 clamp(46px, 3.6vw, 64px)/1 "Bricolage Grotesque", var(--font); letter-spacing: -0.04em; color: var(--sandtx);
+}
+.hl-ii { position: relative; display: inline-block; }
+.hl-wifi { position: absolute; left: 50%; bottom: 0.66em; width: 0.62em; height: 0.52em; transform: translateX(-50%); overflow: visible; color: var(--red-soft); fill: none; stroke: currentColor; stroke-width: 2.3; stroke-linecap: round; }
+.hl-wifi circle { fill: currentColor; stroke: none; }
+
+html[data-look="host"] h1 { font: 600 calc(var(--u) * 1.75)/1.15 var(--font); letter-spacing: -0.015em; margin-bottom: 10px; }
+html[data-look="host"] .lead { color: var(--soft); }
+html[data-look="host"] .fine { color: #a08e93; }
+html[data-look="host"] .back { color: var(--muted); }
+
+/* everything square and flat */
+html[data-look="host"] .oauth, html[data-look="host"] .ghost, html[data-look="host"] .primary, html[data-look="host"] .chip,
+html[data-look="host"] .seg, html[data-look="host"] .seg button, html[data-look="host"] .connect, html[data-look="host"] .app,
+html[data-look="host"] .preview, html[data-look="host"] .badge, html[data-look="host"] .suggest,
+html[data-look="host"] input[type="text"], html[data-look="host"] input[type="email"], html[data-look="host"] .logo,
+html[data-look="host"] .dots li { border-radius: 0; box-shadow: none; }
+html[data-look="host"] .oauth { background: transparent; color: var(--text); border: 1px solid var(--plum-line); }
+html[data-look="host"] .oauth:hover, html[data-look="host"] .oauth:focus-visible { border-color: var(--text); }
+html[data-look="host"] .oauth svg path[fill="currentColor"] { fill: var(--text); }
+html[data-look="host"] input[type="text"], html[data-look="host"] input[type="email"] {
+  background: var(--plum-2); color: var(--text); border: 0; border-bottom: 1px solid var(--plum-line);
+}
+html[data-look="host"] input::placeholder { color: #a08e93; }
+html[data-look="host"] input:focus { background: var(--plum-2); border-color: var(--red-soft); }
+html[data-look="host"] .primary, html[data-look="host"] .connect, html[data-look="host"] .room-join {
+  background: var(--sage); color: var(--plum); border-radius: 0;
+}
+html[data-look="host"] .ghost { color: var(--text); border-color: var(--plum-line); }
+html[data-look="host"] .chip { background: transparent; color: var(--text); border-color: var(--plum-line); }
+html[data-look="host"] .chip.on { background: var(--sage); color: var(--plum); border-color: var(--sage); }
+html[data-look="host"] .seg { background: var(--plum-2); }
+html[data-look="host"] .seg button[aria-checked="true"] { background: var(--plum); color: var(--text); }
+html[data-look="host"] .dots li { background: var(--plum-line); }
+html[data-look="host"] .dots li.done { background: var(--red-soft); }
+html[data-look="host"] .or::before, html[data-look="host"] .or::after { background: var(--plum-line); }
+html[data-look="host"] .face { border-color: var(--plum-line); }
+html[data-look="host"] .app.linked { border-color: var(--sage); }
+html[data-look="host"] .suggest li:hover { background: var(--plum-2); }
+html[data-look="host"] .skip:hover, html[data-look="host"] .link:hover { color: var(--text); }
+html[data-look="host"] .primary:focus-visible, html[data-look="host"] .ghost:focus-visible, html[data-look="host"] .chip:focus-visible,
+html[data-look="host"] .seg button:focus-visible, html[data-look="host"] .connect:focus-visible { outline-color: var(--red-soft); }
+
+/* the join-or-host step: plain rows with a rule between them, like the host screen's lists */
+html[data-look="host"] .room-inline, html[data-look="host"] .room-window, html[data-look="host"] .room-card { border-radius: 0; border-color: var(--plum-line); box-shadow: none; }
+html[data-look="host"] .room-window { background: var(--plum); color: var(--text); }
+html[data-look="host"] .room-option {
+  background: transparent; color: var(--text); border: 0; border-bottom: 1px solid var(--plum-line); border-radius: 0; padding: 16px 4px;
+}
+html[data-look="host"] .room-option:last-child { border-bottom: 0; }
+html[data-look="host"] .room-option:hover, html[data-look="host"] .room-option:focus-visible { transform: translateX(4px); border-color: var(--plum-line); }
+html[data-look="host"] .room-option:hover b, html[data-look="host"] .room-option:focus-visible b { color: var(--red-soft); }
+html[data-look="host"] .room-option .room-option-icon { background: var(--plum-2); border-radius: 0; color: var(--text); }
+html[data-look="host"] .room-option-text small, html[data-look="host"] .room-sub, html[data-look="host"] .room-kicker { color: var(--muted); }
+html[data-look="host"] .room-kicker { font-family: var(--mono); }
+html[data-look="host"] .tap-btn { color: var(--text); }
+html[data-look="host"] .tap-ring, html[data-look="host"] .tap-led { color: var(--red-soft); stroke: var(--red-soft); }
+html[data-look="host"] .tap-led { fill: var(--red-soft); }
+html[data-look="host"] .tap-card { fill: var(--plum); }
+html[data-look="host"] .tap-crease { stroke: var(--plum); }
+html[data-look="host"] .done { color: var(--sage); }
+html[data-look="host"] .room-form input { background: var(--plum-2); color: var(--text); border: 0; border-bottom: 1px solid var(--plum-line); border-radius: 0; }
+html[data-look="host"] .room-make { color: var(--muted); }
+
+/* phones: the plan on top (first screen only), then the strip, then the form */
+@media (max-width: 800px) {
+  html[data-look="host"] .stage { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto; grid-template-areas: "plan" "strip" "side"; }
+  html[data-look="host"] .art-panel { height: 44vh; min-height: 280px; order: 0 !important; width: auto !important; }
+  html[data-look="host"] body:not(.at-start) .art-panel, html[data-look="host"] body:not(.at-start) .hl-strip { display: none; }
+  html[data-look="host"] .hl-strip { height: 56px; padding: 0 16px; }
+  html[data-look="host"] .hl-tag { display: none; }
+  html[data-look="host"] .hl-legend { left: 14px; top: 12px; max-width: calc(100% - 28px); }
+  html[data-look="host"] .hl-legend ul { display: none; }
+  html[data-look="host"] .card { min-height: auto; border-left: 0; padding: 26px 18px 34px; justify-content: flex-start; }
+  html[data-look="host"] body:not(.at-start) .card { min-height: 100vh; }
+}
