@@ -70,7 +70,7 @@
   const labelOf = (p) => (p.role !== "student" ? `${p.name}, ${p.role}` : p.focus ? `${p.name} (focus)` : p.name);
 
   // Only the leading tables are drawn, so the plan stays calm. A table keeps its place unless another one clearly overtakes it.
-  const MAXT = qs.has("tables") ? parseInt(qs.get("tables"), 10) : 5;
+  let MAXT = qs.has("tables") ? parseInt(qs.get("tables"), 10) : 5;
   const shownT = new Set();
   let hiddenT = 0;
   const onPlan = (gid) => !MAXT || shownT.size === 0 || shownT.has(gid);
@@ -832,8 +832,31 @@
   canvas.addEventListener("pointercancel", endDrag);
 
   // ------------------------------------------------------------ boot
-  if (qs.has("silent")) $("start").classList.add("gone");
-  $("start-btn").addEventListener("click", async () => {
+  // The wall opens straight away (no Start screen), with sound on. Browsers only start sound after a click on the site, so it is tried at
+  // once (it works when the host has just clicked through the settings page) and again at the first click or key press.
+  // ?silent keeps it quiet; ?startscreen brings the old Start screen back.
+  if (!qs.has("startscreen")) {
+    $("start").classList.add("gone");
+    if (!qs.has("silent")) {
+      const loud = () => { try { return Promise.resolve(Sound.start()).catch(() => {}); } catch { return null; } };
+      loud(); addEventListener("pointerdown", loud, { once: true }); addEventListener("keydown", loud, { once: true });
+      setTimeout(() => {                                                // the browser held the sound back: a small note until the first click
+        if (window.Sound && Sound.started) return;
+        const n = document.createElement("div"); n.className = "soundnote"; n.textContent = "Click anywhere to turn on sound"; document.body.append(n);
+        const gone = () => n.remove(); addEventListener("pointerdown", gone, { once: true }); addEventListener("keydown", gone, { once: true });
+        setTimeout(gone, 15000);
+      }, 900);
+    }
+  }
+  // The host's settings (host/settings.html): place name, how many tables, table names, sound. The URL still wins.
+  fetch("/api/room-settings").then((r) => (r.ok ? r.json() : null)).then((s) => {
+    if (!s) return;
+    if (!qs.get("venue") && s.venue) { $("locname").textContent = s.venue; $("venue").textContent = ""; }
+    if (!qs.has("tables") && Number.isFinite(s.tables)) { MAXT = s.tables; if (graphRaw) applyGraph(graphRaw); }
+    if (!qs.get("mk")) { document.documentElement.dataset.mk = s.marker === "numbers" ? "num" : "let"; if (graphRaw) renderSide(); }
+    if (s.sound === false && window.Sound && Sound.setMuted) Sound.setMuted(true);
+  }).catch(() => {});
+  async function begin() {
     $("start").classList.add("gone");
     try { await Sound.start(); } catch (e) { console.error("sound", e); }
     // Avery's intro (intro/): the room fills up, then lands on this plan. Never blocks the data or the WebSocket.
@@ -844,7 +867,18 @@
                  people: layout.positions().map((p) => ({ x: r.left + p.x, y: r.top + p.y, table: p.gid })) };
       } }).catch(() => {});
     } catch (e) { console.error("intro", e); }
-  });
+  }
+  $("start-btn").addEventListener("click", begin);
+  // Coming from the host's Start button: no second Start screen. The intro plays at once (quietly: browsers only allow sound after a click on
+  // this page), and the first click anywhere turns the sound on.
+  if (qs.has("start")) {
+    $("start").classList.add("gone");
+    try { if (window.TapInIntro) TapInIntro.map(document.body, { quiet: qs.has("silent"), target: () => {
+      const r = $("room").getBoundingClientRect();
+      return { tables: [...layout.tables()].map(([id, t]) => ({ id, x: r.left + t.x, y: r.top + t.y, r: t.R })),
+               people: layout.positions().map((p) => ({ x: r.left + p.x, y: r.top + p.y, table: p.gid })) };
+    } }).catch(() => {}); } catch (e) { console.error("intro", e); }
+  }
   buildLayout();
   let rt = 0;
   new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(buildLayout, 250); }).observe($("stage"));

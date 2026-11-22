@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import api, db, scans, stats
+from . import api, db, host, scans, stats
 from .hub import hub
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
@@ -33,6 +33,7 @@ app = FastAPI(title="Tap In", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 app.include_router(api.router)
 app.include_router(stats.router)
+app.include_router(host.router)
 
 
 class Tap(BaseModel):
@@ -66,7 +67,7 @@ async def ws(socket: WebSocket):
 
 
 # Wall, phone and intro are owned by other teammates; mount them once their folders exist.
-for name in ("wall", "phone", "intro"):
+for name in ("wall", "phone", "intro", "landing", "host"):
     folder = ROOT / name
     if folder.is_dir():
         app.mount(f"/{name}", StaticFiles(directory=folder, html=True), name=name)

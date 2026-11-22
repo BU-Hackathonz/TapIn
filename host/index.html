@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Host sign in · Tap In</title><link rel="icon" href="data:,">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@800&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="host-flow.css"></head>
+<body>
+<main>
+  <p class="wm">tap <i>in</i></p>
+  <form class="sign" id="f" autocomplete="off">
+    <h1>Host sign in</h1>
+    <label for="pin">Host PIN</label>
+    <input id="pin" type="password" inputmode="numeric" autocomplete="off" required autofocus>
+    <p class="err" id="err" role="alert"></p>
+    <button class="btn" id="go" type="submit">Sign in</button>
+    <p class="hint">The PIN is on the host's setup sheet. Joining a space instead? <a href="/landing/" style="color:inherit">Back</a></p>
+  </form>
+</main>
+<i class="stripe"></i><div class="fade" id="fade"></div>
+<script>
+const err = document.getElementById("err"), go = document.getElementById("go");
+fetch("/api/host/me").then((r) => r.json()).then((m) => { if (m.signed_in) location.replace("settings.html"); if (!m.enabled) err.textContent = "Host sign-in is off. Set HOST_PIN on the server."; }).catch(() => {});
+document.getElementById("f").addEventListener("submit", async (e) => {
+  e.preventDefault(); err.textContent = ""; go.disabled = true;
+  try {
+    const r = await fetch("/api/host/login", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ pin: document.getElementById("pin").value }) });
+    if (r.ok) { document.getElementById("fade").classList.add("on"); setTimeout(() => location.replace("settings.html"), 300); return; }
+    err.textContent = (await r.json().catch(() => ({}))).detail || "Could not sign in";
+  } catch { err.textContent = "Could not reach the server"; }
+  go.disabled = false; document.getElementById("pin").select();
+});
+</script></body></html>

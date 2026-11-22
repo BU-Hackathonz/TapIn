@@ -1,5 +1,6 @@
 .board/
 .env
+.host_settings.json
 .env.*
 !.env.example
 __pycache__/
