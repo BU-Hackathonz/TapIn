@@ -633,6 +633,11 @@
     if (QS.has("edit")) show("step-account");
     else if (QS.has("login")) show("step-login");
     else if (QS.has("join")) show("step-tap");
+    else if (QS.has("host") && /(^|\.)tapin\.boston$/i.test(location.hostname)) {
+      // On the public site, hosting hands over to the venue server: it only loads on the venue Wi-Fi (cmap), so the PIN is
+      // never exposed to the internet, and the host wall gets its live data there (Avery's call, Nov 22).
+      location.replace("http://192.168.8.236:8000/wall/join.html?host");
+    }
     else if (QS.has("host")) {
       // Hosts sign in with the venue's PIN first (server checks it: /api/host/login); already signed in goes straight to Create / Existing
       show("step-pin");
@@ -667,7 +672,7 @@
       try {
         const r = await fetch("/api/host/login", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ pin }) });
         if (r.ok) { $("host-pin").value = ""; if (typeof UISound !== "undefined") UISound.ok(); show("step-host"); }
-        else { $("pin-err").textContent = r.status === 429 ? "Too many tries. Wait a minute." : r.status === 503 ? "Hosting isn't set up on this server." : r.status === 404 ? "Hosting only works on the venue network." : "That PIN isn't right."; }
+        else { $("pin-err").textContent = r.status === 429 ? "Too many tries. Wait a minute." : r.status === 503 ? "Hosting isn't set up on this server." : r.status === 404 ? "Hosting only works on the venue Wi-Fi (cmap): connect to it, then open tapin.boston and tap Host again." : "That PIN isn't right."; }
       } catch { $("pin-err").textContent = "Couldn't reach the server."; }
       btn.disabled = false;
     });
