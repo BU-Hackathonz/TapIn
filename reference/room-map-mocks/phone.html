@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en" data-palette="v" data-v="11" data-s="1" data-h="7" data-mk="let">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Room map on a phone (mock)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Bricolage+Grotesque:wght@500;700;800&family=DotGothic16&display=swap">
+<link rel="stylesheet" href="../../wall/host.css">
+<link rel="stylesheet" href="mock.css">
+</head>
+<body class="phonepage">
+<!-- MOCK: the explore page on a phone. Static sample data. -->
+<div class="phone">
+  <div class="top"><span class="wm">tap <span class="ii">&#305;<svg class="wifi" viewBox="0 0 24 20" aria-hidden="true"><circle cx="12" cy="16.6" r="2.3"/><path d="M6.6 11.6a7.6 7.6 0 0 1 10.8 0"/><path d="M2.9 7.4a12.8 12.8 0 0 1 18.2 0"/></svg></span>n</span><span class="where">spark!</span></div>
+  <div class="mapwrap"><canvas id="room" aria-label="Room map"></canvas><p class="lede">Who is here, and who is working together</p></div>
+  <div>
+    <div class="sheet">
+      <div class="hd" style="--u:15px"><span class="mk1" data-l="3" style="width:2.6em;height:2.6em">C</span><div><h1 style="font-size:22px">Table C</h1><small style="font-size:13px">AR campus map · 5 people · 65 points</small></div></div>
+      <ul class="rows mk round" style="margin:10px 0 0;font-size:15px;--u:15px">
+        <li data-k="Z" data-l="3"><span class="t">Zoe<small>ml, data</small></span><span class="v">57</span></li><li data-k="K" data-l="3"><span class="t">Kai<small>hardware</small></span><span class="v">52</span></li><li data-k="R" data-l="3"><span class="t">Ruby<small>backend</small></span><span class="v">49</span></li>
+      </ul>
+      <span class="cta" style="margin-top:12px;--u:15px">Needs hardware · tap your badge to join</span>
+    </div>
+    <div class="bar"><b>Table C</b> needs <b>hardware</b>. You are at Table A.</div>
+  </div>
+</div>
+<script src="../../wall/room_layout.js"></script>
+<script src="mock-data.js"></script>
+<script src="mock.js"></script>
+<script>MockRoom.render({ canvas: document.getElementById("room"), select: { type: "table", id: 3 }, k: 0.62, margin: { x: 40, top: 50, bottom: 24 } });</script>
+</body>
+</html>

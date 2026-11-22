@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en" data-palette="v" data-v="11" data-s="1" data-h="7" data-mk="let">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Person selected (mock)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Bricolage+Grotesque:wght@500;700;800&family=DotGothic16&display=swap">
+<link rel="stylesheet" href="../../wall/host.css">
+<link rel="stylesheet" href="mock.css">
+</head>
+<body>
+<!-- MOCK: person.html. Static sample data, nothing here talks to the server. -->
+<main id="stage">
+  <canvas id="room" aria-label="Room map"></canvas>
+  <div id="loc"><span id="locname">spark!</span></div>
+  <header id="legend"><p class="lede">Noah: who they know and what they are looking for</p><ul><li><i class="k dot"></i>person</li><li><i class="k sq"></i>mentor</li><li><i class="k ring"></i>heads-down</li><li><i class="k dash"></i>a table</li><li><i class="k line"></i>have met</li><li><i class="k pink"></i>just arrived</li></ul></header>
+  <p class="mocktag">MOCK · SAMPLE DATA</p>
+</main>
+<div id="brand" role="img" aria-label="Tap In"><span class="wm" aria-hidden="true">tap <span class="ii">&#305;<svg class="wifi" viewBox="0 0 24 20" aria-hidden="true"><circle cx="12" cy="16.6" r="2.3"/><path d="M6.6 11.6a7.6 7.6 0 0 1 10.8 0"/><path d="M2.9 7.4a12.8 12.8 0 0 1 18.2 0"/></svg></span>n</span></div>
+<aside id="side"><div class="hd round"><span class="mk1" data-l="2">N</span><div><h1>Noah</h1><small>Student · Table B · 60 points</small></div></div>
+  <p class="plain">Knows <b>frontend</b> and <b>design</b>. Is looking for <b>backend</b>.</p>
+  <section><h2>Knows</h2><ul class="rows mk round"><li data-k="P" data-l="2"><span class="t">Priya<small>Table B</small></span><span class="v">2 links</span></li><li data-k="T" data-l="2"><span class="t">Tomas<small>Table B</small></span><span class="v">1 link</span></li><li data-k="M" data-l="1"><span class="t">Maya<small>Table A</small></span><span class="v">1 link</span></li><li data-k="N" data-l="2"><span class="t">Nina<small>Mentor</small></span><span class="v">1 link</span></li></ul></section>
+  <section><h2>Suggested intro</h2><p class="quote">Noah, Table A is looking for design and could use your frontend. Maya there already knows your teammate Priya.</p></section>
+  <span class="cta">Say hi: Table A is two tables away</span></aside>
+<footer id="moment"><time id="mtime">8:21 PM</time><p id="mtext"><b>Noah</b> knows Priya, Tomas, Maya and Nina.</p></footer>
+<script src="../../wall/room_layout.js"></script>
+<script src="mock-data.js"></script>
+<script src="mock.js"></script>
+<script>MockRoom.render({ canvas: document.getElementById("room"), select: { type: "person", id: 6 } });</script>
+</body>
+</html>
