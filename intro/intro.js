@@ -400,6 +400,9 @@
 
   function signIn(container, opts) {
     opts = opts || {};
+    // Retired on the live sign-up (Avery, Nov 22): the phone page shows its own pixel train instead. The page's hook
+    // stays harmless; pass { force: true } to play it anyway (the intro demo does).
+    if (!opts.force) return Promise.resolve("off");
     try { if (sessionStorage.getItem(SIGNIN_KEY)) return Promise.resolve("already-played"); } catch (e) { /* private mode */ }
     const reduced = prefersReduced(opts);
     const soundOn = opts.sound !== false && !opts.quiet && !reduced;
