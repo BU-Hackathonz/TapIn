@@ -28,7 +28,7 @@ Boston is full of students sitting alone in rooms full of people. Tap In is two 
 
 ## Links
 
-- **Video demo:** `VIDEO LINK FROM YAOVI` (placeholder)
+- **Video demo:** https://youtu.be/srOQUchKKRQ (1-minute demo, Unlisted; source media/devpost/tapin-demo-v2.mp4)
 - **GitHub:** https://github.com/BU-Hackathonz/TapIn
 - **Try it:** https://tapin.boston (landing, phone sign-up and the room map; hosting runs on the venue Wi-Fi)
 
