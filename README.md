@@ -4,7 +4,7 @@
 
 <!-- Demo GIF goes here once the 5 PM checkpoint works: docs/tap-to-wall.gif (a badge tap lighting up the wall). -->
 
-Built at BostonHacks 2026 for the **Boundless Boston** track and the **Spark! Hack Our Space** subtrack. We plan to serve it at tapin.boston (not registered yet).
+Built at BostonHacks 2026 for the **Boundless Boston** track and the **Spark! Hack Our Space** subtrack. Live at **[tapin.boston](https://tapin.boston)**.
 
 ## The problem
 
@@ -20,14 +20,17 @@ There is one action: **tap**. The server groups taps that land on the same stati
 |---|---|
 | 1 badge | **Check-in.** You light up on the wall as "here now", with lines to people you already know and the open groups that fit you. |
 | 2+ badges, none in a group | **New group.** Everyone is linked to each other and lands on the map as one cluster. |
-| 2+ badges, one already in a group | **Join.** The others join that group and get linked to every member. |
+| 2+ badges, one already at a table | **Join.** The others join that table (the one at this station wins; otherwise the table with the most people in the scan) and leave their old table. Everyone in the scan is linked. |
 | A mentor or staff badge in the scan | **Help.** The group's need is marked handled and the mentor shows as a bridge between groups. |
 | Everyone already met | **Repeat.** No points; the connection gets stronger. |
 
-A join only counts when the whole group scans in at the same station, so the hardware itself proves people actually met.
+A join only counts when the newcomer and someone from the table tap the same station together, so the hardware itself proves people actually met. A person is in one station's scan at a time.
 
 - **Phone site:** sign up in about 30 seconds (first name, up to 3 skills, up to 2 "looking for" tags), then tap any blank badge to claim it. Your "where you stand" page shows people you know who are here, your top groups with a reason ("Table 2 needs firmware"), and your points.
-- **Wall display:** a live room view where each group is a cluster labeled with its table and what it's building, plus stats, a leaderboard, a needs board, and an activity log. It plays a pentatonic bell when someone arrives and a pluck for every new link.
+- **Host wall** (`/wall/host.html`, the projector): the room plan with tables by letter, stats, groups by points, a needs board and an activity log. Every event plays a note from one pentatonic scale: a bell in your own note when you arrive, plucks for new links, a trolley bell every 10th person. Quiet mode (`?mode=quiet`, or the gear panel) is for study hours.
+- **Room map** (`/wall/`): your own view of the room on your phone, with your table, the people you know and your profile.
+- **Front door:** `/landing/` with Join a space (sign up, or log in by tapping your badge) and Host a space (host PIN, then create or open an event).
+- **Admin** (`/host/admin.html`, venue network, PIN every visit): unlink a badge, give someone a new badge with live status, remove test profiles.
 - **Modes:** groups can be open or heads-down, and people can check in on focus mode. Heads-down groups and focus people are never suggested.
 - **Points:** +1 for your first check-in of the day, +5 for each new person you connect with, +10 for joining a group, and +5 to each current member when someone joins. The group's points double when the newcomer had fewer than 2 connections.
 
@@ -68,9 +71,8 @@ Phone screenshots were taken in FAKE mode (hard-coded sample data, no server), u
 
 ## From the build
 
-| The wall, demo mode | Building on Saturday |
-|---|---|
-| ![The wall in demo mode: tables as clusters with their needs, a check-in ring, and the template suggestion line](docs/media/wall-demo.gif) |
+![The wall in demo mode: tables as clusters with their needs, a check-in ring, and the template suggestion line](docs/media/wall-demo.gif)
+
 The wall recording is in demo mode with sample people, not real sign-ups. Full 29 s clip: [docs/media/wall-demo.mov](docs/media/wall-demo.mov).
 
 ## Station wiring
@@ -122,8 +124,10 @@ python tools/check_db.py          # checks the database connection and Timescale
 uvicorn server.main:app --host 0.0.0.0 --port 8000
 ```
 
-- Wall: `http://<server-ip>:8000/wall`. Click **Start** once to enable sound.
-- Phone: `http://<server-ip>:8000/phone`
+- Front door: `http://<server-ip>:8000/landing/`
+- Host wall (projector): `http://<server-ip>:8000/wall/host.html`. Sound starts on the first click.
+- Phone sign-up: `http://<server-ip>:8000/phone/`
+- Admin: `http://<server-ip>:8000/host/admin.html` (needs `HOST_PIN` in `.env`)
 - No internet? Run the same schema on a local TimescaleDB with `docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=tapin timescale/timescaledb:latest-pg16`, then point `DATABASE_URL` at it.
 
 **Without hardware:**
@@ -139,7 +143,7 @@ python tools/count.py                                           # real people, g
 
 Fake badges always start with `5EED`, so `count.py` reports only real people. Never run `tools/seed.py --reset` after recruiting starts: it deletes every real sign-up.
 
-**Stations:** open `firmware/station.ino` in the Arduino IDE with ESP32 support installed, set `STATION_ID` (1 or 2) at the top, and upload. Stations join the private 2.4 GHz `TapIn` network and talk to the server at `192.168.8.100:8000`.
+**Stations:** open `firmware/station.ino` in the Arduino IDE with ESP32 support installed, set `STATION_ID` (1 or 2) at the top, and upload. Put the Wi-Fi name and password, and the server's address as `SERVER_URL`, in `firmware/station/secrets.h` (copy `secrets.example.h`). At the venue that's the 2.4 GHz `cmap` network and `http://192.168.8.236:8000`.
 
 ## Built on Tiger Data
 
@@ -149,7 +153,8 @@ Taps are time-series data, so Tap In runs on [Tiger Data](https://www.tigerdata.
 |---|---|---|
 | `taps` | hypertable on `ts` | Every raw tap: station, badge UID and result |
 | `scan_events` | hypertable on `ts` | Every resolved scan: check-in, join, new group, repeat or help, with its size and group |
-| `scans_per_10min` | continuous aggregate (being added with the stats panel) | Scans per 10 minutes by station and kind, for the live stats chart |
+| `scans_per_10min` | real-time continuous aggregate | Scans per 10 minutes by station and kind, for the live stats chart |
+| `scans_per_hour` | hierarchical continuous aggregate on `scans_per_10min` | Scans per hour by station, for the busiest-station view |
 | `people`, `groups`, `group_members`, `connections`, `needs` | regular tables | Profiles, groups, the connection graph and open needs |
 
 ```sql
@@ -205,9 +210,9 @@ tools/board unread      # catch up on the board
 - **Server:** [FastAPI](https://fastapi.tiangolo.com), [Uvicorn](https://www.uvicorn.org), [asyncpg](https://github.com/MagicStack/asyncpg), [HTTPX](https://www.python-httpx.org)
 - **Database:** [Tiger Data](https://www.tigerdata.com) / [TimescaleDB](https://github.com/timescale/timescaledb)
 - **AI:** [Google Gemini API](https://ai.google.dev)
-- **Wall display:** [d3](https://d3js.org), [Tone.js](https://tonejs.github.io), [IBM Plex](https://github.com/IBM/plex)
+- **Wall display:** [Tone.js](https://tonejs.github.io), [IBM Plex](https://github.com/IBM/plex), [Bricolage Grotesque](https://fonts.google.com/specimen/Bricolage+Grotesque), [DotGothic16](https://fonts.google.com/specimen/DotGothic16)
 - **Firmware:** [MFRC522](https://github.com/miguelbalboa/rfid), [Adafruit NeoPixel](https://github.com/adafruit/Adafruit_NeoPixel), [ArduinoJson](https://arduinojson.org), [Arduino core for ESP32](https://github.com/espressif/arduino-esp32)
-- **Domain:** tapin.boston, planned through the [GoDaddy Registry](https://www.godaddy.com/registry) offer (not registered yet)
+- **Domain:** [tapin.boston](https://tapin.boston), served from Vercel; the server is reached through a Cloudflare tunnel
 - **Agent board:** the hackathon agent board template
 
 ## License

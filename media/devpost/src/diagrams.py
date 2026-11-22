@@ -293,28 +293,27 @@ def system():
 def access():
     c = Canvas(2400, 1600)
     c.text(50, 72, "What is public, and what stays at the venue", size=46, weight=700)
-    c.text(50, 118, "tapin.boston forwards six API routes and nothing else. Names, taps and hosting never leave the venue network.", size=27)
+    c.text(50, 118, "tapin.boston forwards nine API routes: sign-up and a read-only view of the room. Nothing public can change the room.", size=27)
     c.group(40, 180, 1120, 1360, "Public · tapin.boston (any network)")
-    rows = [("Pages", "landing · Join a space · phone sign-up, claim, where you stand"),
+    rows = [("Pages", "landing · Join a space · phone sign-up, claim, where you stand · room map"),
             ("POST /api/signup", "make a profile (first name only)"),
             ("GET /api/claim/{code}", "is my badge linked yet?"),
             ("GET /api/me/{id}", "where you stand"),
-            ("POST /api/me/{id}/focus", "focus mode on or off"),
-            ("POST /api/groups/{id}/mode", "open or heads-down table"),
-            ("GET /api/needs", "what tables are looking for")]
+            ("POST focus · table mode", "focus mode; open or heads-down table"),
+            ("GET /api/needs", "what tables are looking for"),
+            ("GET /api/graph · stats · leaderboard", "the room map, read-only, refreshed every 5 s")]
     for i, (a, b) in enumerate(rows):
         y = 260 + i * 172
         c.rect(80, y, 1040, 140, stroke=GREEN, fill="#fff", sw=3.5, rx=18)
         c.text(110, y + 58, a, size=30, weight=600, mono=a.startswith(("POST", "GET")))
         c.text(110, y + 104, b, size=26, color=SOFT)
     c.group(1240, 180, 1120, 1360, "Venue Wi-Fi only · 192.168.8.236:8000")
-    rows = [("Host a space + PIN", "/host · /api/host/* (on tapin.boston, Host forwards here)"),
+    rows = [("Host a space + PIN", "/api/host/* (on tapin.boston, Host forwards here)"),
             ("Host wall", "/wall/host.html, the projector"),
-            ("GET /api/graph", "the room: everyone's first name"),
-            ("stats · leaderboard · analytics", "the wall's side column"),
+            ("Admin · badge log-in", "/api/admin/* (PIN every visit) · /api/badge-login"),
             ("POST /api/tap · /api/station/{id}", "the two stations"),
-            ("/ws", "live updates to the wall"),
-            ("Why", "names only for people in the room; no fake taps or PIN guesses")]
+            ("/ws", "live updates to the walls"),
+            ("Why", "no fake taps, PIN guesses or badge changes from the internet")]
     for i, (a, b) in enumerate(rows):
         y = 260 + i * 172
         c.rect(1280, y, 1040, 140, stroke=RASP, fill="#fff", sw=3.5, rx=18)

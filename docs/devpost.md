@@ -25,13 +25,13 @@ we submit by **8:45 AM**. Items marked **(refresh 8:15)** come from `tools/count
 
 ## Short summary (if a field asks for one)
 
-Boston is full of students sitting alone in rooms full of people. Tap In is two badge stations, a room display and a phone page: tap your badge when you arrive and you see who you already know and which table needs your skills. Joining a table only counts when everyone taps the same station together, so the room proves people met, and every tap plays a sound in your own note.
+Boston is full of students sitting alone in rooms full of people. Tap In is two badge stations, a room display and a phone page: tap your badge when you arrive and you see who you already know and which table needs your skills. Joining a table only counts when you tap the same station together with someone from it, so the room proves people met, and every tap plays a sound in your own note.
 
 ## Links
 
 - **Video demo:** `VIDEO LINK FROM YAOVI` (placeholder)
 - **GitHub:** https://github.com/BU-Hackathonz/TapIn
-- **Try it:** https://tapin.boston (landing and the real phone sign-up; the room and hosting run on the venue Wi-Fi)
+- **Try it:** https://tapin.boston (landing, phone sign-up and the room map; hosting runs on the venue Wi-Fi)
 
 ## Built with
 
