@@ -97,3 +97,8 @@ body[data-theme="tin"] .count { top: 22px; }
 .info-x { top: 8px; right: 8px; }
 body[data-theme="tin"] .profile { bottom: 156px; max-height: calc(100% - 250px); }
 @media (max-width: 800px) { body[data-theme="tin"] .profile { bottom: 132px; max-height: 50%; } }
+
+/* every panel that opens over the map shares the info card's soft backing (the Room activity column stays solid: it is beside the map) */
+body[data-theme="tin"] .profile, body[data-theme="tin"] .me-panel { background: rgba(236, 217, 210, 0.72); backdrop-filter: blur(6px); }
+body[data-theme="tin"] .p-stats div, body[data-theme="tin"] .p-chip:not(.want) { background: rgba(255, 255, 255, 0.45); }
+body[data-theme="tin"] .wall-icebreaker { background: rgba(236, 217, 210, 0.72); color: #2b1f23; backdrop-filter: blur(6px); font-family: "Bricolage Grotesque", sans-serif; text-transform: none; }
