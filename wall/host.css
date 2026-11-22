@@ -169,6 +169,86 @@ body::before {
 #mtext b { font-weight: 600; }
 #mtext span { color: var(--muted); }
 
+/* ---- Boston T (MBTA) style drafts, ?s=1..6. Line colors: Red #DA291C, Orange #ED8B00, Blue #003DA5, Green #00843D. Helvetica, capitals for labels,
+   stark white or black signs, a round route bullet per table, countdown-sign lettering at the bottom. No MBTA logo or marks, only the look. */
+:root[data-s] { --hv: "Helvetica Neue", Helvetica, Arial, sans-serif; }
+:root[data-s] #side, :root[data-s] #moment, :root[data-s] #brand { font-family: var(--hv); }
+:root[data-s] #groups li::before { content: attr(data-n); display: grid; place-items: center; flex: none; width: 1.9em; height: 1.9em; border-radius: 50%; color: #fff; font-weight: 700; font-size: 0.9em; }
+:root[data-s] #groups li[data-l="0"]::before { background: #DA291C; } :root[data-s] #groups li[data-l="1"]::before { background: #ED8B00; }
+:root[data-s] #groups li[data-l="2"]::before { background: #003DA5; } :root[data-s] #groups li[data-l="3"]::before { background: #00843D; }
+:root[data-s] #groups li { align-items: center; gap: 0.7em; justify-content: flex-start; } :root[data-s] #groups .t { flex: 1; font-weight: 700; }
+:root[data-s] .rows li.wait::before { content: ""; flex: none; width: 0.6em; height: 0.6em; border-radius: 50%; background: #DA291C; align-self: center; }
+:root[data-s] .rows li.done::before { content: "✓"; flex: none; color: #00843D; font-weight: 700; }
+:root[data-s] .rows li { justify-content: flex-start; gap: 0.7em; } :root[data-s] .rows li .t { flex: 1; }
+
+/* 1 Platform sign: a white sign with black label bars, route bullets, and an amber countdown line along the bottom */
+:root[data-s="1"] #side { --bg: #fff; --side: #fff; --fg: #111; --muted: #444; --dim: #888; --line: #d9d9d9; --pink: #DA291C; --green: #00843D; --forest: #111; background: #fff; color: #111; border-left: 0; }
+:root[data-s="1"] #side h2 { background: #111; color: #fff; padding: 0.45em 0.8em; font: 700 calc(var(--u) * 0.8)/1.2 var(--hv); text-transform: uppercase; letter-spacing: 0.08em; margin: 0 0 1vh; }
+:root[data-s="1"] #side h2 span { color: #bbb; font-family: inherit; }
+:root[data-s="1"] #statline { font: 400 calc(var(--u) * 0.95)/1.2 var(--hv); color: #111; } :root[data-s="1"] #statline b { font-weight: 700; }
+:root[data-s="1"] .rows .v, :root[data-s="1"] .log { font-family: inherit; } :root[data-s="1"] .rows .v { color: #111; font-weight: 700; } :root[data-s="1"] .rows li.top .v { color: #DA291C; }
+:root[data-s="1"] .rows li.done .v { color: #00843D; } :root[data-s="1"] .log em { color: #00843D; font-weight: 700; } :root[data-s="1"] .log { font-family: inherit; }
+:root[data-s="1"] .bars i { background: #111; } :root[data-s="1"] .bars i.now { background: #DA291C; }
+:root[data-s="1"] #moment { --pink: #ffb000; --fg: #ffb000; --muted: #b57a00; --sand: #ffb000; --line: #DA291C; background: #111; color: #ffb000; border-top: 6px solid #DA291C; }
+:root[data-s="1"] #mtime, :root[data-s="1"] #mtext { font-family: "DotGothic16", monospace; text-transform: uppercase; letter-spacing: 0.04em; } :root[data-s="1"] #mtext { font-size: calc(var(--u) * 1.25); } :root[data-s="1"] #mtext b { color: #fff; font-weight: 400; }
+
+/* 2 Wayfinding: a black sign, white Helvetica Bold, a colored stripe on every heading, rounded line markers */
+:root[data-s="2"] #side { --bg: #000; --side: #000; --fg: #fff; --muted: #c4c4c4; --dim: #8a8a8a; --line: #2e2e2e; --pink: #ff4b3e; --green: #3ec777; background: #000; color: #fff; border-left: 0; }
+:root[data-s="2"] #side h2 { font: 700 calc(var(--u) * 1.05)/1.1 var(--hv); color: #fff; text-transform: uppercase; letter-spacing: 0.04em; border-left: 0.5em solid #DA291C; padding-left: 0.6em; }
+:root[data-s="2"] #side section:nth-of-type(2) h2 { border-color: #ED8B00; } :root[data-s="2"] #side section:nth-of-type(3) h2 { border-color: #3d7bff; } :root[data-s="2"] #side section:nth-of-type(4) h2 { border-color: #00843D; }
+:root[data-s="2"] #statline { font: 700 calc(var(--u) * 0.95)/1.2 var(--hv); color: #c4c4c4; } :root[data-s="2"] #statline b { color: #fff; }
+:root[data-s="2"] #groups li::before { border-radius: 0.4em; } :root[data-s="2"] .rows .v { color: #fff; font-weight: 700; font-family: inherit; } :root[data-s="2"] .rows li.top .v { color: #ff4b3e; }
+:root[data-s="2"] .log { font-family: inherit; } :root[data-s="2"] .log em { color: #3ec777; } :root[data-s="2"] .bars i { background: #5a5a5a; } :root[data-s="2"] .bars i.now { background: #DA291C; }
+:root[data-s="2"] #moment { --pink: #fff; --fg: #fff; --sand: #fff; --muted: #c4c4c4; --line: #333; background: #000; color: #fff; border-top: 0; }
+:root[data-s="2"] #mtime { color: #fff; font: 700 calc(var(--u) * 1.05)/1 var(--hv); padding: 0.3em 0.6em; background: #DA291C; border-radius: 0.3em; } :root[data-s="2"] #mtext { font-weight: 700; font-size: calc(var(--u) * 1.3); }
+
+/* 3 Line diagram: groups are stations on a red line, needs are stops on a green one, the bottom bar is a line with the latest stop */
+:root[data-s="3"] #side { --bg: #fff; --side: #fff; --fg: #111; --muted: #444; --dim: #888; --line: #e4e4e4; --pink: #DA291C; --green: #00843D; background: #fff; color: #111; border-left: 0; }
+:root[data-s="3"] #side h2 { font: 700 calc(var(--u) * 1.05)/1.1 var(--hv); text-transform: uppercase; letter-spacing: 0.04em; color: #111; }
+:root[data-s="3"] #statline { font: 700 calc(var(--u) * 0.95)/1.2 var(--hv); color: #111; }
+:root[data-s="3"] #groups, :root[data-s="3"] #needs { position: relative; padding-left: 2.2em; }
+:root[data-s="3"] #groups::before { content: ""; position: absolute; left: 0.55em; top: 0.8em; bottom: 0.8em; width: 0.5em; background: #DA291C; border-radius: 0.3em; }
+:root[data-s="3"] #needs::before { content: ""; position: absolute; left: 0.55em; top: 0.8em; bottom: 0.8em; width: 0.5em; background: #00843D; border-radius: 0.3em; }
+:root[data-s="3"] .rows li { position: relative; border-bottom: 0; } :root[data-s="3"] #groups li::before, :root[data-s="3"] .rows li.wait::before, :root[data-s="3"] .rows li.done::before { content: ""; position: absolute; left: -1.95em; top: 50%; width: 1.1em; height: 1.1em; border: 0.28em solid #111; background: #fff; border-radius: 50%; transform: translateY(-50%); color: transparent; }
+:root[data-s="3"] .rows .v { font-family: inherit; font-weight: 700; color: #111; } :root[data-s="3"] .rows li.top .v { color: #DA291C; } :root[data-s="3"] .log { font-family: inherit; } :root[data-s="3"] .log em { color: #00843D; }
+:root[data-s="3"] .bars i { background: #111; } :root[data-s="3"] .bars i.now { background: #DA291C; }
+:root[data-s="3"] #moment { --pink: #DA291C; --fg: #111; --sand: #111; --muted: #555; --line: #fff; background: #fff; color: #111; border-top: 0; }
+:root[data-s="3"] #moment::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 0.7em; background: #DA291C; } :root[data-s="3"] #mtime { color: #DA291C; font: 700 calc(var(--u) * 1.1)/1 var(--hv); } :root[data-s="3"] #mtext { font-weight: 700; font-size: calc(var(--u) * 1.3); }
+
+/* 4 Timetable: a white poster, a red header on each block, ruled rows, bold figures on the right, "NOW ARRIVING" in front of the bottom line */
+:root[data-s="4"] #side { --bg: #fff; --side: #fff; --fg: #111; --muted: #444; --dim: #888; --line: #111; --pink: #DA291C; --green: #00843D; background: #fff; color: #111; border-left: 0; }
+:root[data-s="4"] #side h2 { background: #DA291C; color: #fff; padding: 0.4em 0.7em; font: 700 calc(var(--u) * 0.85)/1.2 var(--hv); text-transform: uppercase; letter-spacing: 0.08em; } :root[data-s="4"] #side h2 span { color: #fff; font-family: inherit; }
+:root[data-s="4"] #statline { font: 700 calc(var(--u) * 0.95)/1.2 var(--hv); color: #111; } :root[data-s="4"] .rows li { border-bottom: 1px solid #111; } :root[data-s="4"] .rows li:last-child { border-bottom: 1px solid #111; }
+:root[data-s="4"] #groups li::before { display: none; } :root[data-s="4"] #groups li { justify-content: space-between; } :root[data-s="4"] #groups .t, :root[data-s="4"] .rows .t { font-weight: 700; flex: initial; }
+:root[data-s="4"] .rows li.wait::before, :root[data-s="4"] .rows li.done::before { display: none; } :root[data-s="4"] .rows li { justify-content: space-between; }
+:root[data-s="4"] .rows .v { font-family: inherit; font-weight: 700; color: #111; } :root[data-s="4"] .rows li.top .v, :root[data-s="4"] .rows li.wait.top .v { color: #DA291C; } :root[data-s="4"] .log { font-family: inherit; } :root[data-s="4"] .log em { color: #00843D; font-weight: 700; }
+:root[data-s="4"] .bars i { background: #111; } :root[data-s="4"] .bars i.now { background: #DA291C; }
+:root[data-s="4"] #moment { --pink: #DA291C; --fg: #111; --sand: #111; --muted: #555; --line: #111; background: #fff; color: #111; border-top: 4px solid #DA291C; }
+:root[data-s="4"] #mtime { color: #111; font: 700 calc(var(--u) * 1)/1 var(--hv); } :root[data-s="4"] #mtime::before { content: "NOW ARRIVING  "; color: #DA291C; letter-spacing: 0.08em; } :root[data-s="4"] #mtext { font-weight: 700; font-size: calc(var(--u) * 1.25); }
+
+/* 5 Colored by line: the dark column with every table in a line color; the bottom bar a full red announcement band */
+:root[data-s="5"] #side { --bg: #111; --side: #111; --fg: #fff; --muted: #c8c8c8; --dim: #8c8c8c; --line: #333; --pink: #ff4b3e; --green: #3ec777; background: #111; color: #fff; border-left: 0; }
+:root[data-s="5"] #side h2 { font: 700 calc(var(--u) * 0.85)/1.2 var(--hv); text-transform: uppercase; letter-spacing: 0.1em; color: #c8c8c8; }
+:root[data-s="5"] #statline { font: 700 calc(var(--u) * 0.95)/1.2 var(--hv); color: #c8c8c8; } :root[data-s="5"] #statline b { color: #fff; }
+:root[data-s="5"] .rows .v { font-family: inherit; font-weight: 700; color: #fff; } :root[data-s="5"] .rows li.top .v { color: #ff4b3e; } :root[data-s="5"] .log { font-family: inherit; } :root[data-s="5"] .log em { color: #3ec777; }
+:root[data-s="5"] .bars i { background: #5a5a5a; } :root[data-s="5"] .bars i.now { background: #DA291C; }
+:root[data-s="5"] #moment { --pink: #fff; --fg: #fff; --sand: #fff; --muted: rgba(255, 255, 255, 0.82); --line: transparent; background: #DA291C; color: #fff; border-top: 0; }
+:root[data-s="5"] #mtime { color: #fff; font: 700 calc(var(--u) * 1.05)/1 var(--hv); } :root[data-s="5"] #mtext { font-weight: 700; font-size: calc(var(--u) * 1.35); } :root[data-s="5"] #mtext b { font-weight: 900; }
+
+/* 6 Quiet: a pale warm-grey sign, big bold figures, a line-colored edge on every table, a green marker at the bottom */
+:root[data-s="6"] #side { --bg: #f2f1ee; --side: #f2f1ee; --fg: #111; --muted: #555; --dim: #8a8a86; --line: #d6d5d0; --pink: #DA291C; --green: #00843D; background: #f2f1ee; color: #111; border-left: 0; }
+:root[data-s="6"] #side h2 { font: 700 calc(var(--u) * 0.75)/1.2 var(--hv); text-transform: uppercase; letter-spacing: 0.14em; color: #555; }
+:root[data-s="6"] #statline { font: 400 calc(var(--u) * 0.95)/1.2 var(--hv); color: #555; } :root[data-s="6"] #statline b { color: #111; font-weight: 700; }
+:root[data-s="6"] #groups li::before { display: none; } :root[data-s="6"] #groups li { border-left: 0.35em solid #00843D; padding-left: 0.8em; justify-content: space-between; } :root[data-s="6"] #groups li[data-l="0"] { border-color: #DA291C; } :root[data-s="6"] #groups li[data-l="1"] { border-color: #ED8B00; } :root[data-s="6"] #groups li[data-l="2"] { border-color: #003DA5; }
+:root[data-s="6"] #groups .t { flex: initial; } :root[data-s="6"] #groups .v { font: 700 calc(var(--u) * 1.8)/1 var(--hv); color: #111; } :root[data-s="6"] #groups li.top .v { color: #DA291C; }
+:root[data-s="6"] .rows .v { font-family: inherit; font-weight: 700; color: #111; } :root[data-s="6"] .rows li.wait::before, :root[data-s="6"] .rows li.done::before { display: none; } :root[data-s="6"] .rows li { justify-content: space-between; } :root[data-s="6"] .rows li.top .v { color: #DA291C; }
+:root[data-s="6"] .log { font-family: inherit; } :root[data-s="6"] .log em { color: #00843D; font-weight: 700; } :root[data-s="6"] .bars i { background: #111; } :root[data-s="6"] .bars i.now { background: #DA291C; }
+:root[data-s="6"] #moment { --pink: #DA291C; --fg: #111; --sand: #111; --muted: #555; --line: #d6d5d0; background: #f2f1ee; color: #111; border-top: 1px solid #d6d5d0; }
+:root[data-s="6"] #moment::before { content: ""; width: 0.9em; height: 0.9em; border-radius: 50%; background: #00843D; flex: none; position: absolute; left: 2.5%; } :root[data-s="6"] #mtime { color: #DA291C; font: 700 calc(var(--u) * 1.05)/1 var(--hv); margin-left: 2em; } :root[data-s="6"] #mtext { font-weight: 700; font-size: calc(var(--u) * 1.25); }
+
+:root[data-s="3"] #brand, :root[data-s="4"] #brand, :root[data-s="6"] #brand { --sand: #111; --pink: #DA291C; }
+:root[data-s="5"] #brand { --sand: #fff; --pink: #fff; }
+
 .start { position: fixed; inset: 0; display: grid; place-content: center; justify-items: center; gap: 1.2vh; background: color-mix(in srgb, var(--bg) 96%, transparent); z-index: 6; cursor: pointer; }
 .start.gone { display: none; }
 .start button { font: 500 calc(var(--u) * 1.6)/1 var(--sans); padding: 0.7em 2em; color: var(--bg); background: var(--green); border: 0; border-radius: 0; cursor: pointer; }
