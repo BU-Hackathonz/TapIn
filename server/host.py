@@ -112,3 +112,63 @@ async def save_settings(body: Settings, tapin_host: str | None = Cookie(default=
     data["venue"] = data["venue"].strip() or DEFAULTS["venue"]
     SETTINGS_FILE.write_text(json.dumps(data, indent=2), encoding="utf-8")
     return data
+
+
+# ---------------------------------------------------------------- admin: people and their badges (host PIN, venue only)
+# Unlinking frees a badge for someone new while the person keeps their profile, points and connections. "Link a badge" starts
+# a claim for an existing person, so the next blank badge tapped becomes theirs. Remove deletes a profile (test sign-ups).
+
+def _pool():
+    from . import db   # imported here so the host checks run without a database driver
+    if db.pool is None:
+        raise HTTPException(503, "database not configured")
+    return db.pool
+
+
+@router.get("/api/admin/people")
+async def admin_people(tapin_host: str | None = Cookie(default=None)):
+    require_host(tapin_host)
+    rows = await _pool().fetch(
+        """SELECT p.id, p.name, p.role, p.uid, p.points, p.created_at, p.last_checkin,
+                  (SELECT count(*) FROM connections c WHERE c.person_a = p.id OR c.person_b = p.id) AS links,
+                  (SELECT g.name FROM group_members m JOIN groups g ON g.id = m.group_id
+                    WHERE m.person_id = p.id ORDER BY m.joined_at DESC LIMIT 1) AS table_name
+           FROM people p ORDER BY p.id DESC LIMIT 500""")
+    return [{**dict(r), "created_at": r["created_at"].isoformat() if r["created_at"] else None,
+             "last_checkin": r["last_checkin"].isoformat() if r["last_checkin"] else None} for r in rows]
+
+
+@router.post("/api/admin/people/{person_id}/unlink")
+async def admin_unlink(person_id: int, tapin_host: str | None = Cookie(default=None)):
+    require_host(tapin_host)
+    row = await _pool().fetchrow("UPDATE people SET uid=NULL WHERE id=$1 RETURNING id", person_id)
+    if row is None:
+        raise HTTPException(404, "No such person")
+    return {"ok": True}
+
+
+@router.post("/api/admin/people/{person_id}/link")
+async def admin_link(person_id: int, tapin_host: str | None = Cookie(default=None)):
+    require_host(tapin_host)
+    from . import claims
+    if claims.waiting():
+        raise HTTPException(409, detail={"error": "claim_busy", "retry_in": 5})
+    row = await _pool().fetchrow("UPDATE people SET uid=NULL WHERE id=$1 RETURNING id", person_id)   # a new badge replaces the old one
+    if row is None:
+        raise HTTPException(404, "No such person")
+    c = claims.start(person_id)
+    return {"claim_code": c.code, "expires_in": int(claims.CLAIM_SECONDS)}
+
+
+@router.post("/api/admin/people/{person_id}/delete")
+async def admin_delete(person_id: int, tapin_host: str | None = Cookie(default=None)):
+    require_host(tapin_host)
+    async with _pool().acquire() as conn:
+        async with conn.transaction():
+            await conn.execute("DELETE FROM group_members WHERE person_id=$1", person_id)
+            await conn.execute("DELETE FROM connections WHERE person_a=$1 OR person_b=$1", person_id)
+            await conn.execute("UPDATE needs SET handled_by=NULL WHERE handled_by=$1", person_id)
+            row = await conn.fetchrow("DELETE FROM people WHERE id=$1 RETURNING id", person_id)
+    if row is None:
+        raise HTTPException(404, "No such person")
+    return {"ok": True}

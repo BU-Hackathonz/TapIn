@@ -681,23 +681,16 @@ const View3D = (() => {
     for (const ch of `${person.id}:${person.name}`) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
     return () => ((h = Math.imul(h ^ (h >>> 15), 2246822507) >>> 0) / 4294967296);
   }
+  // Only what the person really entered (sign-up, or the profile form on this site). Nothing is made up.
   function mock(person) {
-    const r = seedOf(person), pickN = (xs, n) => [...xs].sort(() => r() - 0.5).slice(0, n);
-    const skills = person.skills?.length ? person.skills : pickN(SKILLS, 1 + Math.floor(r() * 3));
     return {
-      skills,
-      looking: person.looking_for?.length ? person.looking_for : pickN(SKILLS.filter((s) => !skills.includes(s)), 2),
-      major: MAJORS[Math.floor(r() * MAJORS.length)],
-      year: 2026 + Math.floor(r() * 4),
-      bio: BIOS[Math.floor(r() * BIOS.length)],
-      // everyone shows LinkedIn and GitHub; Instagram and a website only for some, so profiles differ
-      socials: ["linkedin", "github", ...(r() < 0.5 ? ["instagram"] : []), ...(r() < 0.6 ? ["web"] : [])],
-      // a profile filled in on the sign-in page overrides the made-up parts
-      ...(person.major ? { major: person.major } : {}),
-      ...(person.year ? { year: person.year } : {}),
-      ...(person.bio ? { bio: person.bio } : {}),
+      skills: person.skills || [],
+      looking: person.looking_for || [],
+      major: person.major || "",
+      year: person.year || "",
+      bio: person.bio || person.working_on || "",
       school: person.school || "",
-      ...(person.socials ? { socials: person.socials } : {}),
+      socials: person.socials || [],
     };
   }
 
@@ -759,7 +752,8 @@ const View3D = (() => {
     const tags = el("div", "p-tags");
     tags.append(el("span", `p-role ${person.role}`, person.role));
     tags.append(el("span", `p-state${person.here ? " here" : ""}`, person.focus ? "focus mode" : person.here ? "here now" : "away"));
-    who.append(tags, el("p", "p-sub", `${m.school ? m.school + " · " : ""}${m.major} · '${String(m.year).slice(2)}`));
+    const sub = [m.school, m.major, m.year ? `'${String(m.year).slice(2)}` : ""].filter(Boolean).join(" · ");
+    who.append(tags, ...(sub ? [el("p", "p-sub", sub)] : []));
     head.append(img, who);
 
     const table = el("section", "p-sec");
@@ -780,16 +774,15 @@ const View3D = (() => {
     }
 
     const skills = el("section", "p-sec");
-    skills.append(el("h3", "", "Skills"), chips(m.skills, "p-chip"));
+    skills.append(el("h3", "", "Skills"), m.skills.length ? chips(m.skills, "p-chip") : el("p", "p-muted", "None added"));
     const looking = el("section", "p-sec");
-    looking.append(el("h3", "", "Looking for"), chips(m.looking, "p-chip want"));
+    looking.append(el("h3", "", "Looking for"), m.looking.length ? chips(m.looking, "p-chip want") : el("p", "p-muted", "Nothing yet"));
     const knows = el("section", "p-sec");
     knows.append(el("h3", "", "Knows"));
     knows.append(known.length ? chips(known.slice(0, 6).map((p) => p.name), "p-chip person")
                               : el("p", "p-muted", "No connections yet"));
 
-    return [head, el("p", "p-bio", m.bio), socials(m.socials), stats, table, skills, looking, knows,
-            el("p", "p-foot", "Mock profile · skills, major, bio and links are sample data")];
+    return [head, ...(m.bio ? [el("p", "p-bio", m.bio)] : []), ...(m.socials.length ? [socials(m.socials)] : []), stats, table, skills, looking, knows];
   }
   function showProfile(person) {
     document.getElementById("profile-body").replaceChildren(...buildProfile(person));

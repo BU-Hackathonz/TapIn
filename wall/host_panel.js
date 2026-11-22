@@ -80,7 +80,7 @@
     (tab === "you" ? you : settings)(body);
     const end = el("button", "hp-leave"); end.type = "button"; end.innerHTML = DOOR; end.append(el("span", "", "End room"));   // static icon markup
     end.addEventListener("click", ask);
-    body.append(bar("Room"), end, link("Join or host another", "join.html?host"));
+    body.append(bar("Room"), end, link("Join or host another", "join.html?host"), link("People and badges (team)", "/host/admin.html"));
     panel.replaceChildren(tabs, body);
   };
 

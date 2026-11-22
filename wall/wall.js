@@ -323,8 +323,15 @@
   }, 1800);
   if (qs.has("demo")) startDemo();
   else {
+    // No server behind this page (the public site keeps the room private): say so, never show a made-up room.
+    const offline = () => {
+      document.body.classList.add("no-room");
+      const n = document.createElement("div"); n.className = "no-room-note"; n.setAttribute("role", "status");
+      n.innerHTML = "<b>The room shows at the venue</b><span>Connect to the venue Wi-Fi to see who is here right now.</span>";   // static text
+      document.body.append(n);
+    };
     fetch(HTTP + "/api/graph")
-      .then((r) => (r.ok && (r.headers.get("content-type") || "").includes("json") ? connect() : startDemo()))
-      .catch(startDemo);
+      .then((r) => (r.ok && (r.headers.get("content-type") || "").includes("json") ? connect() : offline()))
+      .catch(offline);
   }
 })();

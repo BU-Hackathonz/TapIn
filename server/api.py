@@ -4,7 +4,7 @@ from typing import Literal
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from . import claims, db, groups, matching
+from . import logins, claims, db, groups, matching
 from .hub import hub
 from . import points as P
 
@@ -37,7 +37,7 @@ def pool():
 async def graph():
     p = pool()
     people = await p.fetch(
-        f"""SELECT id, name, role, focus, points, note,
+        f"""SELECT id, name, role, focus, points, note, skills, looking_for, working_on,
                    (last_checkin IS NOT NULL AND last_checkin > now() - interval '{P.HERE_HOURS} hours') AS here,
                    (SELECT group_id FROM group_members WHERE person_id = people.id
                     ORDER BY joined_at DESC LIMIT 1) AS group_id
@@ -48,7 +48,7 @@ async def graph():
     )
     links = await p.fetch("SELECT person_a AS a, person_b AS b, strength FROM connections ORDER BY id")
     return {
-        "people": [dict(r) for r in people],
+        "people": [{**dict(r), "skills": r["skills"] or [], "looking_for": r["looking_for"] or []} for r in people],
         "groups": [{**dict(r), "looking_for": r["looking_for"] or []} for r in grps],
         "links": [dict(r) for r in links],
     }
@@ -82,6 +82,28 @@ async def signup(body: Signup):
         )
     claim = claims.start(person_id)
     return {"person_id": person_id, "claim_code": claim.code, "expires_in": int(claims.CLAIM_SECONDS)}
+
+
+@router.post("/badge-login")
+async def badge_login_start():
+    """The join page's "tap your badge": the next owned badge tapped at any station tells this browser who it is."""
+    pool()
+    if logins.waiting():
+        raise HTTPException(409, detail={"error": "login_busy", "retry_in": 5})
+    w = logins.start()
+    return {"code": w.code, "expires_in": int(logins.LOGIN_SECONDS)}
+
+
+@router.get("/badge-login/{code}")
+async def badge_login_status(code: str):
+    s, pid = logins.status(code.strip().upper())
+    if s != "done":
+        return {"status": s}
+    row = await pool().fetchrow(
+        "SELECT id, name, role, skills, looking_for, working_on FROM people WHERE id=$1", pid)
+    if row is None:
+        return {"status": "expired"}
+    return {"status": "done", "person": {**dict(row), "skills": row["skills"] or [], "looking_for": row["looking_for"] or []}}
 
 
 @router.get("/claim/{claim_code}")

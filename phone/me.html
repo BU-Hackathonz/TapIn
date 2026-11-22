@@ -119,6 +119,12 @@
       el("h1", {}, p.name, el("span", { class: "points" }, `${me.points} pts`)),
       el("p", {}, el("span", { class: "status" + (me.here ? " here" : "") }, me.here ? "Here now" : "Not checked in"),
         me.here ? null : el("span", { class: "muted" }, " Tap your badge alone at the Entrance.")),
+      // into the room map as yourself: the map reads this browser's profile (wall.me) and shows your links and table
+      el("a", { class: "button", href: "/wall/index.html", onclick: () => { try {
+        const prev = JSON.parse(localStorage.getItem("wall.me") || "null") || {};
+        localStorage.setItem("wall.me", JSON.stringify({ ...prev, person_id: p.id, name: p.name, role: p.role, skills: p.skills || [], looking_for: p.looking_for || [], working_on: p.working_on || "", face: prev.face || `face-${p.id}` }));
+        if (me.here) localStorage.setItem("wall.room", JSON.stringify({ status: "in", name: "This room", time: Date.now() }));
+      } catch (_) {} } }, "Open the room map"),
       el("div", { class: "switch-row" },
         el("label", { for: "focus" }, "Focus mode", el("small", {}, "Nobody gets you as a suggestion.")), state, focus),
       el("h2", {}, "People you know who are here"),
