@@ -284,6 +284,13 @@ body::before {
 :root[data-h="6"] #moment { border-top: 0; }
 :root[data-h="6"] #moment::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 6px; background: linear-gradient(90deg, #DA291C 0 25%, #ED8B00 25% 50%, #003DA5 50% 75%, #00843D 75% 100%); }
 
+/* 7 The mix: the side column of 5 (colored rectangle at the end of each black bar), the red time block of 5, and the four-color rule of 6 */
+:root[data-h="7"] #side h2 { box-shadow: inset -0.75em 0 0 var(--scl); padding-right: 1.5em; }
+:root[data-h="7"] #side h2 span { margin-right: 0.2em; }
+:root[data-h="7"] #mtime { background: #DA291C; color: #fff; border-radius: 0.25em; padding: 0.35em 0.7em; }
+:root[data-h="7"] #moment { border-top: 0; }
+:root[data-h="7"] #moment::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 6px; background: linear-gradient(90deg, #DA291C 0 25%, #ED8B00 25% 50%, #003DA5 50% 75%, #00843D 75% 100%); }
+
 .start { position: fixed; inset: 0; display: grid; place-content: center; justify-items: center; gap: 1.2vh; background: color-mix(in srgb, var(--bg) 96%, transparent); z-index: 6; cursor: pointer; }
 .start.gone { display: none; }
 .start button { font: 500 calc(var(--u) * 1.6)/1 var(--sans); padding: 0.7em 2em; color: var(--bg); background: var(--green); border: 0; border-radius: 0; cursor: pointer; }
