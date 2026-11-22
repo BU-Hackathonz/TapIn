@@ -105,6 +105,28 @@
     ];
   }
 
+  // Edit your profile photo: kept on this device (wall.me.photo), what the room map shows for you. Same as at sign-up.
+  function photoEditor() {
+    let photo = null;
+    try { photo = (JSON.parse(localStorage.getItem("wall.me") || "null") || {}).photo || null; } catch (_) {}
+    const img = el("img", { class: "me-photo", alt: "" }); img.hidden = !photo; if (photo) img.src = photo;
+    const label = el("span", {}, photo ? "Change photo" : "Add a profile photo");
+    const input = el("input", { type: "file", accept: "image/*", onchange: (e) => {
+      const f = e.target.files && e.target.files[0]; if (!f) return;
+      const pic = new Image();
+      pic.onload = () => {
+        const c = document.createElement("canvas"); c.width = c.height = 128;
+        const side = Math.min(pic.width, pic.height);
+        c.getContext("2d").drawImage(pic, (pic.width - side) / 2, (pic.height - side) / 2, side, side, 0, 0, 128, 128);
+        photo = c.toDataURL("image/jpeg", 0.85); URL.revokeObjectURL(pic.src);
+        try { const m = JSON.parse(localStorage.getItem("wall.me") || "null") || {}; localStorage.setItem("wall.me", JSON.stringify({ ...m, photo })); } catch (_) {}
+        img.src = photo; img.hidden = false; label.textContent = "Change photo";
+      };
+      pic.src = URL.createObjectURL(f);
+    } });
+    return el("div", { class: "photo-row" }, img, el("label", { class: "button secondary photo-btn" }, input, label));
+  }
+
   function render(me, needs) {
     const p = me.person;
     const helper = p.role !== "student";
@@ -125,6 +147,7 @@
         localStorage.setItem("wall.me", JSON.stringify({ ...prev, person_id: p.id, name: p.name, role: p.role, skills: p.skills || [], looking_for: p.looking_for || [], working_on: p.working_on || "", face: prev.face || `face-${p.id}` }));
         if (me.here) localStorage.setItem("wall.room", JSON.stringify({ status: "in", name: "This room", time: Date.now() }));
       } catch (_) {} } }, "Open the room map"),
+      photoEditor(),
       el("div", { class: "switch-row" },
         el("label", { for: "focus" }, "Focus mode", el("small", {}, "Nobody gets you as a suggestion.")), state, focus),
       el("h2", {}, "People you know who are here"),
