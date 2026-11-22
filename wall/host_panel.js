@@ -1,5 +1,5 @@
 // The gear on the host wall opens this panel, in the same look as the room map's corner panel: a You tab (who is hosting) and a
-// Settings tab (place name, sound), plus Leave room, which asks "Are you sure?" first. Nothing here changes how the wall looks
+// Settings tab (place name, sound), plus End room, which asks "Are you sure?" first. Nothing here changes how the wall looks
 // (no views, styles, tables or names): that is set once, before Start.
 (() => {
   const gear = document.getElementById("hostset");
@@ -19,7 +19,8 @@
 
   const you = (body) => {
     body.append(bar("You"), el("p", "hp-big", "Host"), el("p", "hp-note", cur.venue ? `Hosting ${cur.venue}` : "Hosting this room"),
-                el("p", "hp-note", "Signed in with the room PIN."));
+                el("p", "hp-note", "Signed in with the room PIN."),
+                el("p", "hp-note", "How the wall looks (views, display, tables) is set before Start and can't be changed here."));
   };
   const settings = (body) => {
     body.append(bar("Room"));
@@ -59,19 +60,19 @@
       panel.replaceChildren(body); return;
     }
     (tab === "you" ? you : settings)(body);
-    const leave = el("button", "hp-leave"); leave.type = "button"; leave.innerHTML = DOOR; leave.append(el("span", "", "Leave room"));   // static icon markup
+    const leave = el("button", "hp-leave"); leave.type = "button"; leave.innerHTML = DOOR; leave.append(el("span", "", "End room"));   // static icon markup
     leave.addEventListener("click", ask);
-    body.append(bar("Leave"), leave);
+    body.append(bar("End"), leave);
     panel.replaceChildren(tabs, body);
   };
 
-  // Leave room asks first, like the room map does.
+  // End room asks first, like the room map does.
   const shade = el("div", "hp-shade"); shade.hidden = true;
   const win = el("div", "hp-win"); win.setAttribute("role", "alertdialog"); win.setAttribute("aria-modal", "true"); win.setAttribute("aria-labelledby", "hp-t");
   const title = el("h2", null, "Are you sure?"); title.id = "hp-t";
-  const yes = el("button", "hp-yes", "Yes, leave"), no = el("button", "hp-no", "No, stay"), row = el("div", "hp-yn");
+  const yes = el("button", "hp-yes", "Yes, end it"), no = el("button", "hp-no", "No, keep going"), row = el("div", "hp-yn");
   yes.type = no.type = "button"; row.append(yes, no);
-  win.append(el("p", "hp-wbar", "Leave room"), title, el("p", "hp-wtext", "You'll sign out and go back to the front door. The room stays as it is."), row);
+  win.append(el("p", "hp-wbar", "End room"), title, el("p", "hp-wtext", "You'll stop hosting and go back to the front door. Nothing is deleted: the wall and the people on it stay as they are."), row);
   shade.append(win); document.body.append(shade);
   let last = null;
   const ask = () => { last = document.activeElement; shade.hidden = false; no.focus(); };

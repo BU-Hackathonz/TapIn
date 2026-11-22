@@ -859,26 +859,10 @@
   async function begin() {
     $("start").classList.add("gone");
     try { await Sound.start(); } catch (e) { console.error("sound", e); }
-    // Avery's intro (intro/): the room fills up, then lands on this plan. Never blocks the data or the WebSocket.
-    try {
-      if (window.TapInIntro) TapInIntro.map(document.body, { quiet: Sound.muted, target: () => {
-        const r = $("room").getBoundingClientRect();
-        return { tables: [...layout.tables()].map(([id, t]) => ({ id, x: r.left + t.x, y: r.top + t.y, r: t.R })),
-                 people: layout.positions().map((p) => ({ x: r.left + p.x, y: r.top + p.y, table: p.gid })) };
-      } }).catch(() => {});
-    } catch (e) { console.error("intro", e); }
   }
   $("start-btn").addEventListener("click", begin);
-  // Coming from the host's Start button: no second Start screen. The intro plays at once (quietly: browsers only allow sound after a click on
-  // this page), and the first click anywhere turns the sound on.
-  if (qs.has("start")) {
-    $("start").classList.add("gone");
-    try { if (window.TapInIntro) TapInIntro.map(document.body, { quiet: qs.has("silent"), target: () => {
-      const r = $("room").getBoundingClientRect();
-      return { tables: [...layout.tables()].map(([id, t]) => ({ id, x: r.left + t.x, y: r.top + t.y, r: t.R })),
-               people: layout.positions().map((p) => ({ x: r.left + p.x, y: r.top + p.y, table: p.gid })) };
-    } }).catch(() => {}); } catch (e) { console.error("intro", e); }
-  }
+  // Coming from the host's Start button (?start): no Start screen and no intro, the wall just opens.
+  if (qs.has("start")) $("start").classList.add("gone");
   buildLayout();
   let rt = 0;
   new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(buildLayout, 250); }).observe($("stage"));
