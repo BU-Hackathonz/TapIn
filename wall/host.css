@@ -337,9 +337,7 @@ body::before {
 :root:not([data-logo]) #brand, :root[data-logo="strip"] #brand { right: calc(var(--side-w) + (100vw - var(--side-w)) * 0.025); padding-top: 1vh; }
 :root[data-s] #moment { padding-right: 12vw; }
 
-/* ---- where we are: a small pin and the venue name at the top right of the map */
-#loc { position: absolute; right: 1.7vw; top: 2.6vh; z-index: 2; pointer-events: none; display: flex; align-items: center; gap: 0.55em; padding: 0.5em 0.9em 0.5em 0.7em; border-radius: 0.45em; background: #111; color: #fff; font: 800 calc(var(--u) * 1.1)/1 "Bricolage Grotesque", "Helvetica Neue", Helvetica, Arial, sans-serif; letter-spacing: -0.01em; }
-#loc svg { width: 0.85em; height: 1.05em; fill: #DA291C; stroke: none; } #loc svg circle { fill: #111; }
+#legend .lede b { font-weight: 800; }
 
 .start { position: fixed; inset: 0; display: grid; place-content: center; justify-items: center; gap: 1.2vh; background: color-mix(in srgb, var(--bg) 96%, transparent); z-index: 6; cursor: pointer; }
 .start.gone { display: none; }
