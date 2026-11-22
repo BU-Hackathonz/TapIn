@@ -15,6 +15,8 @@ from pathlib import Path
 from fastapi import APIRouter, Cookie, HTTPException, Request, Response
 from pydantic import BaseModel, Field
 
+from .envfile import env_value   # same reading as .env: quotes and a trailing # note are not part of the PIN
+
 router = APIRouter()
 
 COOKIE = "tapin_host"
@@ -29,7 +31,7 @@ DEFAULTS = {"venue": "spark!", "tables": 5, "marker": "letters", "sound": True}
 
 
 def _pin() -> str:
-    return os.environ.get("HOST_PIN", "").strip()
+    return env_value(os.environ.get("HOST_PIN", ""))
 
 
 def _load() -> dict:
@@ -76,7 +78,7 @@ async def login(body: Login, request: Request, response: Response):
     recent = [t for t in _fails.get(who, []) if now - t < FAIL_WINDOW]
     if len(recent) >= FAIL_LIMIT:
         raise HTTPException(429, "Too many tries. Wait a minute.")
-    if not hmac.compare_digest(body.pin.encode(), pin.encode()):
+    if not hmac.compare_digest(body.pin.strip().encode(), pin.encode()):   # a space typed before or after doesn't count
         _fails[who] = recent + [now]
         raise HTTPException(401, "That PIN is not right")
     _fails.pop(who, None)

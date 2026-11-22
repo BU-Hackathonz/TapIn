@@ -5,6 +5,8 @@ from pathlib import Path
 
 import asyncpg
 
+from .envfile import env_value
+
 log = logging.getLogger("tapin.db")
 ROOT = Path(__file__).resolve().parent.parent
 pool: asyncpg.Pool | None = None
@@ -13,10 +15,13 @@ pool: asyncpg.Pool | None = None
 def load_env() -> None:
     env = ROOT / ".env"
     if env.exists():
-        for line in env.read_text().splitlines():
-            if "=" in line and not line.lstrip().startswith("#"):
+        for line in env.read_text(encoding="utf-8-sig").splitlines():   # utf-8-sig: a BOM from Notepad doesn't end up in the first key
+            line = line.strip()
+            if line.startswith("export "):
+                line = line[7:]
+            if "=" in line and not line.startswith("#"):
                 k, v = line.split("=", 1)
-                os.environ.setdefault(k.strip(), v.strip())
+                os.environ.setdefault(k.strip(), env_value(v))
 
 
 async def connect() -> None:
