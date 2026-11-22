@@ -50,27 +50,39 @@
   "rewrites": [
     {
       "source": "/api/signup",
-      "destination": "https://bridal-extremely-las-boulder.trycloudflare.com/api/signup"
+      "destination": "https://criterion-how-see-posts.trycloudflare.com/api/signup"
     },
     {
       "source": "/api/claim/:code",
-      "destination": "https://bridal-extremely-las-boulder.trycloudflare.com/api/claim/:code"
+      "destination": "https://criterion-how-see-posts.trycloudflare.com/api/claim/:code"
     },
     {
       "source": "/api/me/:id",
-      "destination": "https://bridal-extremely-las-boulder.trycloudflare.com/api/me/:id"
+      "destination": "https://criterion-how-see-posts.trycloudflare.com/api/me/:id"
     },
     {
       "source": "/api/me/:id/focus",
-      "destination": "https://bridal-extremely-las-boulder.trycloudflare.com/api/me/:id/focus"
+      "destination": "https://criterion-how-see-posts.trycloudflare.com/api/me/:id/focus"
     },
     {
       "source": "/api/groups/:id/mode",
-      "destination": "https://bridal-extremely-las-boulder.trycloudflare.com/api/groups/:id/mode"
+      "destination": "https://criterion-how-see-posts.trycloudflare.com/api/groups/:id/mode"
     },
     {
       "source": "/api/needs",
-      "destination": "https://bridal-extremely-las-boulder.trycloudflare.com/api/needs"
+      "destination": "https://criterion-how-see-posts.trycloudflare.com/api/needs"
+    },
+    {
+      "source": "/api/graph",
+      "destination": "https://criterion-how-see-posts.trycloudflare.com/api/graph"
+    },
+    {
+      "source": "/api/stats",
+      "destination": "https://criterion-how-see-posts.trycloudflare.com/api/stats"
+    },
+    {
+      "source": "/api/leaderboard",
+      "destination": "https://criterion-how-see-posts.trycloudflare.com/api/leaderboard"
     }
   ]
 }
