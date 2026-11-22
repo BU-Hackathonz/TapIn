@@ -1,119 +1,101 @@
-/* Tap In phone site. Same family as the host screen: dark plum, rose text, pink for "you", sage for picked tags,
-   Instrument Serif italic for the wordmark. Touch targets 44 px or more. */
+/* Tap In phone site. Same brand as the Devpost cover: warm off-white ground, ink, mint for picked and groups,
+   raspberry for "you", the ring-and-dot logo, IBM Plex Sans. Touch targets 44 px or more. */
 :root {
-  --bg: #241a1f; --raised: #30242a; --edge: #4a3a41; --text: #f6ece8; --muted: #c4b0aa;
-  --you: #ff7ab2; --you-ink: #2a1520; --pick: #a9d9b1; --pick-ink: #16281b; --error: #ffb4a8;
+  --bg: #fbf8f5; --card: #ffffff; --edge: #e6dfe3; --ink: #1d1b20; --muted: #625b66;
+  --mint: #5cc8a0; --mint-pale: #e3f2ea; --mint-ink: #0f3b2c;
+  --rasp: #c85c84; --rasp-deep: #b0466f; --rasp-pale: #f2d9e2; --blue: #4b63a8; --error: #a3263a;
   --radius: 14px;
 }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
-body {
-  margin: 0; background: var(--bg); color: var(--text);
-  font: 17px/1.5 "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-}
-main { max-width: 480px; margin: 0 auto; padding: 16px 16px 40px; }
-h1 { font-size: 28px; line-height: 1.15; margin: 4px 0 8px; font-weight: 600; letter-spacing: -0.01em; }
-h2 { font-size: 17px; font-weight: 600; color: var(--muted); margin: 30px 0 10px; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.5 "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 480px; margin: 0 auto; padding: 18px 16px 40px; }
+h1 { font-size: 30px; line-height: 1.12; margin: 18px 0 6px; font-weight: 700; letter-spacing: -0.015em; }
+h2 { font-size: 18px; font-weight: 700; margin: 30px 0 10px; }
 p { margin: 6px 0; }
 small { font-weight: 400; color: var(--muted); }
 .mono { font-family: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace; }
 .muted, .lede { color: var(--muted); }
-.brand, .wordmark { font: italic 400 30px/1 "Instrument Serif", Georgia, serif; color: var(--you); margin: 0; }
 
-/* Masthead: a small room plan. Your dot sits at the door and pulses once. */
-.masthead { padding: 4px 0 8px; }
-.room { display: block; width: 100%; height: auto; margin: 0 0 14px; }
-.room .table { fill: none; stroke: var(--pick); stroke-opacity: .45; stroke-width: 1.5; }
-.room .dot { fill: var(--muted); fill-opacity: .7; }
-.room .link { stroke: var(--you); stroke-width: 1.5; stroke-dasharray: 4 4; opacity: .8; }
-.room .you { fill: var(--you); }
-.room .ripple { fill: none; stroke: var(--you); stroke-width: 2; transform-origin: 24px 104px; animation: ripple 1.6s ease-out .3s 2 both; }
-@keyframes ripple { from { transform: scale(1); opacity: .9; } to { transform: scale(5); opacity: 0; } }
+/* The logo from the cover: a dark rounded square with a mint ring and a raspberry dot. */
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 19px; margin: 0; }
+.brand::before {
+  content: ""; width: 34px; height: 34px; flex: none; border-radius: 8px; background-color: var(--ink);
+  background-image: radial-gradient(circle, var(--rasp) 0 4px, transparent 4.5px),
+                    radial-gradient(circle, transparent 0 7px, var(--mint) 7.5px 10.5px, transparent 11px);
+}
+
+/* Three tiles, one per step of the flow, like the cover's mosaic. */
+.tiles { list-style: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 18px 0 0; padding: 0; }
+.tile { border-radius: 10px; padding: 10px 8px 9px; display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; text-align: center; line-height: 1.2; }
+.tile svg { width: 44px; height: 44px; }
+.t1 { background: var(--mint); color: var(--mint-ink); }
+.t2 { background: var(--rasp-pale); color: #8e3157; }
+.t3 { background: var(--rasp-deep); color: #fff; }
 
 /* The form is a real sequence, so the steps are numbered. */
-.step { margin-top: 26px; }
-.step-title { display: flex; align-items: center; gap: 10px; color: var(--text); margin: 0 0 4px; }
-.step-n {
-  display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%;
-  background: var(--raised); border: 1px solid var(--edge); color: var(--you); font-size: 15px;
-}
+.step { margin-top: 28px; }
+.step-title { display: flex; align-items: center; gap: 10px; margin: 0 0 2px; }
+.step-n { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--rasp); color: var(--rasp-deep); font-size: 14px; font-weight: 700; }
 label.field { display: block; margin: 16px 0 6px; font-weight: 600; }
-input[type=text] {
-  width: 100%; min-height: 50px; padding: 12px 14px; font: inherit; color: var(--text);
-  background: var(--raised); border: 1px solid var(--edge); border-radius: var(--radius);
-}
-input[type=text]::placeholder { color: #9c8780; }
-input[type=text]:focus { outline: 2px solid var(--you); outline-offset: 1px; border-color: transparent; }
+input[type=text] { width: 100%; min-height: 50px; padding: 12px 14px; font: inherit; color: var(--ink); background: var(--card); border: 1px solid var(--edge); border-radius: var(--radius); }
+input[type=text]::placeholder { color: #8d8590; }
+input[type=text]:focus { outline: 2px solid var(--rasp-deep); outline-offset: 1px; border-color: transparent; }
 fieldset { border: 0; padding: 0; margin: 16px 0 0; }
 legend { font-weight: 600; padding: 0; margin-bottom: 8px; }
 
-/* Chips look like badges: round, tappable, clearly picked. */
+/* Chips are round and clearly picked. */
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip { position: relative; }
 .chip input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-.chip span {
-  display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 999px;
-  border: 1px solid var(--edge); background: var(--raised); color: var(--text); cursor: pointer; user-select: none;
-  transition: background-color .12s, border-color .12s;
-}
-.chip input:checked + span { background: var(--pick); border-color: var(--pick); color: var(--pick-ink); font-weight: 600; }
-.chip input:focus-visible + span { outline: 2px solid var(--you); outline-offset: 2px; }
+.chip span { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--edge); background: var(--card); color: var(--ink); cursor: pointer; user-select: none; }
+.chip input:checked + span { background: var(--mint); border-color: var(--mint); color: var(--mint-ink); font-weight: 700; }
+.chip input:focus-visible + span { outline: 2px solid var(--rasp-deep); outline-offset: 2px; }
 .chip input:disabled + span { cursor: not-allowed; }
 
 /* The submit button stays in reach at the bottom of the screen. */
-.submit-bar {
-  position: sticky; bottom: 0; margin: 28px -16px 0; padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
-  background: linear-gradient(to bottom, rgba(36, 26, 31, 0), var(--bg) 22%);
-}
-button, .button {
-  display: inline-flex; align-items: center; justify-content: center; width: 100%; min-height: 54px; margin-top: 20px;
-  font: inherit; font-weight: 600; color: var(--you-ink); background: var(--you); border: 0; border-radius: var(--radius);
-  cursor: pointer; text-decoration: none;
-}
+.submit-bar { position: sticky; bottom: 0; margin: 28px -16px 0; padding: 14px 16px calc(12px + env(safe-area-inset-bottom)); background: linear-gradient(to bottom, rgba(251, 248, 245, 0), var(--bg) 24%); }
+button, .button { display: inline-flex; align-items: center; justify-content: center; width: 100%; min-height: 54px; margin-top: 20px; font: inherit; font-weight: 700; color: #fff; background: var(--rasp-deep); border: 0; border-radius: var(--radius); cursor: pointer; text-decoration: none; }
 .submit-bar button { margin-top: 0; }
 button:disabled { opacity: .55; cursor: wait; }
-button:focus-visible, .button:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
-.secondary { background: transparent; color: var(--text); border: 1px solid var(--edge); }
+button:focus-visible, .button:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+.secondary { background: var(--card); color: var(--ink); border: 1px solid var(--edge); }
 .note { color: var(--muted); font-size: 15px; margin-top: 8px; }
-.error { color: var(--error); min-height: 0; margin: 0 0 8px; }
+.error { color: var(--error); margin: 0 0 8px; font-weight: 600; }
 .error:empty { display: none; }
 
 /* Claim screen */
-.big { font: italic 400 44px/1.05 "Instrument Serif", Georgia, serif; margin: 36px 0 12px; }
-.count { font: 600 76px/1 "IBM Plex Sans", system-ui, sans-serif; color: var(--you); margin: 16px 0; font-variant-numeric: tabular-nums; }
-.ok { color: var(--pick); }
+.big { font-size: 34px; line-height: 1.12; font-weight: 700; margin: 36px 0 12px; letter-spacing: -0.015em; }
+.count { font: 700 80px/1 "IBM Plex Sans", system-ui, sans-serif; color: var(--rasp-deep); margin: 16px 0; font-variant-numeric: tabular-nums; }
+.ok { color: #1f7a57; }
 
 /* Where you stand */
-.status { display: inline-block; padding: 5px 12px; font-size: 14px; border-radius: 999px; border: 1px solid var(--edge); }
-.status.here { border-color: var(--pick); color: var(--pick); }
+.status { display: inline-block; padding: 5px 12px; font-size: 14px; font-weight: 600; border-radius: 999px; background: var(--card); border: 1px solid var(--edge); }
+.status.here { background: var(--mint-pale); border-color: var(--mint); color: var(--mint-ink); }
 .points { font-size: 15px; color: var(--muted); margin-left: 8px; font-weight: 400; font-variant-numeric: tabular-nums; }
 .list { list-style: none; margin: 0; padding: 0; }
-.list li { padding: 12px 14px; margin-bottom: 8px; background: var(--raised); border-radius: var(--radius); }
-.list .title { font-weight: 600; }
-.list .why { color: var(--you); }
+.list li { padding: 12px 14px; margin-bottom: 8px; background: var(--card); border: 1px solid var(--edge); border-radius: var(--radius); }
+.list .title { font-weight: 700; }
+.list .why { color: var(--rasp-deep); }
 .list .sub { color: var(--muted); font-size: 15px; }
-.list li.top { box-shadow: inset 3px 0 0 var(--you); }
+.list li.top { background: var(--rasp-pale); border-color: var(--rasp-pale); }
 .list li.handled .title { text-decoration: line-through; color: var(--muted); }
 .empty { color: var(--muted); padding: 6px 0; }
 
 .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 56px; padding: 6px 0; border-bottom: 1px solid var(--edge); }
 .switch-row label { flex: 1; cursor: pointer; }
 .switch-row small { display: block; font-size: 14px; }
-.switch { appearance: none; -webkit-appearance: none; width: 54px; height: 32px; margin: 0; flex: none; position: relative; cursor: pointer;
-  background: var(--raised); border: 1px solid var(--edge); border-radius: 999px; }
-.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: var(--muted); transition: left .15s; }
-.switch:checked { background: var(--pick); border-color: var(--pick); }
-.switch:checked::after { left: 25px; background: var(--pick-ink); }
-.switch:focus-visible { outline: 2px solid var(--you); outline-offset: 2px; }
+.switch { appearance: none; -webkit-appearance: none; width: 54px; height: 32px; margin: 0; flex: none; position: relative; cursor: pointer; background: #ddd5da; border: 0; border-radius: 999px; }
+.switch::after { content: ""; position: absolute; top: 4px; left: 4px; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(29, 27, 32, .25); transition: left .15s; }
+.switch:checked { background: var(--mint); }
+.switch:checked::after { left: 26px; }
+.switch:focus-visible { outline: 2px solid var(--rasp-deep); outline-offset: 2px; }
 .switch-state { font-size: 15px; width: 2.2em; text-align: right; color: var(--muted); }
-.switch-state.on { color: var(--pick); font-weight: 600; }
+.switch-state.on { color: var(--mint-ink); font-weight: 700; }
 .seg { display: flex; gap: 8px; margin-top: 10px; }
-.seg button { margin: 0; min-height: 44px; background: var(--raised); border: 1px solid var(--edge); color: var(--text); font-weight: 400; }
-.seg button[aria-pressed=true] { background: var(--pick); border-color: var(--pick); color: var(--pick-ink); font-weight: 600; }
+.seg button { margin: 0; min-height: 44px; background: var(--card); border: 1px solid var(--edge); color: var(--ink); font-weight: 400; }
+.seg button[aria-pressed=true] { background: var(--mint); border-color: var(--mint); color: var(--mint-ink); font-weight: 700; }
 footer { margin-top: 36px; font-size: 14px; color: var(--muted); }
 footer a { color: var(--muted); }
 
-@media (prefers-reduced-motion: reduce) {
-  .room .ripple { animation: none; opacity: 0; }
-  .switch::after, .chip span { transition: none; }
-}
+@media (prefers-reduced-motion: reduce) { .switch::after { transition: none; } }
