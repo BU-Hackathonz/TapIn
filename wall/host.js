@@ -120,37 +120,35 @@
     const m = Math.max(0, Math.floor((Date.now() - new Date(iso)) / 60000));
     return m < 60 ? `${m}m` : `${Math.floor(m / 60)}h ${m % 60}m`;
   };
+  // Numbers that change flash once, so a glance at the column shows what just moved.
+  const prevVal = new Map();
+  const chg = (k, v) => { const c = prevVal.has(k) && prevVal.get(k) !== v; prevVal.set(k, v); return c; };
   function renderSide() {
     const st = S.stats;
-    const tile = (n, label) => `<div class="tile"><b>${n}</b><span>${label}</span></div>`;
-    $("stats").innerHTML = st ? tile(st.here, "here") + tile(st.groups, "groups") + tile(st.links_today, "links today") : "";
+    $("summary").innerHTML = st ? `<b>${st.here}</b> here · <b>${st.groups}</b> tables · <b>${st.links_today}</b> links` : "";
 
-    const top = (S.board?.groups || []).filter((g) => onPlan(g.id)).slice(0, 4), max = Math.max(1, ...top.map((g) => g.points));
-    $("groups").innerHTML = top.length
-      ? top.map((g, i) => {
-        const full = S.groups.get(g.id);
-        return `<li class="${i === 0 && g.points > 0 ? "top" : ""}" style="--p:${(g.points / max).toFixed(3)}"><span class="rk">${i + 1}</span><span class="t"><b>${esc(g.name)}</b>${full?.working_on ? `<small>${esc(full.working_on)}</small>` : ""}</span><span class="v">${g.points}</span></li>`;
-      }).join("")
-      : `<li class="empty">No tables yet</li>`;
-    $("people").innerHTML = (S.board?.people || []).slice(0, 3).map((p) => `<span class="chip"><em>${esc((p.name || "?").slice(0, 1))}</em>${esc(p.name)}<b>${p.points}</b></span>`).join("");
+    const ranked = (S.board?.groups || []).filter((g) => onPlan(g.id));
+    const info = (g) => S.groups.get(g.id)?.working_on || "";
+    const lead = ranked[0];
+    $("lead").innerHTML = !lead ? `<h2>No tables yet</h2>`
+      : lead.points > 0
+        ? `<h2>${esc(lead.name)} is ahead</h2><div class="hero"><b class="${chg("lead:" + lead.id, lead.points) ? "bump" : ""}">${lead.points}</b><span>points${info(lead) ? " · " + esc(info(lead)) : ""}</span></div>`
+        : `<h2>${esc(lead.name)} is first to sit down</h2><div class="hero"><span>${esc(info(lead))}</span></div>`;
+    $("groups").innerHTML = ranked.slice(1, 4).map((g, i) => `<li><span class="rk">${i + 2}</span><span class="t">${esc(g.name)}<small>${esc(info(g))}</small></span><span class="v ${chg("g:" + g.id, g.points) ? "bump" : ""}">${g.points}</span></li>`).join("");
 
-    const open = S.needs.filter((n) => n.handled_by == null && onPlan(n.group_id)).sort((a, b) => new Date(a.since) - new Date(b.since)).slice(0, 3);
-    const done = S.needs.filter((n) => n.handled_by != null && onPlan(n.group_id)).slice(0, Math.max(0, 3 - open.length));
-    $("needcount").textContent = S.needs.filter((n) => n.handled_by == null).length ? `${S.needs.filter((n) => n.handled_by == null).length} open` : "";
-    $("needs").innerHTML = (open.length || done.length)
-      ? open.map((n, i) => `<li class="wait ${i === 0 ? "top" : ""}"><i class="st"></i><span class="t">${esc(n.table)} · ${esc(n.need)}</span><span class="v">${mins(n.since)}</span></li>`).join("")
-        + done.map((n) => `<li class="done"><i class="st ok"></i><span class="t">${esc(n.table)} · ${esc(n.need)}</span><span class="v">${esc(S.people.get(n.handled_by)?.name || "")}</span></li>`).join("")
-      : `<li class="empty">No table is asking for help</li>`;
+    const open = S.needs.filter((n) => n.handled_by == null && onPlan(n.group_id)).sort((a, b) => new Date(a.since) - new Date(b.since));
+    const shown = open.slice(0, 3);
+    const done = S.needs.filter((n) => n.handled_by != null && onPlan(n.group_id)).slice(0, Math.max(0, 3 - shown.length));
+    $("needh").textContent = open.length === 0 ? "Nobody is waiting for help" : open.length === 1 ? `${open[0].table} wants a hand` : `${open.length} tables want a hand`;
+    $("needs").innerHTML = shown.map((n, i) => `<li class="${i === 0 ? "first" : ""}"><span class="t">${esc(n.table)} · ${esc(n.need)}</span><span class="v">${mins(n.since)}</span></li>`).join("")
+      + done.map((n) => `<li class="done"><span class="t">${esc(n.table)} · ${esc(n.need)}</span><span class="v">${esc(S.people.get(n.handled_by)?.name || "")}</span></li>`).join("");
+
+    const ppl = (S.board?.people || []).slice(0, 3);
+    $("people").innerHTML = ppl.length ? `Most points: ${ppl.map((p) => `<b>${esc(p.name)}</b> ${p.points}`).join(", ")}` : "";
 
     const buckets = st?.scans_10min || [];
     const bmax = Math.max(1, ...buckets.map((b) => b.count));
     $("bars").innerHTML = buckets.map((b, i) => `<i class="${i === buckets.length - 1 ? "now" : ""}" style="height:${Math.max(4, Math.round((b.count / bmax) * 100))}%"></i>`).join("");
-
-    const solo = [...S.people.values()].filter((p) => p.here && p.role === "student" && p.group_id == null).length;   // bottom strip chips
-    const chips = [];
-    if (solo) chips.push(`<span class="chip"><b>${solo}</b> looking for a group</span>`);
-    if (st?.busiest_station) chips.push(`<span class="chip">Busiest: station ${st.busiest_station}</span>`);
-    $("chips").innerHTML = chips.join("");
   }
   const addLog = (html) => { activity.unshift({ t: clock().replace(/ ?[ap]m/, ""), html }); activity.length = Math.min(activity.length, 12); };
 
@@ -167,23 +165,21 @@
     if (!m.ice && m.person != null && ice.has(m.person)) m.ice = ice.get(m.person);
     $("mtime").textContent = clock();
     $("mtext").innerHTML = stripHTML(m);
-    const bar = $("mbar");
-    bar.style.transition = "none"; bar.style.width = "100%"; void bar.offsetWidth;
-    bar.style.transition = `width ${Math.max(500, m.until - now)}ms linear`; bar.style.width = "0%";
+    $("msub").textContent = "";
     if (typeof Sound !== "undefined" && Sound.started) {
       if (m.sound === "arrive") Sound.arrive();
       if (m.links) Sound.links(m.links);
     }
   }
   let idleShown = false, idleAt = -1e9, tipI = -1;
-  const TIPS = ["Tap your badge at a station to join the room.", "Each dashed circle is a table. A line means two people have met.", "Squares are mentors. Hollow dots are people who are heads-down.", "A dot on its own is someone who has tapped in and is waiting to join a table.", "Groups earn points for welcoming someone new."];
+  const TIPS = ["Each dashed circle is a table. A line means two people have met.", "Squares are mentors. Hollow dots are people who are heads-down.", "A dot on its own is someone who has tapped in and is waiting to join a table.", "Groups earn points for welcoming someone new."];
   function pump(now) {
     if (cur && now < cur.until) return;
     cur = null;
     if (!queue.length) {
       if (!idleShown || now - idleAt > 7000) {                       // between moments the strip explains the screen, one hint at a time
         idleShown = true; idleAt = now; tipI = (tipI + 1) % TIPS.length;
-        $("mtime").textContent = ""; $("mtext").innerHTML = `<span>${TIPS[tipI]}</span>`;
+        $("mtime").textContent = ""; $("mtext").innerHTML = `<span class="cta">Tap your badge at a station to join the room</span>`; $("msub").textContent = TIPS[tipI];
       }
       return;
     }
@@ -585,9 +581,9 @@
       ctx.restore();
 
       const needs = S.needs.filter((n) => n.group_id === gid && n.handled_by == null).map((n) => n.need);
-      const l1 = trunc(low(g.name) + (topIds.has(gid) && g.working_on ? " · " + low(g.working_on) : ""), 28);
+      const l1 = trunc(g.name + (topIds.has(gid) && g.working_on ? " · " + g.working_on : ""), 30);
       const l2 = quiet ? "heads-down" : needs.length ? trunc("needs " + low(needs[0]) + (needs.length > 1 ? " +" + (needs.length - 1) : ""), 24) : "";
-      ctx.font = `${hi ? 600 : 500} ${lab}px ${MONO}`;
+      ctx.font = `600 ${lab}px ${SANS}`;
       const half = Math.max(ctx.measureText(l1).width, ctx.measureText(l2).width) / 2;
       const x = Math.min(W - half - 10, Math.max(half + 10, tb.x));
       const lineH = lab * 1.35, y2 = tb.y - ringR - 10 * K;
