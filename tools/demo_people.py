@@ -82,7 +82,7 @@ async def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--remove", action="store_true", help="delete only these demo people and their tables")
     args = ap.parse_args()
-    conn = await connect(apply_schema=False)
+    conn, _host = await connect(apply_schema=False)   # seed.connect returns (connection, host)
     try:
         if args.remove:
             n = await delete_people(conn, "uid = ANY($1::text[])", UIDS)
