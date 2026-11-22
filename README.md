@@ -14,11 +14,11 @@ Tap In turns walking into a room into a way to find your people. Tap your badge 
 
 ## How it works
 
-There is one action: **tap**. The server groups taps that land on the same station within 12 seconds into one scan.
+There is one action: **tap**. The server groups taps that land on the same station within 6 seconds into one scan.
 
 | Scan | What happens |
 |---|---|
-| 1 badge | **Check-in.** You light up on the wall as "here now", with lines to people you already know and the open groups that fit you. |
+| 1 badge | **Check-in.** You light up on the wall as "here now" and sit at that station's table (or start one there on your own), with lines to people you already know and the open tables that fit you. Mentors stay floating. |
 | 2+ badges, none in a group | **New group.** Everyone is linked to each other and lands on the map as one cluster. |
 | 2+ badges, one already at a table | **Join.** The others join that table, if it belongs to this station, and leave their old table. Tables belong to the station where they formed: with no table of theirs here, the tappers form a new table here. Everyone in the scan is linked. |
 | A mentor or staff badge in the scan | **Help.** The group's need is marked handled and the mentor shows as a bridge between groups. |
@@ -41,7 +41,7 @@ A join only counts when the newcomer and someone from the table tap the same sta
 The tap path is drawn in raspberry: badge, station, server, then out to the wall.
 
 - **Stations** are dumb: they send a badge UID with `POST /api/tap`, poll `GET /api/station/{id}` every 500 ms, and show whatever state the server returns on the board's built-in blue LED. No LED strip, no buzzer.
-- **Server:** Python FastAPI on one event loop. Each station has at most one open scan window, and every tap restarts its 12 s timer. The window is popped before it's resolved, so a tap that lands mid-resolve opens a fresh window instead of corrupting the old one.
+- **Server:** Python FastAPI on one event loop. Each station has at most one open scan window, and each new person restarts its 6 s timer, and it closes at most 12 s after the first tap. The window is popped before it's resolved, so a tap that lands mid-resolve opens a fresh window instead of corrupting the old one.
 - **Database:** Tiger Data (see below).
 - **Wall and phone** are plain HTML/JS served by the same server at `/wall` and `/phone`, so there's only one thing to run.
 

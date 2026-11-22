@@ -15,8 +15,8 @@ from .hub import hub
 
 log = logging.getLogger("tapin.scans")
 
-WINDOW_MAX_SECONDS = float(os.environ.get("TAPIN_WINDOW_MAX", "20"))   # a window always closes this long after its first tap
-WINDOW_SECONDS = float(os.environ.get("TAPIN_WINDOW", "12"))   # 12 s (David, for the demo): time to pass a badge and tap; each tap restarts it
+WINDOW_MAX_SECONDS = float(os.environ.get("TAPIN_WINDOW_MAX", "12"))   # a window always closes this long after its first tap
+WINDOW_SECONDS = float(os.environ.get("TAPIN_WINDOW", "6"))   # 6 s between NEW people (re-taps never extend it)
 DEDUPE_SECONDS = float(os.environ.get("TAPIN_DEDUPE", "3"))
 RESULT_SECONDS = 2.0  # result states last this long, then back to idle
 

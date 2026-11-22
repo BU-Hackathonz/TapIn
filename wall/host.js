@@ -92,7 +92,9 @@
     }
     hiddenT = alive.length - shownT.size;
     const hide = new Set(alive.filter((x) => !shownT.has(x.id)).map((x) => x.id));
-    return { ...g, groups: g.groups.filter((x) => !hide.has(x.id)), people: g.people.filter((p) => !(p.group_id != null && hide.has(p.group_id) && p.role === "student")) };
+    // People at a table that isn't drawn still show, as single people: a table dropping to one person (someone moved to a new
+    // table elsewhere) used to vanish together with its last person.
+    return { ...g, groups: g.groups.filter((x) => !hide.has(x.id)), people: g.people.map((p) => (p.group_id != null && hide.has(p.group_id) ? { ...p, group_id: null } : p)) };
   }
 
   function applyGraph(g) {
