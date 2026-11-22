@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>User map: 3D mock</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Bricolage+Grotesque:wght@500;700;800&display=swap">
+<style>
+  :root { --ink: #0f1318; --ink2: #171d25; --line: #28313c; --fg: #f1ece4; --muted: #9aa5b1; --green: #7ee0a3; --pink: #ff6fae; --amber: #ffc46b; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { background: radial-gradient(120% 90% at 50% 30%, #1b2330 0%, var(--ink) 70%); color: var(--fg); font: 15px/1.4 "IBM Plex Sans", system-ui, sans-serif; overflow: hidden; }
+  canvas#gl { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+  canvas#gl.drag { cursor: grabbing; }
+  .top { position: fixed; left: 18px; right: 18px; top: 16px; display: flex; justify-content: space-between; align-items: center; pointer-events: none; }
+  .brand { font: 800 24px/1 "Bricolage Grotesque", sans-serif; letter-spacing: -0.04em; } .brand i { color: var(--pink); font-style: normal; }
+  .chip { pointer-events: auto; display: flex; align-items: center; gap: 10px; padding: 6px 14px 6px 6px; border-radius: 999px; background: #ffffff12; backdrop-filter: blur(10px); border: 1px solid #ffffff1c; font-weight: 600; }
+  .chip b { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--pink); color: #2a0a1a; font: 800 15px "Bricolage Grotesque"; }
+  .chip small { color: var(--muted); font-weight: 500; }
+  .hint { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); padding: 8px 14px; border-radius: 999px; background: #ffffff10; border: 1px solid #ffffff18; color: var(--muted); font-size: 13px; white-space: nowrap; pointer-events: none; }
+  .tag { position: fixed; left: 18px; bottom: 16px; color: #ffffff55; font: 600 11px/1 "IBM Plex Sans"; letter-spacing: .12em; }
+  /* the card: a side card on desktop, a bottom sheet on a phone */
+  .card { position: fixed; right: 18px; top: 74px; bottom: 18px; width: 340px; padding: 20px; border-radius: 22px; background: #151b23e6; backdrop-filter: blur(14px); border: 1px solid #ffffff1a; display: flex; flex-direction: column; gap: 14px; overflow: auto; box-shadow: 0 20px 60px #0008; }
+  .card[hidden] { display: none; }
+  .card .grab { display: none; }
+  .who { display: flex; align-items: center; gap: 14px; }
+  .av { display: grid; place-items: center; flex: none; width: 56px; height: 56px; border-radius: 50%; font: 800 24px "Bricolage Grotesque"; color: #0f1318; }
+  .who h1 { margin: 0; font: 800 26px/1.05 "Bricolage Grotesque"; letter-spacing: -0.02em; }
+  .who small { display: block; margin-top: 3px; color: var(--muted); }
+  .row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pill { padding: 5px 11px; border-radius: 999px; background: #ffffff12; font-size: 13px; font-weight: 500; }
+  .pill.g { background: #7ee0a31f; color: var(--green); } .pill.p { background: #ff6fae22; color: var(--pink); }
+  .card h2 { margin: 4px 0 -4px; color: var(--muted); font: 600 12px/1 "IBM Plex Sans"; letter-spacing: .1em; text-transform: uppercase; }
+  .says { margin: 0; padding: 12px 14px; border-radius: 14px; background: #ffc46b17; border: 1px solid #ffc46b30; color: #ffe4b5; }
+  .people { display: grid; gap: 8px; }
+  .person { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 14px; background: #ffffff0b; }
+  .person .av { width: 34px; min-width: 34px; height: 34px; flex: none; font-size: 15px; } .person > span:not(.av) { flex: 1; font-weight: 600; } .person small { color: var(--muted); }
+  .go { margin-top: auto; padding: 14px 16px; border: 0; border-radius: 16px; background: var(--green); color: #07200f; font: 700 15px "IBM Plex Sans"; text-align: center; }
+  .go.pink { background: var(--pink); color: #2a0a1a; }
+  body.phone .card { left: 0; right: 0; top: auto; bottom: 0; width: auto; max-height: 52%; border-radius: 26px 26px 0 0; padding-top: 22px; }
+  body.phone .card .grab { display: block; position: absolute; left: 50%; top: 8px; width: 44px; height: 5px; border-radius: 3px; background: #ffffff40; transform: translateX(-50%); }
+  body.phone .hint { bottom: auto; top: 58px; }
+  body.phone .tag { display: none; }
+</style>
+</head>
+<body>
+<!-- MOCK: the user's 3D map, after sign-in. Static sample data. Nothing talks to the server. Open with ?sel=table:3 or ?sel=person:6, and &phone for the phone layout. -->
+<canvas id="gl"></canvas>
+<div class="top"><div class="brand">tap <i>in</i></div><div class="chip"><b>M</b><span>Maya <small>· Table A · 55</small></span></div></div>
+<p class="hint" id="hint">Drag to turn · scroll or pinch to zoom · tap a table or a person</p>
+<p class="tag">MOCK · SAMPLE DATA</p>
+<aside class="card" id="card" hidden><span class="grab"></span><div id="cardbody"></div></aside>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="mock-data.js"></script>
+<script>
+const qs = new URLSearchParams(location.search);
+if (qs.has("phone")) document.body.classList.add("phone");
+const M = MockData, L = M.letter, TC = { 1: 0x7ee0a3, 2: 0x7cc7ff, 3: 0xffc46b, 4: 0xc9a2ff, 5: 0x9aa5b1 };
+const hex = (n) => "#" + n.toString(16).padStart(6, "0");
+const canvas = document.getElementById("gl");
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+const scene = new THREE.Scene(); scene.fog = new THREE.Fog(0x0f1318, 520, 1100);
+const camera = new THREE.PerspectiveCamera(46, 1, 1, 3000);
+scene.add(new THREE.AmbientLight(0x8899aa, 0.9)); const key = new THREE.DirectionalLight(0xffffff, 1.1); key.position.set(200, 300, 400); scene.add(key);
+const rim = new THREE.PointLight(0xff6fae, 0.8, 900); rim.position.set(-300, -100, -200); scene.add(rim);
+
+// starfield for depth
+{ const g = new THREE.BufferGeometry(), a = []; for (let i = 0; i < 500; i++) a.push((Math.random() - 0.5) * 2200, (Math.random() - 0.5) * 1400, (Math.random() - 0.5) * 2200);
+  g.setAttribute("position", new THREE.Float32BufferAttribute(a, 3)); scene.add(new THREE.Points(g, new THREE.PointsMaterial({ color: 0x8899aa, size: 1.6, transparent: true, opacity: 0.45 }))); }
+
+const world = new THREE.Group(); scene.add(world);
+const R = 300, ids = M.groups.map((g) => g.id), centres = new Map();
+ids.forEach((id, i) => { const y = 1 - (i + 0.5) * (2 / ids.length), r = Math.sqrt(1 - y * y), a = i * 2.399963; centres.set(id, new THREE.Vector3(Math.cos(a) * r * R, y * R * 0.75, Math.sin(a) * r * R)); });
+
+function label(text, size, color, bold) {
+  const c = document.createElement("canvas"), g = c.getContext("2d"), px = 64; g.font = `${bold ? 700 : 500} ${px}px "IBM Plex Sans", sans-serif`;
+  const w = Math.ceil(g.measureText(text).width) + 20; c.width = w; c.height = px + 24; g.font = `${bold ? 700 : 500} ${px}px "IBM Plex Sans", sans-serif`; g.textBaseline = "middle";
+  g.shadowColor = "rgba(0,0,0,.8)"; g.shadowBlur = 10; g.fillStyle = color; g.fillText(text, 10, c.height / 2);
+  const t = new THREE.CanvasTexture(c); t.minFilter = THREE.LinearFilter; const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, depthWrite: false }));
+  s.scale.set((w / c.height) * size, size, 1); s.userData.w = (w / c.height) * size; return s;
+}
+
+const tableMesh = new Map(), personMesh = new Map(), links = [], pickables = [];
+for (const g of M.groups) {
+  const c = centres.get(g.id), ms = M.people.filter((p) => p.group_id === g.id), rad = 42 + ms.length * 7, col = TC[g.id];
+  const shell = new THREE.Mesh(new THREE.SphereGeometry(rad + 26, 40, 28), new THREE.MeshPhongMaterial({ color: col, transparent: true, opacity: 0.10, shininess: 90, side: THREE.DoubleSide, depthWrite: false }));
+  shell.position.copy(c); shell.userData = { type: "table", id: g.id }; world.add(shell); pickables.push(shell);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(rad + 26, 0.9, 8, 90), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.55 })); ring.position.copy(c); ring.rotation.x = Math.PI / 2 + 0.4; shell.userData.ring = ring; world.add(ring);
+  const lab = label(`Table ${L(g.id)}`, 30, hex(col), true); lab.position.copy(c).add(new THREE.Vector3(0, rad + 52, 0)); world.add(lab);
+  const sub = label(g.working_on, 17, "#9aa5b1", false); sub.position.copy(c).add(new THREE.Vector3(0, rad + 28, 0)); world.add(sub);
+  tableMesh.set(g.id, { shell, ring, lab, sub, col });
+  ms.forEach((p, i) => { const a = (i / ms.length) * Math.PI * 2 + g.id, ph = (i % 2 ? 1 : -1) * 0.5; const pos = c.clone().add(new THREE.Vector3(Math.cos(a) * rad * 0.8, Math.sin(ph) * rad * 0.45, Math.sin(a) * rad * 0.8)); addPerson(p, pos, col); });
+}
+M.people.filter((p) => p.group_id == null).forEach((p, i) => { const a = i * 1.7 + 0.6; addPerson(p, new THREE.Vector3(Math.cos(a) * R * 1.12, (i % 2 ? 1 : -1) * R * 0.4, Math.sin(a) * R * 1.12), 0xe8e2d8); });
+function addPerson(p, pos, col) {
+  const mentor = p.role !== "student", r = 6 + 5 * Math.min(1, Math.sqrt(p.points / 60)) + (mentor ? 2 : 0);
+  const geo = mentor ? new THREE.OctahedronGeometry(r * 1.25) : new THREE.SphereGeometry(r, 24, 18);
+  const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: col, roughness: 0.35, metalness: 0.1, emissive: col, emissiveIntensity: 0.28, transparent: true }));
+  m.position.copy(pos); m.userData = { type: "person", id: p.id }; world.add(m); pickables.push(m);
+  const l = label(p.name, 15, "#f1ece4", false); l.position.copy(pos).add(new THREE.Vector3(0, r + 12, 0)); world.add(l);
+  personMesh.set(p.id, { m, l, p, col });
+}
+for (const l of M.links) { const a = personMesh.get(l.a), b = personMesh.get(l.b); if (!a || !b) continue;
+  const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints([a.m.position, b.m.position]), new THREE.LineBasicMaterial({ color: 0x7ee0a3, transparent: true, opacity: 0.2 })); line.userData = { a: l.a, b: l.b }; world.add(line); links.push(line); }
+// "you" halo
+{ const me = personMesh.get(1); const h = new THREE.Mesh(new THREE.TorusGeometry(18, 1.4, 8, 48), new THREE.MeshBasicMaterial({ color: 0xff6fae })); h.position.copy(me.m.position); world.add(h); me.halo = h; }
+
+// camera: orbit around a target, drag to turn, wheel to zoom, idle spin
+const cam = { rotY: 0.6, rotX: -0.25, dist: 880, tx: 0, ty: 0, tz: 0, gdist: 880, gx: 0, gy: 0, gz: 0, idle: 0, spin: 0 };
+let sel = null;
+function frame() {
+  const w = innerWidth, h = innerHeight; if (canvas.width !== w * renderer.getPixelRatio()) { renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
+  if (!qs.has("still") && performance.now() - cam.idle > 4000) cam.rotY += 0.0016;
+  cam.dist += (cam.gdist - cam.dist) * 0.08; cam.tx += (cam.gx - cam.tx) * 0.08; cam.ty += (cam.gy - cam.ty) * 0.08; cam.tz += (cam.gz - cam.tz) * 0.08;
+  const cx = Math.cos(cam.rotX), sx = Math.sin(cam.rotX);
+  camera.position.set(cam.tx + Math.sin(cam.rotY) * cx * cam.dist, cam.ty - sx * cam.dist, cam.tz + Math.cos(cam.rotY) * cx * cam.dist); camera.lookAt(cam.tx, cam.ty, cam.tz);
+  const t = performance.now() / 1000;
+  for (const [id, T] of tableMesh) { T.ring.rotation.z = t * 0.2 * (id % 2 ? 1 : -1); }
+  for (const [id, P] of personMesh) P.m.position.y += Math.sin(t * 1.3 + id) * 0.04;
+  const me = personMesh.get(1); me.halo.position.copy(me.m.position); me.halo.lookAt(camera.position);
+  renderer.render(scene, camera); requestAnimationFrame(frame);
+}
+// dragging and zoom
+let down = null;
+canvas.addEventListener("pointerdown", (e) => { down = { x: e.clientX, y: e.clientY, moved: 0 }; cam.idle = performance.now(); canvas.classList.add("drag"); canvas.setPointerCapture(e.pointerId); });
+canvas.addEventListener("pointermove", (e) => { if (!down) return; const dx = e.clientX - down.x, dy = e.clientY - down.y; down.moved += Math.abs(dx) + Math.abs(dy); down.x = e.clientX; down.y = e.clientY; cam.rotY -= dx * 0.006; cam.rotX = Math.max(-1.2, Math.min(1.2, cam.rotX - dy * 0.005)); cam.idle = performance.now(); });
+canvas.addEventListener("pointerup", (e) => { canvas.classList.remove("drag"); if (down && down.moved < 6) pick(e.clientX, e.clientY); down = null; });
+canvas.addEventListener("wheel", (e) => { e.preventDefault(); cam.gdist = Math.max(260, Math.min(1400, cam.gdist * (1 + e.deltaY * 0.001))); cam.idle = performance.now(); }, { passive: false });
+canvas.addEventListener("dblclick", () => select(null));
+const ray = new THREE.Raycaster();
+function pick(x, y) { ray.setFromCamera({ x: (x / innerWidth) * 2 - 1, y: -(y / innerHeight) * 2 + 1 }, camera); const hits = ray.intersectObjects(pickables); const person = hits.find((h) => h.object.userData.type === "person"); const h = person || hits[0]; select(h ? h.object.userData : null); }
+
+// selection: focus the camera, dim the rest, fill the card
+function select(s) {
+  sel = s; const card = document.getElementById("card"), body = document.getElementById("cardbody");
+  const selT = !s ? null : s.type === "table" ? s.id : M.byId.get(s.id).group_id;
+  const knows = s?.type === "person" ? new Set(M.links.filter((l) => l.a === s.id || l.b === s.id).map((l) => (l.a === s.id ? l.b : l.a))) : new Set();
+  for (const [id, P] of personMesh) { const on = !s || (s.type === "person" ? id === s.id || knows.has(id) : P.p.group_id === s.id); P.m.material.opacity = on ? 1 : 0.18; P.l.material.opacity = on ? 1 : 0.15; P.m.material.emissiveIntensity = s?.type === "person" && id === s.id ? 0.9 : 0.28; if (s?.type === "person" && id === s.id) P.m.material.color.set(0xff6fae), P.m.material.emissive.set(0xff6fae); else P.m.material.color.set(P.col), P.m.material.emissive.set(P.col); }
+  for (const [id, T] of tableMesh) { const on = !s || id === selT; T.shell.material.opacity = on ? (id === selT ? 0.2 : 0.1) : 0.03; T.ring.material.opacity = on ? 0.7 : 0.1; T.lab.material.opacity = on ? 1 : 0.2; T.sub.material.opacity = on ? 1 : 0.15; }
+  for (const l of links) { const on = !s || (s.type === "person" ? l.userData.a === s.id || l.userData.b === s.id : M.byId.get(l.userData.a).group_id === s.id || M.byId.get(l.userData.b).group_id === s.id); l.material.opacity = on ? (s?.type === "person" ? 0.95 : 0.55) : 0.04; l.material.color.set(s?.type === "person" && on ? 0xff6fae : 0x7ee0a3); }
+  if (!s) { cam.gdist = 880; cam.gx = cam.gy = cam.gz = 0; card.hidden = true; return; }
+  const target = s.type === "table" ? centres.get(s.id) : personMesh.get(s.id).m.position;
+  cam.gx = target.x * 0.6; cam.gy = target.y * 0.6; cam.gz = target.z * 0.6; cam.gdist = s.type === "table" ? 620 : 700;
+  card.hidden = false; body.innerHTML = s.type === "table" ? tableCard(s.id) : personCard(s.id);
+}
+const av = (p, col) => `<span class="av" style="background:${hex(col || 0x7ee0a3)}">${p.name[0]}</span>`;
+function tableCard(id) { const g = M.groupOf(id), ms = M.people.filter((p) => p.group_id === id), need = M.needs.find((n) => n.group_id === id), col = TC[id];
+  return `<div class="who"><span class="av" style="background:${hex(col)}">${L(id)}</span><div><h1>Table ${L(id)}</h1><small>${g.working_on} · ${ms.length} people · ${g.points} pts</small></div></div>
+  <div class="row">${need ? `<span class="pill p">Needs ${need.need}</span>` : `<span class="pill g">Has what it needs</span>`}<span class="pill">${g.mode === "heads_down" ? "Heads-down" : "Open to visitors"}</span></div>
+  <h2>Who is here</h2><div class="people">${ms.map((p) => `<div class="person">${av(p, col)}<span>${p.name}</span><small>${p.skills.join(", ")}</small></div>`).join("")}</div>
+  <div class="go">${id === 1 ? "You are here" : "Join: tap your badge at station " + g.station_id}</div>`; }
+function personCard(id) { const p = M.byId.get(id), g = M.groupOf(p.group_id), knows = M.links.filter((l) => l.a === id || l.b === id).map((l) => M.byId.get(l.a === id ? l.b : l.a));
+  return `<div class="who">${av(p, g ? TC[g.id] : 0xe8e2d8)}<div><h1>${p.name}</h1><small>${p.role === "student" ? "Student" : "Mentor"}${g ? " · Table " + L(g.id) : ""} · ${p.points} pts</small></div></div>
+  <div class="row">${p.skills.map((s) => `<span class="pill g">${s}</span>`).join("")}${p.looking_for.map((s) => `<span class="pill p">looking for ${s}</span>`).join("")}</div>
+  <h2>Knows</h2><div class="people">${knows.map((k) => `<div class="person">${av(k, k.group_id ? TC[k.group_id] : 0xe8e2d8)}<span>${k.name}</span><small>${k.group_id ? "Table " + L(k.group_id) : k.role}</small></div>`).join("")}</div>
+  <p class="says">${p.name}, ${g && g.id !== 1 ? "Table " + L(1) + " is looking for " + p.skills[0] + " and could use you." : "you two should talk: you are both looking for " + (p.looking_for[0] || "a teammate") + "."}</p>
+  <div class="go pink">Say hi</div>`; }
+
+const s0 = qs.get("sel"); if (s0) { const [t, i] = s0.split(":"); select({ type: t, id: +i }); if (qs.has("still")) { cam.rotY = +(qs.get("ry") || 0.6); } }
+if (qs.get("ry")) cam.rotY = +qs.get("ry"); if (qs.get("rx")) cam.rotX = +qs.get("rx");
+frame();
+</script>
+</body>
+</html>
