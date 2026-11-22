@@ -1,0 +1,177 @@
+/* Host screen. Layout: room plan on the left (about 75%), room numbers in a flat column on the right, the latest moment in a
+   strip along the bottom. Color follows 60-30-10: a dark ground (60), one main green (30), one pop of pink (10) that sits
+   opposite the green on the wheel, and sand for the wordmark and quiet text. Pink means "you, right now"; green means
+   groups; the forest green is the grid and the bars; grey is out of the way. Three ground palettes to compare:
+   ?palette=moss (green-black), ?palette=sand (warm dark sand), ?palette=cool (cool dark sand). Logo placement:
+   ?logo=strip (default, right end of the bottom strip), ?logo=ghost (large faint watermark behind the plan), ?logo=side. */
+:root {
+  --bg: #0d1411; --side: #101914; --line: #1e2c25; --fg: #efe9da; --muted: #8c9d93; --dim: #56675d;
+  --pink: #ff5fa2;   /* the pop: opposite the green on the wheel, and darker than it, so the two stay apart for color-blind viewers */
+  --green: #8fd69c;  /* the main color: a warm moss */
+  --forest: #2f6f4f; /* the quiet green for the grid, rings and bars */
+  --sand: #ead9b8;   /* the wordmark and the Wi-Fi mark */
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+  --serif: "Instrument Serif", "Bodoni Moda", Georgia, serif;
+  --u: clamp(15px, 1.042vw, 24px);                  /* 20 px at 1920 wide */
+  --side-w: clamp(360px, 25vw, 560px);
+  --strip-h: clamp(64px, 8vh, 110px);
+}
+/* Sand (the default): a real sand ground for the room plan, with the right column and the bottom strip kept in the cool dark. */
+:root[data-palette="sand"] {
+  --bg: #d9cba8; --side: #222120; --line: #b9aa85; --fg: #26241c; --muted: #6a624c; --dim: #948a6b;
+  --pink: #e0367f; --green: #2f6d4e; --forest: #9f9c70; --deep: #1b4a33; --sand: #3a372b; --fume: 0.75; --scan: 0.05; --vig: 0.12;
+}
+/* The side column and the bottom strip: a deep forest ink, with soft sand text, sage values and a warm pink. */
+:root[data-palette="sand"] #side, :root[data-palette="sand"] #moment, :root[data-palette="sand"] #brand {
+  --bg: #1b2521; --side: #1b2521; --line: #2d3a34; --fg: #f3eee3; --muted: #a9b4ab; --dim: #707d75;
+  --pink: #ff7ab2; --green: #a9d9b1; --forest: #3f5b4a; --sand: #ece0c6;
+}
+:root[data-palette="sand"] #moment { background: #1b2521; color: var(--fg); }
+:root[data-palette="sand"] #side { background: #1b2521; color: var(--fg); }
+/* Warm dark sand: a mocha ground, soft-sand text, sage green, watermelon pink. */
+:root[data-palette="warm"] {
+  --bg: #2a251d; --side: #231f18; --line: #3d372c; --fg: #f0e6d2; --muted: #a89e88; --dim: #6e6654;
+  --pink: #ff6fae; --green: #a9d3a0; --forest: #566a4a; --sand: #efe0c0; --fume: 0.5;
+}
+/* Cool dark sand: the same idea with the warmth taken out, a taupe leaning grey. */
+:root[data-palette="cool"] {
+  --bg: #292826; --side: #222120; --line: #3a3835; --fg: #ece6da; --muted: #9f9b92; --dim: #66645e;
+  --pink: #ff6fae; --green: #9fd1a6; --forest: #4f6150; --deep: #6c9a76; --sand: #e6dcc6; --fume: 0.5;
+}
+/* Real sand: a light ground with dark ink, a deep forest green and a stronger pink. */
+:root[data-palette="sandlight"] {
+  --bg: #d9cba8; --side: #cfc19d; --line: #b9aa85; --fg: #26241c; --muted: #6a624c; --dim: #948a6b;
+  --pink: #e0367f; --green: #2f6d4e; --forest: #9f9c70; --sand: #3a372b; --fume: 0.38; --scan: 0.05; --vig: 0.12;
+}
+
+/* ---- ten looks: ?v=2 ... ?v=10 (v=1 is the default sand above). The panels pick up the --pn-* colors. */
+:root[data-v] #side, :root[data-v] #moment, :root[data-v] #brand { --bg: var(--pn-bg); --side: var(--pn-bg); --line: var(--pn-line); --fg: var(--pn-fg); --muted: var(--pn-muted); --dim: var(--pn-dim); --pink: var(--pn-pink); --green: var(--pn-green); --forest: var(--pn-forest); --sand: var(--pn-sand); }
+:root[data-v] #side, :root[data-v] #moment { background: var(--pn-bg); color: var(--pn-fg); }
+/* 2 Midnight */
+:root[data-v="2"] { --bg: #1f2226; --line: #343a40; --fg: #eceff1; --muted: #98a0a8; --dim: #5d646b; --pink: #ff6fae; --green: #9fd8ad; --forest: #4a6857; --deep: #86c497; --sand: #e8e0cc; --fume: 0.55; --scan: 0.04; --vig: 0.1;
+  --pn-bg: #14171a; --pn-line: #272c31; --pn-fg: #eef0f2; --pn-muted: #98a0a8; --pn-dim: #5d646b; --pn-pink: #ff6fae; --pn-green: #9fd8ad; --pn-forest: #3d5a49; --pn-sand: #e8e0cc;  }
+/* 3 Forest */
+:root[data-v="3"] { --bg: #15231c; --line: #2a4036; --fg: #eee7d3; --muted: #9fb3a4; --dim: #5d7766; --pink: #ff7ab2; --green: #b0e0a8; --forest: #3f6049; --deep: #8cc593; --sand: #eadfc2; --fume: 0.6; --scan: 0.04; --vig: 0.1;
+  --pn-bg: #0f1a14; --pn-line: #223529; --pn-fg: #f0eadb; --pn-muted: #9fb3a4; --pn-dim: #5d7766; --pn-pink: #ff7ab2; --pn-green: #b0e0a8; --pn-forest: #3f6049; --pn-sand: #eadfc2;  }
+/* 4 Paper */
+:root[data-v="4"] { --bg: #f4f0e6; --line: #ddd5c3; --fg: #1d1d1b; --muted: #6f6b60; --dim: #a29d8f; --pink: #e3347f; --green: #1f6b4a; --forest: #bcc6b4; --deep: #174d36; --sand: #2b2a26; --fume: 0.12; --scan: 0; --vig: 0;
+  --pn-bg: #fbf9f4; --pn-line: #e6dfd0; --pn-fg: #1d1d1b; --pn-muted: #6f6b60; --pn-dim: #a29d8f; --pn-pink: #e3347f; --pn-green: #1f6b4a; --pn-forest: #cfd8c8; --pn-sand: #2b2a26;  }
+/* 5 Blueprint */
+:root[data-v="5"] { --bg: #0e2238; --line: #223d58; --fg: #e4eef7; --muted: #8fabc4; --dim: #56718b; --pink: #ff7ab2; --green: #7fd6ff; --forest: #2c5072; --deep: #5eb0dd; --sand: #dce9f5; --fume: 0.3; --scan: 0.04; --vig: 0.1;
+  --pn-bg: #0a1a2b; --pn-line: #1b3249; --pn-fg: #e4eef7; --pn-muted: #8fabc4; --pn-dim: #56718b; --pn-pink: #ff7ab2; --pn-green: #7fd6ff; --pn-forest: #2c5072; --pn-sand: #dce9f5;  }
+/* 6 Rose */
+:root[data-v="6"] { --bg: #ecd9d2; --line: #d4bab2; --fg: #2b1f23; --muted: #7a6066; --dim: #a88f93; --pink: #d62b78; --green: #2f6d4e; --forest: #c9a99f; --deep: #1b4a33; --sand: #3a2b2b; --fume: 0.9; --scan: 0.04; --vig: 0.1;
+  --pn-bg: #2a1f24; --pn-line: #3d2d34; --pn-fg: #f6ece8; --pn-muted: #cdbcc0; --pn-dim: #a08e93; --pn-pink: #ff7ab2; --pn-green: #a9d9b1; --pn-forest: #4b5f52; --pn-sand: #f1e0d3;  }
+/* 7 Mono */
+:root[data-v="7"] { --bg: #2a2a2b; --line: #3d3d3f; --fg: #f1f1f1; --muted: #a0a0a2; --dim: #68686a; --pink: #ff4d94; --green: #dedede; --forest: #5b5b5e; --deep: #c4c4c6; --sand: #ececec; --fume: 0.18; --scan: 0.04; --vig: 0.1;
+  --pn-bg: #1d1d1e; --pn-line: #313133; --pn-fg: #f1f1f1; --pn-muted: #a0a0a2; --pn-dim: #68686a; --pn-pink: #ff4d94; --pn-green: #dedede; --pn-forest: #505053; --pn-sand: #ececec;  }
+/* 8 Glow */
+:root[data-v="8"] { --bg: #0d1117; --line: #222a34; --fg: #e6edf3; --muted: #8b98a6; --dim: #4f5b68; --pink: #ff4fa3; --green: #5ef2a0; --forest: #1f5b43; --deep: #2fbf7a; --sand: #e6edf3; --fume: 0.7; --scan: 0.04; --vig: 0.1;
+  --pn-bg: #090c10; --pn-line: #1b222b; --pn-fg: #e6edf3; --pn-muted: #8b98a6; --pn-dim: #4f5b68; --pn-pink: #ff4fa3; --pn-green: #5ef2a0; --pn-forest: #1f5b43; --pn-sand: #e6edf3;  }
+/* 9 Sage */
+:root[data-v="9"] { --bg: #cfd8c3; --line: #b3c0a6; --fg: #1c261f; --muted: #55665a; --dim: #8a9a8d; --pink: #d9306e; --green: #2a6a46; --forest: #9db094; --deep: #1c4a31; --sand: #20281f; --fume: 0.6; --scan: 0.04; --vig: 0.1;
+  --pn-bg: #1d2a22; --pn-line: #2d3d33; --pn-fg: #eef1e6; --pn-muted: #a3b5a8; --pn-dim: #6b7d70; --pn-pink: #ff7ab2; --pn-green: #b3e0b0; --pn-forest: #44624f; --pn-sand: #e8e2cb;  }
+/* 10 Dusk */
+:root[data-v="10"] { --bg: #241f33; --line: #3b3454; --fg: #f1e8f3; --muted: #a99fbd; --dim: #665d82; --pink: #ff8fb3; --green: #bba9ff; --forest: #4a4272; --deep: #8e7fe0; --sand: #efe4f0; --fume: 0.8; --scan: 0.04; --vig: 0.1;
+  --pn-bg: #19152a; --pn-line: #2c2644; --pn-fg: #f1e8f3; --pn-muted: #a99fbd; --pn-dim: #665d82; --pn-pink: #ff8fb3; --pn-green: #bba9ff; --pn-forest: #3e3763; --pn-sand: #efe4f0;  }
+/* 11 Rose with the pink swapped for red, nothing else changed. */
+:root[data-v="11"] { --bg: #ecd9d2; --line: #d4bab2; --fg: #2b1f23; --muted: #7a6066; --dim: #a88f93; --pink: #d4151b; --green: #2f6d4e; --forest: #c9a99f; --deep: #1b4a33; --sand: #3a2b2b; --fume: 0.9; --scan: 0.04; --vig: 0.1;
+  --pn-bg: #2a1f24; --pn-line: #3d2d34; --pn-fg: #f6ece8; --pn-muted: #cdbcc0; --pn-dim: #a08e93; --pn-pink: #ff3b36; --pn-green: #a9d9b1; --pn-forest: #4b5f52; --pn-sand: #f1e0d3;  }
+* { box-sizing: border-box; }
+body.idle, body.idle * { cursor: none; }
+html, body { height: 100%; margin: 0; }
+body {
+  display: grid; background: var(--bg); color: var(--fg); font: 400 var(--u)/1.35 var(--sans);
+  grid-template-columns: minmax(0, 1fr) var(--side-w);
+  grid-template-rows: minmax(0, 1fr) var(--strip-h);
+  grid-template-areas: "stage side" "moment side";
+  overflow: hidden; user-select: none; -webkit-user-select: none;
+}
+#stage { grid-area: stage; position: relative; min-width: 0; min-height: 0; z-index: 1; }
+#room { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+body:not(.idle) #room.grab { cursor: grab; }
+body:not(.idle) #room.grabbing { cursor: grabbing; }
+/* A key to the plan, so a first-time viewer can read it. */
+#legend { position: absolute; left: 1.7vw; top: 2.6vh; z-index: 2; pointer-events: none; display: grid; gap: 1.1vh; max-width: 70%; }
+#legend .lede { margin: 0; font: 600 calc(var(--u) * 1.15)/1.2 var(--sans); letter-spacing: -0.01em; color: var(--fg); }
+#legend ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.5em 1.3em; font: 500 calc(var(--u) * 0.8)/1 var(--sans); color: var(--muted); }
+#legend li { display: inline-flex; align-items: center; gap: 0.55em; }
+.k { display: inline-block; width: 0.8em; height: 0.8em; flex: none; }
+.k.dot { border-radius: 50%; background: var(--green); }
+.k.sq { border: 2px solid var(--green); }
+.k.ring { border-radius: 50%; border: 2px solid var(--muted); }
+.k.pink { border-radius: 50%; background: var(--pink); }
+.k.dash, .k.line { width: 1.5em; height: 0; border-top: 2.5px dashed var(--deep); }
+.k.line { border-top-style: solid; }
+.conn { position: absolute; left: 2.5%; bottom: 3%; margin: 0; font: 500 var(--u)/1 var(--mono); color: var(--pink); }
+.mono { font-family: var(--sans); font-variant-numeric: tabular-nums; }
+
+/* Pixelated pink fume: a small canvas stretched with hard pixels and ordered-dither steps, drifting slowly and stirred by the mouse (see host.js). */
+#fume { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; image-rendering: pixelated; image-rendering: crisp-edges; }
+
+/* A faint CRT scanline and vignette over the whole screen. */
+body::before {
+  content: ""; position: fixed; inset: 0 var(--side-w) var(--strip-h) 0; z-index: 4; pointer-events: none;   /* over the room plan only */
+  background:
+    repeating-linear-gradient(to bottom, rgba(0, 0, 0, var(--scan, 0.13)) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse at 50% 45%, transparent 60%, rgba(0, 0, 0, var(--vig, 0.32)) 100%);
+}
+
+/* Wordmark: friendly heavy sans in sand, plain (no effects). The dot of the i is a pink Wi-Fi mark. */
+#brand { position: fixed; z-index: 3; display: flex; align-items: baseline; gap: 0.7em; pointer-events: none; }
+.wm {
+  position: relative; display: inline-block; padding: 0.46em 0.1em 0.08em; margin: -0.46em -0.1em -0.08em;
+  font: 800 calc(var(--u) * 2.3)/1 "Bricolage Grotesque", var(--sans); letter-spacing: -0.04em; color: var(--sand);
+}
+.ii { position: relative; display: inline-block; }
+.wifi { position: absolute; left: 50%; bottom: 0.66em; width: 0.62em; height: 0.52em; transform: translateX(-50%); overflow: visible; color: var(--pink); fill: none; stroke: currentColor; stroke-width: 2.3; stroke-linecap: round; }
+.wifi circle { fill: currentColor; stroke: none; }
+#venue { font: 400 var(--u)/1 var(--mono); color: var(--muted); }
+:root:not([data-logo]) #brand, :root[data-logo="strip"] #brand { right: calc(var(--side-w) + 2.2vw); bottom: 0; height: var(--strip-h); align-items: center; }
+:root[data-logo="ghost"] #brand { left: calc((100vw - var(--side-w)) / 2); top: 47%; transform: translate(-50%, -50%); opacity: 0.1; }
+:root[data-logo="ghost"] .wm { font-size: calc(var(--u) * 11); }
+:root[data-logo="side"] #brand { left: 1.1vw; top: 50%; transform: translateY(-50%) rotate(-90deg); transform-origin: left center; left: 2.2vw; top: 62%; }
+
+/* The side column and the bottom bar follow the approved v5 mockup: plain lists, no cards or badges, mono only for numbers, times and the log. */
+#side, #moment { font-variant-numeric: tabular-nums; }
+#side { grid-area: side; background: color-mix(in srgb, var(--side) 96%, transparent); border-left: 1px solid var(--line); padding: 3.4vh 2vw 3vh; display: flex; flex-direction: column; gap: 3.2vh; min-height: 0; overflow: hidden; position: relative; z-index: 2; }
+#statline { margin: 0; font: 400 calc(var(--u) * 0.9)/1.2 var(--mono); color: var(--muted); white-space: nowrap; letter-spacing: -0.02em; }
+#statline b { color: var(--fg); font-weight: 500; }
+#side h2 { margin: 0 0 1vh; font: 400 var(--u)/1.2 var(--sans); color: var(--muted); display: flex; justify-content: space-between; align-items: baseline; }
+#side h2 span { font: 400 calc(var(--u) * 0.9)/1 var(--mono); }
+.rows { list-style: none; margin: 0; padding: 0; }
+.rows li { display: flex; justify-content: space-between; gap: 1em; padding: 0.7vh 0; border-bottom: 1px solid var(--line); }
+.rows li:last-child { border-bottom: 0; }
+.rows .t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rows .v { font-family: var(--mono); color: var(--green); white-space: nowrap; }
+.rows li.top .v { color: var(--pink); }
+.rows li.wait .v { color: var(--muted); }
+.rows li.wait.top .v { color: var(--pink); }
+.rows li.done .t { color: var(--dim); text-decoration: line-through; }
+.rows li.done .v { color: var(--green); }
+.note { margin: 0.8vh 0 0; font-size: calc(var(--u) * 0.9); color: var(--dim); }
+.empty { color: var(--dim); font-size: calc(var(--u) * 0.95); padding: 0.4vh 0; list-style: none; }
+.log { list-style: none; margin: 0; padding: 0; font: 400 calc(var(--u) * 0.95)/1.55 var(--mono); color: var(--muted); }
+.log .tm { color: var(--dim); margin-right: 0.7em; }
+.log em { font-style: normal; color: var(--green); }
+.chart { margin-top: auto; }
+.bars { display: flex; align-items: flex-end; gap: 0.5vw; height: 9vh; }
+.bars i { flex: 1; background: var(--forest); min-height: 3px; }
+.bars i.now { background: var(--pink); }
+.bump { animation: bump 1.4s ease-out; }
+@keyframes bump { 0% { color: var(--fg); } }
+
+#moment { grid-area: moment; display: flex; align-items: center; gap: 1.6vw; padding: 0 9.5vw 0 2.5%; border-top: 1px solid var(--line); min-width: 0; position: relative; z-index: 1; }
+#mtime { font: 400 calc(var(--u) * 1.15)/1 var(--mono); color: var(--pink); white-space: nowrap; }
+#mtime:empty { display: none; }
+#mtext { margin: 0; font-size: calc(var(--u) * 1.1); min-width: 0; max-width: 100%; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+#mtext b { font-weight: 600; }
+#mtext span { color: var(--muted); }
+
+.start { position: fixed; inset: 0; display: grid; place-content: center; justify-items: center; gap: 1.2vh; background: color-mix(in srgb, var(--bg) 96%, transparent); z-index: 6; cursor: pointer; }
+.start.gone { display: none; }
+.start button { font: 500 calc(var(--u) * 1.6)/1 var(--sans); padding: 0.7em 2em; color: var(--bg); background: var(--green); border: 0; border-radius: 0; cursor: pointer; }
+.start p { margin: 0; color: var(--muted); font: 400 var(--u)/1.2 var(--mono); }
+
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }

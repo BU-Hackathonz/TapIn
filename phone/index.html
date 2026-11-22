@@ -52,6 +52,12 @@
 </main>
 <script>const FAKE = false; // true = hard-coded replies, no server needed. false = the real server.</script>
 <script src="common.js"></script>
+<!-- Avery's intro (intro/, needs the server's /intro mount). If it is missing or fails, the form just shows. -->
+<script src="/intro/intro.js"></script>
+<script>
+  // Plays once per session over the form, then slides away. Never blocks sign-up if anything goes wrong.
+  try { window.TapInIntro && TapInIntro.signIn(document.body).catch(() => {}); } catch (_) {}
+</script>
 <script>
   const saved = store.get("tapin_form", sessionStorage) || {};
   const counter = (id, max) => v => { document.getElementById(id).textContent = v.length ? `(${v.length} of ${max} picked)` : `(up to ${max})`; };
