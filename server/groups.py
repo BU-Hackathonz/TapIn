@@ -96,12 +96,45 @@ async def _members(conn, gid: int) -> list[int]:
     return [r["person_id"] for r in await conn.fetch("SELECT person_id FROM group_members WHERE group_id=$1", gid)]
 
 
-async def _first_active_group(conn, ids):
-    for i in ids:
-        gid = await active_group_of(conn, i)
-        if gid:
-            return gid  # first tapper's group wins
-    return None
+def choose_table(station_id: int, ids: list, active: dict, table_station: dict, here_members: dict):
+    """Which table a group scan is about, and who from that table is missing. Pure: no database, so it is unit-tested.
+    - ids: the people in the scan, in tap order. active: person -> their active table (or None).
+    - table_station: table -> the station it is pinned to. here_members: table -> its members who are here now.
+    Rules: a table pinned to THIS station wins (you joined the table you walked up to); otherwise the table with the most
+    people in the scan; a tie goes to the first tapper's table. A join only counts when every member of that table who is
+    here now is in the scan, so the whole table has to tap in together. Returns (table or None, missing member ids)."""
+    tables = [active[i] for i in ids if active.get(i)]
+    if not tables:
+        return None, set()
+    count = {g: tables.count(g) for g in tables}
+    first = {}
+    for n, g in enumerate(tables):
+        first.setdefault(g, n)
+    here = [g for g in count if table_station.get(g) == station_id]
+    pool = here or list(count)
+    gid = min(pool, key=lambda g: (-count[g], first[g]))
+    missing = set(here_members.get(gid, set())) - set(ids)
+    return gid, missing
+
+
+async def _here_members(conn, gid: int) -> set:
+    rows = await conn.fetch(
+        f"""SELECT m.person_id FROM group_members m JOIN people p ON p.id = m.person_id
+            WHERE m.group_id=$1 AND p.last_checkin > now() - interval '{HERE}'""", gid)
+    return {r["person_id"] for r in rows}
+
+
+async def _table_for(conn, station_id: int, ids):
+    active = {i: await active_group_of(conn, i) for i in ids}
+    cands = {g for g in active.values() if g}
+    stations = {g: await conn.fetchval("SELECT station_id FROM groups WHERE id=$1", g) for g in cands}
+    here = {g: await _here_members(conn, g) for g in cands}
+    return choose_table(station_id, ids, active, stations, here)
+
+
+async def _first_active_group(conn, ids, station_id: int = 0):
+    gid, _ = await _table_for(conn, station_id, ids)
+    return gid
 
 
 async def resolve(conn, station_id: int, person_ids: list[int]):
@@ -143,7 +176,7 @@ async def resolve(conn, station_id: int, person_ids: list[int]):
 
         if helpers and students:
             # Help: the mentor is not a member; the students' group is the one helped. No points for help links.
-            gid = await _first_active_group(conn, students)
+            gid = await _first_active_group(conn, students, station_id)
             formed = gid is None
             if formed:
                 gid = await _new_group(conn, station_id, rows[students[0]])
@@ -159,12 +192,24 @@ async def resolve(conn, station_id: int, person_ids: list[int]):
             events.append(("needs_updated", {"needs": await list_needs(conn)}))
             kind, state = "help", "joined"
         else:
-            gid = await _first_active_group(conn, ids)
+            gid, missing = await _table_for(conn, station_id, ids)
             joiners: list = []
+            table_members = set(await _members(conn, gid)) if gid is not None else set()
+            adding = gid is not None and any(i not in table_members for i in ids)
+            if adding and missing:   # only a JOIN needs the whole table; members re-tapping together is a repeat
+                # Not everyone at that table tapped in: nobody joins and nothing is linked. The station blinks red and the
+                # wall says the whole table has to tap in together.
+                events.append(("join_incomplete", {"group_id": gid, "station_id": station_id,
+                                                   "scanned_ids": ids, "missing_ids": sorted(missing)}))
+                await conn.execute(
+                    "INSERT INTO scan_events (station_id, kind, size, group_id) VALUES ($1,'incomplete',$2,$3)",
+                    station_id, len(ids), gid)
+                return "incomplete", "unknown", events
             if gid is None:
                 gid = await _new_group(conn, station_id, rows[ids[0]])
                 for i in ids:
                     await conn.execute("INSERT INTO group_members (group_id, person_id) VALUES ($1,$2)", gid, i)
+                    await conn.execute("DELETE FROM group_members WHERE person_id=$1 AND group_id<>$2", i, gid)   # one table each
                 events.append(("group_formed", {"group_id": gid, "member_ids": ids, "station_id": station_id}))
                 events.append(("needs_updated", {"needs": await list_needs(conn)}))
                 kind = "new_group"
@@ -173,6 +218,7 @@ async def resolve(conn, station_id: int, person_ids: list[int]):
                 joiners = [i for i in ids if i not in members]
                 for j in joiners:
                     await conn.execute("INSERT INTO group_members (group_id, person_id) VALUES ($1,$2)", gid, j)
+                    await conn.execute("DELETE FROM group_members WHERE person_id=$1 AND group_id<>$2", j, gid)   # moving tables: leave the old one
                     group_pts = P.MEMBER_WELCOME * len(members)
                     if counts[j] < P.WELCOME_BONUS_BELOW:
                         group_pts *= 2

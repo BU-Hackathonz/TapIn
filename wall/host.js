@@ -195,6 +195,7 @@
       else if (m.kind === "formed") Sound.formed(m.group, m.links, m.pairs);
       else if (m.kind === "joined") Sound.joined(m.group, m.links || 1, m.pairs);
       else if (m.kind === "help") Sound.help(m.group);
+      else if (m.kind === "incomplete") Sound.need();               // two quiet rising notes: not everyone tapped
     }
   }
   let idleShown = false, idleAt = -1e9, tipI = -1;
@@ -248,6 +249,14 @@
       addLog(`${esc(low(list(names)))} joined <em>${esc(low(table(d.group_id)))}</em>`);
       enqueue({ kind: "joined", group: d.group_id, known: [], links: (d.new_links || []).length, pairs: d.new_links || [], main: `<b>${esc(list(names))}</b> joined ${esc(table(d.group_id))}.`, tail: "" });
       syncSoon(600);
+    },
+    // a scan that tried to add someone to a table without everyone at that table tapping in
+    join_incomplete(d) {
+      const missing = first(d.missing_ids || []);
+      addLog(`<em>${esc(low(table(d.group_id)))}</em> needs everyone to tap in`);
+      enqueue({ kind: "incomplete", person: null, group: d.group_id, known: [], links: 0,
+        main: `<b>${esc(table(d.group_id))}</b>: everyone at the table taps in together to add someone.`,
+        tail: missing.length ? `Missing: ${esc(list(missing))}.` : "" });
     },
     help(d) {
       const mentor = S.people.get(d.mentor_id);
