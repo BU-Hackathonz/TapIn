@@ -409,3 +409,7 @@ body::before {
 .hp-link { color: #111; font-size: 14px; text-decoration: underline; width: fit-content; }
 .hp-out { justify-self: start; }
 .hp-row { flex-wrap: wrap; }
+
+/* the sound note sits low over the map, clear of the place name; the stat line leaves room for the gear */
+.soundnote { top: auto; bottom: calc(var(--strip-h) + 14px); left: calc((100vw - var(--side-w)) / 2); }
+#side #statline { padding-right: 40px; }

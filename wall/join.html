@@ -665,7 +665,7 @@
       try {
         const r = await fetch("/api/host/login", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ pin }) });
         if (r.ok) { $("host-pin").value = ""; show("step-host"); }
-        else $("pin-err").textContent = r.status === 429 ? "Too many tries. Wait a minute." : r.status === 503 ? "Hosting isn't set up on this server." : "That PIN isn't right.";
+        else $("pin-err").textContent = r.status === 429 ? "Too many tries. Wait a minute." : r.status === 503 ? "Hosting isn't set up on this server." : r.status === 404 ? "Hosting only works on the venue network." : "That PIN isn't right.";
       } catch { $("pin-err").textContent = "Couldn't reach the server."; }
       btn.disabled = false;
     });
