@@ -90,3 +90,10 @@ body[data-theme="tin"] .count { top: 22px; }
 
 /* the red smoke sits behind the map */
 #fume { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; image-rendering: pixelated; image-rendering: crisp-edges; }
+
+/* no table bubbles: tables show by their label and the people at them. The info card gets a soft backing, and the profile card
+   sits above the "i" button so the button always stays on the page. */
+.info-card { background: rgba(236, 217, 210, 0.72); backdrop-filter: blur(6px); padding: 14px 16px 12px; text-shadow: none; }
+.info-x { top: 8px; right: 8px; }
+body[data-theme="tin"] .profile { bottom: 156px; max-height: calc(100% - 250px); }
+@media (max-width: 800px) { body[data-theme="tin"] .profile { bottom: 132px; max-height: 50%; } }
