@@ -27,7 +27,7 @@ SETTINGS_FILE = Path(__file__).resolve().parent.parent / ".host_settings.json"
 _sessions: dict[str, float] = {}           # token -> expiry
 _fails: dict[str, list[float]] = {}        # address -> times of recent wrong PINs
 
-DEFAULTS = {"venue": "spark!", "tables": 5, "marker": "letters", "sound": True}
+DEFAULTS = {"venue": "spark!", "tables": 8, "marker": "letters", "sound": True}   # the host wall shows the top 8 tables
 
 
 def _pin() -> str:
