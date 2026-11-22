@@ -176,7 +176,7 @@ const PixelBoston = (() => {
     return { sky, city: c };
   }
 
-  function mount(el) {
+  function mount(el) {   // returns { leave }
     const cv = document.createElement("canvas");
     cv.className = "px-scene";
     cv.setAttribute("role", "img");
@@ -201,12 +201,20 @@ const PixelBoston = (() => {
     };
     new ResizeObserver(size).observe(el);
     size();
-    if (reduce) return;
+    // leave(ms): the train speeds up and rushes off to the right while the city streaks past (used when a choice is made)
+    let leaving = null;
+    const leave = (ms = 700) => new Promise((done) => { if (reduce) return done(); leaving = { t0: performance.now(), ms, base: tx, done }; });
+    if (reduce) return { leave };
     const loop = (now) => {
-      if (now - last > 80) { last = now; scroll += 1; draw(now); }
+      if (leaving) {
+        const p = Math.min(1, (now - leaving.t0) / leaving.ms);
+        tx = leaving.base + p * p * (W + sprite.width - leaving.base + 20); scroll += 1 + p * 14; draw(now);
+        if (p >= 1) { const d = leaving.done; leaving = null; d(); }
+      } else if (now - last > 80) { last = now; scroll += 1; draw(now); }
       requestAnimationFrame(loop);
     };
     requestAnimationFrame(loop);
+    return { leave };
   }
   return { mount };
 })();

@@ -41,6 +41,7 @@
   .choice b { display: block; font: 800 clamp(24px, 3.4vw, 32px)/1.05 "Bricolage Grotesque", sans-serif; letter-spacing: -.02em; }
   .choice span { display: block; margin-top: 6px; color: #cfc6bd; font-size: 15px; }
   .choice.join { --bar: #DA291C; } .choice.host { --bar: #003DA5; }
+  body.leaving main { opacity: 0; transition: opacity .35s ease; }
   .fade { position: fixed; inset: 0; z-index: 5; background: var(--bg); opacity: 0; pointer-events: none; transition: opacity .35s ease; }
   .fade.on { opacity: 1; }
   @keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
@@ -68,7 +69,12 @@
 // a quick fade out when a choice is picked, then the next page
 document.querySelectorAll(".choice").forEach((a) => a.addEventListener("click", (e) => {
   if (e.metaKey || e.ctrlKey || e.shiftKey) return;
-  e.preventDefault(); document.getElementById("fade").classList.add("on"); setTimeout(() => (location.href = a.href), 320);
+  e.preventDefault();
+  const go = () => (location.href = a.href), fade = document.getElementById("fade");
+  document.body.classList.add("leaving");
+  const rush = window.heroScene && window.heroScene.leave ? window.heroScene.leave(650) : Promise.resolve();
+  setTimeout(() => fade.classList.add("on"), 420);          // the fade starts while the train is still going
+  rush.then(() => setTimeout(go, 250));
 }));
 // the red pixel smoke from the host wall, behind everything
 (() => {
@@ -166,6 +172,6 @@ document.querySelectorAll(".choice").forEach((a) => a.addEventListener("click", 
 })();
 </script>
 <script src="pixel.js"></script>
-<script>PixelBoston.mount(document.getElementById("hscene"));</script>
+<script>window.heroScene = PixelBoston.mount(document.getElementById("hscene"));</script>
 </body>
 </html>
