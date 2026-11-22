@@ -135,7 +135,6 @@ document.querySelectorAll(".choice").forEach((a) => a.addEventListener("click", 
   function train(t) {
     const x = -112 + ease(t / T_TRAIN) * (STOP + 112), y = GROUND - 30, moving = t < T_TRAIN, bob = moving ? Math.round(Math.sin(t * 40) * 0.6) : 0;
     const doors = clamp((t - T_TRAIN) / 0.35) * clamp((T_DOORS + 3.2 - t) / 0.35);
-    R(x + 2, y - 8 + bob, 108, 2, "#2b1f23"); R(x + 40, y - 14 + bob, 2, 8, "#2b1f23"); R(x + 34, y - 15 + bob, 14, 2, "#2b1f23");                // pantograph
     R(x, y + bob, 112, 26, "#00843D"); R(x, y + bob, 112, 4, "#2fbf6a"); R(x, y + 20 + bob, 112, 3, "#f3e4dc"); R(x, y + 23 + bob, 112, 3, "#005c2a");
     for (let i = 0; i < 6; i++) R(x + 6 + i * 16, y + 6 + bob, 12, 9, "#cfe8d9");
     const dx = x + 70; R(dx, y + 4 + bob, 14, 19, "#005c2a"); R(dx + 2, y + 6 + bob, 4 + doors * 4, 17, doors > 0.05 ? "#3a2b2b" : "#cfe8d9"); R(dx + 8 - doors * 4, y + 6 + bob, 4, 17, "#cfe8d9");
