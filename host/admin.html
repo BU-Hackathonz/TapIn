@@ -63,6 +63,9 @@
 </main>
 <script>
 (() => {
+  // The admin API only answers on the venue server (tapin.boston keeps /api/admin private), so from the public site this
+  // page hands over to the venue address, like Host a room does. It loads only on the venue Wi-Fi.
+  if (/(^|\.)tapin\.boston$/i.test(location.hostname)) { location.replace("http://192.168.8.236:8000/host/admin.html"); return; }
   const $ = (id) => document.getElementById(id);
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
   let people = [];
@@ -165,14 +168,17 @@
   });
   $("pinform").addEventListener("submit", async (e) => {
     e.preventDefault(); $("pinerr").textContent = "";
+    await loggedOut;                     // the sign-out this page sends on opening must land first, or it ends the new session
     const r = await fetch("/api/admin/login", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ pin: $("pin").value }) }).catch(() => null);
     if (r && r.ok) { $("pin").value = ""; return load(); }
-    $("pinerr").textContent = !r ? "Couldn't reach the server." : r.status === 429 ? "Too many tries. Wait a minute." : r.status === 404 ? "The admin panel only works on the venue network." : "That PIN isn't right.";
+    $("pinerr").textContent = !r ? "Couldn't reach the server." : r.status === 429 ? "Too many tries. Wait a minute." : r.status === 404 ? "The admin panel only works on the venue network." :
+      r.status === 503 ? "Admin sign-in is off: HOST_PIN isn't set on the venue server." :
+      r.status === 401 || r.status === 422 ? "That PIN isn't right." : `The server had a problem (${r.status}). Try again.`;
   });
   $("q").addEventListener("input", render);
   $("reload").addEventListener("click", load);
   // every visit starts at the PIN: any earlier admin session ends when the page opens
-  fetch("/api/admin/logout", { method: "POST" }).catch(() => {}).finally(() => { $("signin").hidden = false; $("pin").focus(); });
+  const loggedOut = fetch("/api/admin/logout", { method: "POST" }).catch(() => {}).finally(() => { $("signin").hidden = false; $("pin").focus(); });
   addEventListener("pagehide", () => { try { navigator.sendBeacon("/api/admin/logout"); } catch { /* best effort */ } });
 })();
 </script>
