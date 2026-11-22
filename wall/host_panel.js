@@ -1,4 +1,4 @@
-// The host pill at the top left of the host wall opens this panel, the same You / Settings panel as on the room map:
+// The gear at the top left of the side dashboard opens this panel, the same You / Settings panel as on the room map:
 // your profile, sound, and End room (which asks "Are you sure?" first). There is nothing here to change how the wall looks:
 // no styles, views, 2D or plan, names or spin. The host wall is one fixed view.
 // Everything is kept in this browser (wall.me, wall.room), the same keys the join page writes.
@@ -9,19 +9,14 @@
   const DOOR = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4H6v16h8"/><path d="M14 4l5 2v12l-5 2z"/><path d="M3 12h7M7 9l3 3-3 3"/></svg>';
   const get = (k) => { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch { return null; } };
   const put = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } };
-  const panel = el("aside", "hp"); panel.id = "hostpanel"; panel.hidden = true; panel.setAttribute("aria-label", "Your profile and settings");
+  const panel = el("aside", "hp"); panel.id = "hostpanel"; panel.hidden = true; panel.setAttribute("aria-label", "Your account and settings");
   document.body.append(panel);
   let tab = "you";
   const mine = () => get("wall.me") || {};
   const room = () => get("wall.room") || {};
   const bar = (t) => el("h3", "hp-bar", t);
 
-  const trigger = () => {
-    const name = mine().name || "Host";
-    pill.querySelector(".hs-name").textContent = name;
-    pill.querySelector(".hs-pic").textContent = name.trim().charAt(0).toUpperCase() || "H";
-    pill.setAttribute("aria-label", `${name}: profile and settings`);
-  };
+  const trigger = () => { pill.setAttribute("aria-label", `${mine().name || "Host"}: account and settings`); };
 
   const you = (body) => {
     const m = mine(), r = room();
