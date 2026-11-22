@@ -157,7 +157,8 @@ body[class*="layout-"] input[type="text"], body[class*="layout-"] input[type="em
 /* the photo with its cut-off shapes finished (TapArt.photo): no mask, nothing fades */
 .art-fill .art-photo { overflow: visible; }
 .art-brand { display: none; }
-.brand-top { display: flex; justify-content: center; margin-bottom: 18px; }
+.brand-top { display: flex; justify-content: center; margin: 8px 0 26px; }
+.brand-top .lg { font-size: 64px; }
 .card { align-self: center; justify-self: center; margin: 24px 16px; }
 .layout-1 .card, .layout-2 .card, .layout-5 .card { border: 0; box-shadow: none; background: transparent; }
 
@@ -170,15 +171,15 @@ body[class*="layout-"] input[type="text"], body[class*="layout-"] input[type="em
 .layout-2 .art-panel { order: -1; flex-direction: column; height: 100vh; }
 .layout-2 .art-fill { height: auto; flex: 0 1 auto; min-height: 0; }
 .layout-2 .art-fill .art.art-blend { max-height: calc(100vh - 120px); width: auto; max-width: 100%; }
-.layout-2 .art-brand { display: block; order: 2; margin-top: -8px; }
-.layout-2 .art-brand .lg { font-size: 46px; }
+.layout-2 .art-brand { display: block; order: 2; margin-top: 14px; }
+.layout-2 .art-brand .lg { font-size: 72px; }
 .layout-2 .brand-top { display: none; }
 
 /* 3 · banner: art across the top, logo and form below */
 .layout-3 .stage { grid-template-rows: auto auto; }
 .layout-3 .art-panel { max-height: 46vh; overflow: hidden; }
 .layout-3 .art-fill .art.art-blend { width: min(1100px, 100%); }
-.layout-3 .brand-top .lg { font-size: 44px; }
+.layout-3 .brand-top .lg { font-size: 64px; }
 
 /* 4 · card on art: the art behind, a white card in the middle */
 .layout-4 .stage { grid-template-areas: "all"; }
@@ -191,7 +192,7 @@ body[class*="layout-"] input[type="text"], body[class*="layout-"] input[type="em
 .layout-5 .stage { grid-template-columns: minmax(0, 1fr); justify-items: center; align-content: start; padding-top: 28px; }
 .layout-5 .art-panel { width: min(620px, 94vw); flex-direction: column; gap: 6px; }
 .layout-5 .art-brand { display: block; order: -1; }
-.layout-5 .art-brand .lg { font-size: 52px; }
+.layout-5 .art-brand .lg { font-size: 76px; }
 .layout-5 .card { margin-top: 0; }
 .layout-5 .brand-top { display: none; }
 
@@ -205,5 +206,5 @@ body[class*="layout-"] input[type="text"], body[class*="layout-"] input[type="em
   .layout-4 .art-panel, .layout-4 .card { grid-area: auto; }
   .layout-4 .art-fill .art.art-blend { height: auto; }
   .card, .layout-3 .card, .layout-4 .card { margin: 0; border: 0; border-radius: 0; box-shadow: none; background: transparent; min-height: auto; }
-  .layout-2 .art-brand .lg, .layout-5 .art-brand .lg { font-size: 36px; }
+  .brand-top .lg, .layout-2 .art-brand .lg, .layout-5 .art-brand .lg { font-size: 54px; }
 }
