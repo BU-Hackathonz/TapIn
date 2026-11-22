@@ -241,7 +241,7 @@ const View3D = (() => {
     const PW = W, K = Math.min(1.4, Math.max(0.7, Math.min(PW / 1440, Ha / 760) * 1.25));
     const L = RoomLayout.create({ width: PW, height: Ha, scale: K, margin: { x: 70 * K, top: 46 * K, bottom: 40 * K } });
     const people = visible.map((p) => ({ ...p, here: true }));
-    if (me) people.push({ ...me, id: -1, here: true, role: "student", group_id: null });
+    if (me) people.push({ ...me, id: -1, here: true, role: "student", group_id: me.id >= 0 && shownGroups.some((g) => g.id === me.group_id) ? me.group_id : null });   // a real you keeps their seat at their table
     L.setData({ people, groups: shownGroups, links: [...S.links.values()] });
     for (let i = 0; i < 400 && L.step(); i++);                        // settle at once; the wall's own easing then glides
     const s0 = Math.min(W, Ha) * (Ha > W ? 1.35 : 0.95) / 950, toW = (x, y) => [(x - W / 2) / s0, (y - Ha / 2) / s0];

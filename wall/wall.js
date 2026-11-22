@@ -99,7 +99,11 @@
     const hereGroups = new Set();
     for (const p of S.people.values()) if (p.here && p.group_id) hereGroups.add(p.group_id);
     shownGroups = [...S.groups.values()].filter((g) => hereGroups.has(g.id));
-    visible = [...S.people.values()].filter((p) => p.here || (p.group_id && hereGroups.has(p.group_id)));
+    // You are drawn once, as "you" (red, in the middle). A badge-linked you is also a person from the server: leave that copy out.
+    let meNow = null;
+    try { meNow = Corner.signedIn() && !mainScreen ? Corner.me() : null; } catch { /* still starting up */ }
+    const myId = meNow && meNow.id >= 0 ? meNow.id : null;
+    visible = [...S.people.values()].filter((p) => p.id !== myId && (p.here || (p.group_id && hereGroups.has(p.group_id))));
     View3D.relayout();
     $("here").textContent = [...S.people.values()].filter((p) => p.here).length;
   }
