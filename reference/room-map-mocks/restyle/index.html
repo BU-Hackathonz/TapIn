@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Room map</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600;700&family=Patrick+Hand&family=Bricolage+Grotesque:wght@600;800&display=swap">
+<link rel="stylesheet" href="../../../wall/wall.css"> <link rel="stylesheet" href="tin.css">
+</head>
+<body data-theme="tin">
+<canvas id="map3d" aria-label="3D room view"></canvas>
+<aside id="profile" class="profile" aria-label="Profile" hidden>
+  <button type="button" id="profile-close" class="profile-close" aria-label="Close profile">×</button>
+  <div id="profile-body"></div>
+</aside>
+
+<div class="me">
+  <button type="button" id="me-tab" class="me-tab" aria-expanded="false" aria-controls="me-panel"></button>
+  <section id="me-panel" class="me-panel" hidden>
+    <nav class="me-tabs" aria-label="Panel">
+      <button type="button" data-tab="you">You</button>
+      <button type="button" data-tab="settings">Settings</button>
+    </nav>
+    <div id="me-body" class="me-body"></div>
+  </section>
+</div>
+<div class="count"><b id="here">0</b><span>here now</span><span class="demo-tag">PROTOTYPE · SAMPLE DATA</span></div>
+<details id="room-insights" class="room-insights" open>
+  <summary>Room activity</summary>
+  <div class="insights-body">
+    <dl id="room-stats"></dl>
+    <section><h2>Scans per 10 minutes</h2><div id="scan-chart"></div></section>
+    <section><h2>Top tables</h2><ol id="top-tables"></ol></section>
+    <section><h2>Needs help</h2><ul id="open-needs"></ul></section>
+    <section><h2>Recent activity</h2><ul id="room-activity"></ul></section>
+  </div>
+</details>
+<div id="wall-icebreaker" class="wall-icebreaker" role="status" hidden></div>
+<div id="toasts" class="toasts" aria-live="polite"></div>
+
+<div id="start" class="start">
+  <button type="button" id="start-btn">Start</button>
+  <p>Click once to turn on sound.</p>
+</div>
+
+<script src="../../../wall/vendor/Tone.js"></script>
+<script src="../../../wall/sound.js"></script>
+<script src="themes.js"></script>
+<script src="../../../wall/view3d.js"></script>
+<script src="../../../wall/demo.js"></script>
+<script src="../../../wall/corner.js"></script>
+<script src="../../../wall/panels.js"></script>
+<script src="../../../wall/wall.js"></script>
+</body>
+</html>

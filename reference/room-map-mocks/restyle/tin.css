@@ -1,0 +1,14 @@
+/* "Tin": the user map in its own look. Same markup and same scripts as wall/index.html; only colors, type and the cards change. */
+body[data-theme="tin"] {
+  --bg: #f3ece1; --bg-image: radial-gradient(60% 50% at 50% 38%, #fbf6ee 0%, transparent 100%); --panel: #fffdf8; --line: #e1d8c8; --text: #1d1a16; --text-soft: #3a352d;
+  --muted: #8c8579; --faint: #b9b1a2; --tile: #f3ece1; --accent: #e0367f; --accent-text: #e0367f; --mint: #2f6d4e; --amber: #c9822b;
+  --overlay: rgba(243,236,225,.92); --shadow: 0 14px 40px rgba(60,40,20,.14); --radius: 18px; --border: 1px solid #e1d8c8;
+  --font: "IBM Plex Sans", system-ui, sans-serif;
+}
+body[data-theme="tin"] { background-size: auto; }
+body[data-theme="tin"] .count b { font: 800 44px/1 "Bricolage Grotesque", var(--font); letter-spacing: -.03em; }
+body[data-theme="tin"] .count span { color: var(--muted); }
+body[data-theme="tin"] .profile, body[data-theme="tin"] .room-insights, body[data-theme="tin"] .me-panel { background: var(--panel); border: var(--border); border-radius: 20px; box-shadow: var(--shadow); }
+body[data-theme="tin"] .room-insights summary, body[data-theme="tin"] .insights-body h2 { font-family: "Bricolage Grotesque", var(--font); font-weight: 800; letter-spacing: -.01em; }
+body[data-theme="tin"] .me-tab { border-radius: 999px; background: var(--panel); border: var(--border); box-shadow: var(--shadow); }
+body[data-theme="tin"] .toast b { color: var(--accent); }
