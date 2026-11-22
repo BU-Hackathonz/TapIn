@@ -50,7 +50,8 @@
     <section class="step" aria-labelledby="step3">
     <h2 class="step-title" id="step3"><span class="bullet g" aria-hidden="true">3</span>Extras <small>(optional)</small></h2>
     <label class="field" for="working">Working on today</label>
-    <input type="text" id="working" name="working_on" maxlength="80" placeholder="a robot arm, a study-room finder...">
+    <input type="text" id="working" name="working_on" maxlength="80" placeholder="a robot arm, or just hanging out">
+    <div class="picks" id="working-picks" role="group" aria-label="Quick picks for working on today"></div>
 
     <label class="field" for="contact">How should people reach you after tonight? <small>(Instagram or LinkedIn)</small></label>
     <input type="text" id="contact" name="contact" maxlength="80" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="@yourname or linkedin.com/in/..." aria-describedby="contact-help">
@@ -84,6 +85,17 @@
   document.getElementById("looking").append(looking);
   if (saved.name) document.getElementById("name").value = saved.name;
   if (saved.working_on) document.getElementById("working").value = saved.working_on;
+
+  // Quick picks: tap one to fill "Working on today" (tap again to clear). Typing anything else unpicks it.
+  const working = document.getElementById("working"), picksBox = document.getElementById("working-picks");
+  const syncPicks = () => picksBox.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.textContent === working.value.trim())));
+  for (const s of SOCIAL) {
+    const b = el("button", { type: "button", class: "pick", "aria-pressed": "false" }, s);
+    b.addEventListener("click", () => { working.value = working.value.trim() === s ? "" : s; syncPicks(); });
+    picksBox.append(b);
+  }
+  working.addEventListener("input", syncPicks);
+  syncPicks();
   if (saved.contact) document.getElementById("contact").value = saved.contact;
   if (saved.role) document.querySelector(`input[name=role][value="${saved.role}"]`).checked = true;
 

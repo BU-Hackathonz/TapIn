@@ -81,6 +81,11 @@ async function api(method, path, body) {
 }
 
 // Storage can be blocked (private mode); the pages still work, they just forget you.
+// "Working on today" quick picks that aren't projects, so nobody has to be building something to tap in.
+const SOCIAL = ["Just hanging out", "Meeting new people", "Looking for a team", "Studying", "Exploring ideas"];
+// "Building a robot arm" for a project, but "Just hanging out" as is.
+const doing = (w) => (SOCIAL.some((s) => s.toLowerCase() === String(w).trim().toLowerCase()) ? w : "Building " + w);
+
 const store = {
   get(k, s = localStorage) { try { return JSON.parse(s.getItem(k)); } catch (_) { return null; } },
   set(k, v, s = localStorage) { try { s.setItem(k, JSON.stringify(v)); } catch (_) {} },

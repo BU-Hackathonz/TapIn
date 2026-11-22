@@ -51,7 +51,7 @@
       list(me.suggested_groups.map((s, i) => el("li", { class: i === 0 ? "top" : "" },
         // "Table 2 needs firmware" reads as a sentence; other reasons get a separator
         el("div", { class: "title" }, bullet(s.group.name), tableName(s.group.name), s.reason.startsWith("needs") ? " " : " · ", el("span", { class: "why" }, s.reason)),
-        s.group.working_on ? el("div", {}, "Building ", s.group.working_on) : null,
+        s.group.working_on ? el("div", {}, doing(s.group.working_on)) : null,
         el("div", { class: "sub" }, `You know ${s.group.known_count} of its ${s.group.size} ${s.group.size === 1 ? "person" : "people"}`),
       )), me.here ? "No open tables fit you right now. Check back soon." : "Check in at a station to see tables that fit you."),
       el("h2", {}, "People to meet"),
@@ -95,7 +95,7 @@
     return [
       el("h2", {}, "Your table"),
       el("p", { class: "yours" }, bullet(g.name), el("strong", {}, tableName(g.name)), el("span", { class: "points" }, `${g.points} pts`)),
-      g.working_on ? el("p", { class: "muted" }, "Building ", g.working_on) : null,
+      g.working_on ? el("p", { class: "muted" }, doing(g.working_on)) : null,
       el("p", { class: "muted" }, g.members.map(m => m.name).join(", ")),
       el("div", { class: "seg", role: "group", "aria-label": "Table mode" }, modeBtn("open", "Open"), modeBtn("heads_down", "Heads-down")),
       el("p", { class: "note" }, g.mode === "open" ? "Open: we show your table to people who fit." : "Heads-down: nobody gets your table as a suggestion."),
