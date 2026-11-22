@@ -31,7 +31,7 @@
   const item = (label, color, href, cls) => { const a = el("a", "acc-item" + (cls ? " " + cls : "")); a.setAttribute("role", "menuitem"); a.href = href; const i = el("i"); i.style.background = color; a.append(i, document.createTextNode(label)); menu.append(a); return a; };
   item("Your profile", "#DA291C", "/wall/join.html?profile");
   item("Edit profile & photo", "#ED8B00", "/wall/join.html?edit");
-  item("Settings", "#003DA5", "/wall/index.html?open=settings");
+  item("Settings", "#003DA5", "#").addEventListener("click", (e) => { e.preventDefault(); open(false); settings(); });
   item("Your rooms", "#00843D", "/wall/index.html");
   const out = item("Sign out", "transparent", "#", "out");
   out.querySelector("i").remove(); out.prepend(document.createTextNode("⏻ "));
@@ -47,6 +47,71 @@
   addEventListener("keydown", (e) => { if (e.key === "Escape" && !menu.hidden) { open(false); btn.focus(); } });
   document.body.append(shade, btn, menu);
   const bar = el("div", "acc-bar", `Signed in as ${me.name}`); document.body.append(bar);
+
+  // Settings opens here, in a window over this page (the room map has its own settings in its corner panel).
+  const store = (k, v) => { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); return true; } catch { return false; } };
+  const read = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
+  function settings() {
+    const back = el("div", "acc-set-back");
+    const win = el("div", "acc-set"); win.setAttribute("role", "dialog"); win.setAttribute("aria-modal", "true"); win.setAttribute("aria-labelledby", "acc-set-t");
+    const close = () => { back.remove(); removeEventListener("keydown", esc); btn.focus(); };
+    const esc = (e) => { if (e.key === "Escape") close(); };
+    addEventListener("keydown", esc);
+    back.addEventListener("click", (e) => { if (e.target === back) close(); });
+    const x = el("button", "acc-set-x", "×"); x.type = "button"; x.setAttribute("aria-label", "Close settings"); x.addEventListener("click", close);
+    const top = el("div", "acc-set-top"); const t = el("h2", null, "Settings"); t.id = "acc-set-t"; top.append(t, x);
+
+    // profile: the quick fields; photo, skills and apps stay on the full editor
+    const form = el("form", "acc-set-form");
+    const field = (label, name, ph, max) => { const l = el("label", null, label), i = el("input"); i.type = "text"; i.name = name; i.value = me[name] || ""; i.placeholder = ph; i.maxLength = max; l.append(i); return l; };
+    const saved = el("span", "acc-set-ok", ""); saved.setAttribute("role", "status");
+    const save = el("button", "acc-set-btn", "Save"); save.type = "submit";
+    const more = el("a", "acc-set-link", "Photo, skills and apps"); more.href = "/wall/join.html?edit";
+    const row = el("div", "acc-set-row"); row.append(save, more, saved);
+    form.append(field("Name", "name", "First name", 30), field("School", "school", "Boston University", 60),
+                field("Major", "major", "Computer Engineering", 40), field("One line about you", "bio", "Likes soldering more than slides.", 80), row);
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const f = form.elements;
+      me.name = f.name.value.trim() || "Guest";
+      for (const k of ["school", "major", "bio"]) { const v = f[k].value.trim(); if (v) me[k] = v; else delete me[k]; }
+      if (!store("wall.me", JSON.stringify(me))) { saved.textContent = "Couldn't save in this browser"; return; }
+      saved.textContent = "Saved";
+      who.querySelector("b").textContent = me.name; who.querySelector("small").textContent = me.school || "Signed in";
+      bar.textContent = `Signed in as ${me.name}`;
+      const hi = document.querySelector(".acc-hi"); if (hi) hi.textContent = `Welcome back, ${me.name}`;
+      for (const i of document.querySelectorAll(".acc-init")) i.textContent = me.name.slice(0, 1).toUpperCase();
+      setTimeout(() => { saved.textContent = ""; }, 1800);
+    });
+
+    // a switch row
+    const toggle = (label, on, change) => {
+      const l = el("label", "acc-set-sw"), i = el("input"); i.type = "checkbox"; i.checked = on;
+      i.addEventListener("change", () => change(i.checked));
+      l.append(el("span", null, label), i, el("i")); return l;
+    };
+    const planOn = read("wall.view") === "plan";
+    const soundOn = read("tapin.uisound") !== "off";
+
+    const acct = el("div", "acc-set-row");
+    if (me.person_id != null) { const a = el("a", "acc-set-link", "Your suggestions and table"); a.href = "/phone/me.html?id=" + encodeURIComponent(me.person_id); acct.append(a); }
+    const so = el("button", "acc-set-btn out", "Sign out"); so.type = "button";
+    so.addEventListener("click", () => { store("wall.me", null); store("wall.room", null); location.reload(); });
+    acct.append(so);
+
+    win.append(top,
+      el("h3", null, "Profile"), form,
+      el("h3", null, "Room map"),
+      toggle("Open the room as a floor plan", planOn, (v) => store("wall.view", v ? "plan" : "3d")),
+      el("h3", null, "Sound"),
+      toggle("Interface sounds", soundOn, (v) => {
+        const uis = document.querySelector(".uis-toggle");          // keep the page's speaker button in step
+        if (uis && (read("tapin.uisound") !== "off") !== v) uis.click(); else store("tapin.uisound", v ? "on" : "off");
+      }),
+      el("h3", null, "Account"), acct);
+    back.append(win); document.body.append(back);
+    win.querySelector("input")?.focus();
+  }
 
   const css = el("style");
   css.textContent = `
@@ -72,6 +137,28 @@
   .acc-item:hover, .acc-item:focus-visible { background: #111; color: #ffb000; outline: none; }
   .acc-item.out { color: #DA291C; border-bottom: 0; } .acc-item.out:hover { color: #fff; background: #DA291C; }
   .acc-bar { position: fixed; left: 0; bottom: 0; z-index: 4; padding: 8px 16px 6px; background: #111; color: #ffb000; font: 400 13px "DotGothic16", monospace; text-transform: uppercase; letter-spacing: .05em; }
+  .acc-set-back { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; padding: 16px; background: rgba(17,17,17,.45); }
+  .acc-set { width: min(440px, 100%); max-height: calc(100vh - 32px); overflow: auto; background: #fff; border: 2px solid #111; box-shadow: 8px 8px 0 #111; padding: 0 18px 18px; }
+  .acc-set-top { position: sticky; top: 0; display: flex; align-items: center; justify-content: space-between; margin: 0 -18px; padding: 12px 18px; background: #111; color: #ffb000; }
+  .acc-set-top h2 { margin: 0; font: 400 18px "DotGothic16", monospace; text-transform: uppercase; letter-spacing: .06em; }
+  .acc-set-x { width: 32px; height: 32px; border: 0; background: none; color: #fff; font-size: 26px; line-height: 1; cursor: pointer; }
+  .acc-set-x:hover, .acc-set-x:focus-visible { color: #ffb000; outline: none; }
+  .acc-set h3 { margin: 18px 0 8px; font: 400 13px "DotGothic16", monospace; text-transform: uppercase; letter-spacing: .08em; color: #003DA5; }
+  .acc-set-form label { display: block; margin-bottom: 10px; font: 600 12px "IBM Plex Sans", sans-serif; color: #444; }
+  .acc-set-form input { display: block; width: 100%; box-sizing: border-box; margin-top: 4px; padding: 9px 10px; border: 2px solid #111; font: 400 15px "IBM Plex Sans", sans-serif; }
+  .acc-set-form input:focus { outline: none; box-shadow: 0 0 0 3px #ffb000; }
+  .acc-set-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+  .acc-set-btn { padding: 9px 16px; border: 2px solid #111; background: #111; color: #ffb000; font: 400 14px "DotGothic16", monospace; text-transform: uppercase; letter-spacing: .05em; cursor: pointer; }
+  .acc-set-btn:hover, .acc-set-btn:focus-visible { background: #ffb000; color: #111; outline: none; }
+  .acc-set-btn.out { background: #fff; color: #DA291C; border-color: #DA291C; } .acc-set-btn.out:hover { background: #DA291C; color: #fff; }
+  .acc-set-link { color: #003DA5; font: 600 14px "IBM Plex Sans", sans-serif; }
+  .acc-set-ok { color: #00843D; font: 600 13px "IBM Plex Sans", sans-serif; }
+  .acc-set-sw { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; font: 400 15px "IBM Plex Sans", sans-serif; color: #111; cursor: pointer; }
+  .acc-set-sw input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .acc-set-sw i { flex: none; position: relative; width: 42px; height: 24px; border: 2px solid #111; border-radius: 14px; background: #e2ddd8; transition: background .15s; }
+  .acc-set-sw i::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #111; transition: transform .15s; }
+  .acc-set-sw input:checked + i { background: #00843D; } .acc-set-sw input:checked + i::after { transform: translateX(18px); background: #fff; }
+  .acc-set-sw input:focus-visible + i { box-shadow: 0 0 0 3px #ffb000; }
   @media (max-width: 600px) { .acc-me { width: 44px; height: 44px; top: 10px; right: 10px; } .acc-menu { right: 10px; top: 66px; width: min(270px, calc(100vw - 20px)); } }`;
   document.head.append(css);
 })();
