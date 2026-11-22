@@ -118,7 +118,7 @@ const Corner = (() => {
     if (tab === "you") {
       const p = me();
       const link = el("a", "me-edit", saved() ? "Edit your profile" : "Set up your profile");
-      link.href = saved() ? "login.html?edit" : "login.html";
+      link.href = saved() ? "join.html?edit" : "join.html";
       const r = Room.current;
       const status = el("p", "me-room", r.status === "in" ? `${r.host ? "Hosting" : "In"} ${r.name}` : "Not in a room");
       body.replaceChildren(status, el("p", "me-note", saved() ? `Signed in as ${p.name}` : `Signed in as ${p.name} (mock)`), link,
@@ -173,7 +173,7 @@ const Corner = (() => {
     const saveBtn = el("button", "room-join", "Save");
     saveBtn.type = "submit";
     const more = el("a", "set-more", "Photo, skills and apps");
-    more.href = "login.html?edit";
+    more.href = "join.html?edit";
     const done = el("span", "set-saved", "");
     form.append(field("Name", "name", mine.name || p.name, "First name", 30), field("School", "school", mine.school, "Boston University", 60),
                 field("Major", "major", mine.major, "Computer Engineering", 40), field("One line about you", "bio", mine.bio, "Likes soldering more than slides.", 80));
@@ -199,7 +199,7 @@ const Corner = (() => {
     b.type = "button";
     b.addEventListener("click", () => {
       try { localStorage.removeItem("wall.me"); } catch { /* private mode */ }
-      location.href = "login.html";
+      location.href = "join.html";
     });
     return b;
   }

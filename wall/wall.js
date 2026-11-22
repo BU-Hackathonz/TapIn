@@ -8,7 +8,7 @@
   if (qs.has("kiosk")) document.body.classList.add("kiosk");
   const peek = window.top !== window && qs.has("peek");   // the mockups gallery shows the room in a frame, signed out
   if (!signedIn && !qs.has("kiosk") && !peek) {
-    location.replace(`login.html${location.search}`);
+    location.replace(`join.html${location.search}`);
     return;
   }
   const host = qs.get("server") || location.host;
