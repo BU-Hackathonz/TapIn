@@ -84,11 +84,10 @@ body.idle, body.idle * { cursor: none; }
 .soundnote { position: fixed; z-index: 8; left: 50%; top: 14px; transform: translateX(-50%); padding: 9px 16px; background: #111; color: #ffb000; font: 400 15px/1 "DotGothic16", monospace; text-transform: uppercase; letter-spacing: .04em; box-shadow: inset 0 -3px 0 #DA291C; animation: sn 1.6s ease-in-out infinite; }
 @keyframes sn { 50% { opacity: .55; } }
 /* the host's way back to the settings: a small gear at the top right that shows when the mouse moves and hides when it rests */
-.hostset { position: absolute; z-index: 7; top: 0; left: 0; width: 36px; height: 36px; display: grid; place-items: center; background: #111; color: #fff; box-shadow: inset -4px 0 0 #DA291C; opacity: 0.92; transition: opacity .4s ease; }
-.hostset svg { width: 20px; height: 20px; margin-right: 3px; }
+.hostset { position: absolute; z-index: 7; top: 0; right: 0; width: 36px; height: 36px; display: grid; place-items: center; background: #111; color: #fff; box-shadow: inset 4px 0 0 #DA291C; opacity: 0.92; transition: opacity .4s ease; }
+.hostset svg { width: 20px; height: 20px; margin-left: 3px; }
 .hostset:hover, .hostset:focus-visible { opacity: 1; outline: 3px solid #003DA5; outline-offset: -3px; }
 body.idle .hostset { opacity: 0; pointer-events: none; }
-#side #statline { margin-left: 42px; }
 html, body { height: 100%; margin: 0; }
 body {
   display: grid; background: var(--bg); color: var(--fg); font: 400 var(--u)/1.35 var(--sans);
@@ -406,3 +405,7 @@ body::before {
 @media (prefers-reduced-motion: reduce) { .hp-shade, .hp-win { animation: none; } }
 .hp-leaving { opacity: 0; transition: opacity .35s ease; }
 
+
+.hp-link { color: #111; font-size: 14px; text-decoration: underline; width: fit-content; }
+.hp-out { justify-self: start; }
+.hp-row { flex-wrap: wrap; }

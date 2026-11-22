@@ -1,6 +1,6 @@
-// The gear at the top left of the side dashboard opens this panel, the same You / Settings panel as on the room map:
-// your profile, sound, and End room (which asks "Are you sure?" first). There is nothing here to change how the wall looks:
-// no styles, views, 2D or plan, names or spin. The host wall is one fixed view.
+// The gear at the top right of the side dashboard opens this panel: Jun's account panel from the room map (You / Settings: profile,
+// account sign in and out, room, sound), minus the Style picker and the Display switches (room plan, 2D, names, spin). The host wall is
+// one fixed view. End room asks "Are you sure?" first.
 // Everything is kept in this browser (wall.me, wall.room), the same keys the join page writes.
 (() => {
   const pill = document.getElementById("hostset");
@@ -16,15 +16,17 @@
   const room = () => get("wall.room") || {};
   const bar = (t) => el("h3", "hp-bar", t);
 
-  const trigger = () => { pill.setAttribute("aria-label", `${mine().name || "Host"}: account and settings`); };
+  const trigger = () => { pill.setAttribute("aria-label", "Account and settings"); };
 
+  const link = (text, href) => { const a = el("a", "hp-link", text); a.href = href; return a; };
   const you = (body) => {
-    const m = mine(), r = room();
-    body.append(bar("You"), el("p", "hp-big", m.name || "Host"));
+    const m = mine(), r = room(), signedIn = !!m.name;
+    body.append(bar("You"), el("p", "hp-big", m.name || "Not signed in"));
     if (m.school || m.major) body.append(el("p", "hp-note", [m.school, m.major].filter(Boolean).join(" · ")));
     if (m.bio) body.append(el("p", "hp-note", m.bio));
-    body.append(el("p", "hp-note", r.name ? `Hosting ${r.name}${r.place ? " · " + r.place : ""}` : "Hosting this room"),
-                el("p", "hp-note", "The host wall is one fixed view: its look can't be changed here."));
+    body.append(el("p", "hp-note", r.name ? `Hosting ${r.name}${r.place ? " · " + r.place : ""}` : "Not in a room"),
+                el("p", "hp-note", signedIn ? `Signed in as ${m.name}` : "Sign in to keep your profile on this screen."),
+                signedIn ? link("Edit your profile", "join.html?edit") : link("Sign in or set up your profile", "join.html?login"));
   };
 
   const settings = (body) => {
@@ -33,7 +35,7 @@
     const form = el("form", "hp-form");
     const field = (label, name, value, ph, max) => { const l = el("label", "", label), i = el("input"); i.type = "text"; i.name = name; i.value = value || ""; i.placeholder = ph; i.maxLength = max; l.append(i); return l; };
     const save = el("button", "hp-save", "Save"), msg = el("span", "hp-msg"), row = el("div", "hp-row");
-    save.type = "submit"; row.append(save, msg);
+    save.type = "submit"; row.append(save, link("Photo, skills and apps", "join.html?edit"), msg);
     form.append(field("Name", "name", m.name, "First name", 30), field("School", "school", m.school, "Boston University", 60),
                 field("Major", "major", m.major, "Computer Engineering", 40), field("One line about you", "bio", m.bio, "Likes soldering more than slides.", 80), row);
     form.addEventListener("submit", (e) => {
@@ -53,7 +55,9 @@
       if (window.Sound && Sound.setMuted) Sound.setMuted(!cb.checked);
       try { localStorage.setItem("wall.hostSound", cb.checked ? "on" : "off"); } catch { /* private mode */ }
     });
-    body.append(form, bar("Sound"), sw);
+    const acct = el("button", "hp-save hp-out", mine().name ? "Sign out" : "Sign in"); acct.type = "button";
+    acct.addEventListener("click", () => { if (mine().name) { try { localStorage.removeItem("wall.me"); } catch { /* private mode */ } } location.href = "join.html" + (mine().name ? "" : "?login"); });
+    body.append(form, bar("Account"), acct, bar("Sound"), sw);
   };
 
   const render = () => {
@@ -67,7 +71,7 @@
     (tab === "you" ? you : settings)(body);
     const end = el("button", "hp-leave"); end.type = "button"; end.innerHTML = DOOR; end.append(el("span", "", "End room"));   // static icon markup
     end.addEventListener("click", ask);
-    body.append(bar("Room"), end);
+    body.append(bar("Room"), end, link("Join or host another", "join.html?host"));
     panel.replaceChildren(tabs, body);
   };
 
