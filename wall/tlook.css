@@ -297,3 +297,4 @@ body.hw .wall-icebreaker:not([hidden]) ~ .plan-bar .pb-text, body.hw:has(.wall-i
 @media (max-width: 800px) {
   body.hw .wall-icebreaker { width: calc(100% - 120px); height: auto; min-height: 50px; padding: 10px 14px 6px; white-space: normal; font-size: 12px; line-height: 1.25; }
 }
+body.hw .wall-icebreaker[hidden] { display: none; }

@@ -201,7 +201,7 @@
   @media (max-width: 800px) {
     .window { grid-template-columns: minmax(0, 1fr); width: auto; min-height: 0; margin: 12px 12px 60px; padding: 10px; border-radius: 22px; }
     .scene { height: 32vh; min-height: 190px; order: -1; }
-    .scene::after { font-size: 12.5px; left: 14px; bottom: 12px; }
+    .scene::after { font-size: 12px; line-height: 1.45; left: 0; right: 0; bottom: 0; padding: 8px 14px 9px; background: rgba(17, 17, 17, 0.82); text-shadow: none; }
     .panel { padding: 16px 8px 20px; }
     .wm { font-size: 44px; }
     .board { height: 40px; font-size: 12px; padding: 6px 12px 0; } .board i { display: none; }
@@ -228,6 +228,7 @@
           <span><b>Log in</b><small>Google, GitHub or your badge</small></span><i>▶</i>
         </button>
       </div>
+      <a class="alt" href="/landing/?skip">Back</a>
     </section>
 
     <section id="step-login" hidden>
@@ -271,8 +272,21 @@
         <a class="btn enter" href="index.html">Join room</a>
         <a class="btn decline" href="/landing/" id="decline">Decline</a>
       </div>
+      <button type="button" class="alt linkbtn" data-to="step-tap">Back</button>
     </section>
 
+
+    <section id="step-pin" hidden>
+      <h1>Host sign in</h1>
+      <p class="lead">Enter the host PIN for this venue to create or run an event.</p>
+      <p class="bar" style="--sc:#2f6bff">Host PIN</p>
+      <form class="form" id="pin-form" novalidate>
+        <label>PIN <input id="host-pin" type="password" inputmode="numeric" autocomplete="current-password" maxlength="64" placeholder="••••" required></label>
+        <p class="err" id="pin-err" role="alert"></p>
+        <button type="submit" class="btn">Continue</button>
+      </form>
+      <a class="alt" href="/landing/">Back</a>
+    </section>
 
     <section id="step-host" hidden>
       <h1>Host a room</h1>
@@ -282,9 +296,9 @@
           <span class="bul" style="background:var(--orange)">+</span>
           <span><b>Create event</b><small>Name it, set the place and time</small></span><i>▶</i>
         </button>
-        <a class="choice" href="/host/">
+        <a class="choice" href="host.html?start">
           <span class="bul" style="background:var(--blue)">▶</span>
-          <span><b>Existing event</b><small>Sign in with the event's host PIN</small></span><i>▶</i>
+          <span><b>Existing event</b><small>Open the host wall for your event</small></span><i>▶</i>
         </a>
       </div>
       <a class="alt" href="/landing/">Back</a>
@@ -508,7 +522,7 @@
     let name = "";
     try { name = (JSON.parse(localStorage.getItem("wall.me") || "null") || {}).name || ""; } catch { /* private mode */ }
     const $ = (id) => document.getElementById(id);
-    const STEPS = ["step-start", "step-host", "step-create", "step-login", "step-tap", "step-found", "step-account", "step-connect", "step-linked"];
+    const STEPS = ["step-start", "step-pin", "step-host", "step-create", "step-login", "step-tap", "step-found", "step-account", "step-connect", "step-linked"];
     const show = (id) => { for (const s of STEPS) $(s).hidden = s !== id; document.querySelector(".panel").classList.toggle("signup", ["step-account", "step-connect", "step-linked"].includes(id)); const f = document.querySelector(`#${id} input:not([type=file])`); if (f) f.focus(); };
     const joinRoom = () => { try { localStorage.setItem("wall.room", JSON.stringify({ status: "in", name: "BostonHacks 2026", place: "GSU Metcalf Ballroom", time: Date.now() })); } catch { /* private mode */ } };
     document.querySelectorAll("[data-back]").forEach((b) => b.addEventListener("click", () => show("step-start")));
@@ -617,7 +631,11 @@
     if (QS.has("edit")) show("step-account");
     else if (QS.has("login")) show("step-login");
     else if (QS.has("join")) show("step-tap");
-    else if (QS.has("host")) show("step-host");
+    else if (QS.has("host")) {
+      // Hosts sign in with the venue's PIN first (server checks it: /api/host/login); already signed in goes straight to Create / Existing
+      show("step-pin");
+      fetch("/api/host/me").then((r) => r.json()).then((m) => { if (m.signed_in) show("step-host"); else $("host-pin").focus(); }).catch(() => {});
+    }
     else if (QS.has("profile")) {
       try { const m = JSON.parse(localStorage.getItem("wall.me") || "null"); if (m) { renderProfile({ skills: [], looking_for: [], links: {}, ...m }, m.card || "0000"); $("linked-title").textContent = "Your profile"; $("linked-lead").textContent = "Your card is your login."; document.querySelector(".ok-line").hidden = true; show("step-linked"); } } catch { /* private mode */ }
     }
@@ -638,6 +656,19 @@
       show("step-found");
     });
     document.querySelector("#step-found a.enter").addEventListener("click", joinRoom, { capture: true });
+    $("host-pin").addEventListener("input", () => { $("pin-err").textContent = ""; });
+    $("pin-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const pin = $("host-pin").value.trim(), btn = e.target.querySelector("button");
+      if (!pin) { $("pin-err").textContent = "Enter the host PIN."; return; }
+      btn.disabled = true;
+      try {
+        const r = await fetch("/api/host/login", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ pin }) });
+        if (r.ok) { $("host-pin").value = ""; show("step-host"); }
+        else $("pin-err").textContent = r.status === 429 ? "Too many tries. Wait a minute." : r.status === 503 ? "Hosting isn't set up on this server." : "That PIN isn't right.";
+      } catch { $("pin-err").textContent = "Couldn't reach the server."; }
+      btn.disabled = false;
+    });
     // Create event (prototype): you become its host, then the train takes you into your new room
     $("ev-name").addEventListener("input", () => { $("ev-err").textContent = ""; });
     $("create-form").addEventListener("submit", (e) => {
@@ -648,7 +679,9 @@
       const ev = { status: "in", host: true, name: n.slice(0, 50), place: $("ev-place").value.trim(), date: $("ev-date").value, start: $("ev-time").value,
                    tables: Math.max(1, Math.min(26, +$("ev-tables").value || 5)), time: Date.now() };
       try { localStorage.setItem("wall.room", JSON.stringify(ev)); } catch { /* private mode */ }
-      if (typeof TapLoading !== "undefined") TapLoading.go("index.html", { sub: `Next stop: ${ev.name}` }); else location.href = "index.html";
+      // the host ends up on the host wall (host.html), with the event name and table count the host just chose
+      const wall = `host.html?start&venue=${encodeURIComponent(ev.name)}&tables=${ev.tables}`;
+      if (typeof TapLoading !== "undefined") TapLoading.go(wall, { sub: `Next stop: ${ev.name}` }); else location.href = wall;
     });
   })();
 </script>

@@ -38,7 +38,6 @@
   const clock = (d = new Date()) => d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }).toLowerCase();
   const list = (xs) => (xs.length < 2 ? xs.join("") : xs.slice(0, -1).join(", ") + " and " + xs[xs.length - 1]);
 
-  if (qs.get("venue")) $("venue").textContent = qs.get("venue");
   if (qs.get("venue")) $("locname").textContent = qs.get("venue");      // the place shown on the map (default: spark!)
 
   // ------------------------------------------------------------ state
@@ -848,37 +847,22 @@
       }, 900);
     }
   }
-  // The host's settings (host/settings.html): place name, how many tables, table names, sound. The URL still wins.
-  fetch("/api/room-settings").then((r) => (r.ok ? r.json() : null)).then((s) => {
-    if (!s) return;
-    if (!qs.get("venue") && s.venue) { $("locname").textContent = s.venue; $("venue").textContent = ""; }
-    if (!qs.has("tables") && Number.isFinite(s.tables)) { MAXT = s.tables; if (graphRaw) applyGraph(graphRaw); }
-    if (!qs.get("mk")) { document.documentElement.dataset.mk = s.marker === "numbers" ? "num" : "let"; if (graphRaw) renderSide(); }
-    if (s.sound === false && window.Sound && Sound.setMuted) Sound.setMuted(true);
-  }).catch(() => {});
+  // The room the host made on the join page (wall.room in this browser): its name and how many tables to draw. The URL still wins.
+  try {
+    const r = JSON.parse(localStorage.getItem("wall.room") || "null");
+    if (r && r.host) {
+      if (!qs.get("venue") && r.name) { $("locname").textContent = r.name; $("venue").textContent = ""; }
+      if (!qs.has("tables") && r.tables > 0) MAXT = r.tables;
+    }
+    if (localStorage.getItem("wall.hostSound") === "off" && window.Sound && Sound.setMuted) Sound.setMuted(true);
+  } catch { /* private mode or no room saved */ }
   async function begin() {
     $("start").classList.add("gone");
     try { await Sound.start(); } catch (e) { console.error("sound", e); }
-    // Avery's intro (intro/): the room fills up, then lands on this plan. Never blocks the data or the WebSocket.
-    try {
-      if (window.TapInIntro) TapInIntro.map(document.body, { quiet: Sound.muted, target: () => {
-        const r = $("room").getBoundingClientRect();
-        return { tables: [...layout.tables()].map(([id, t]) => ({ id, x: r.left + t.x, y: r.top + t.y, r: t.R })),
-                 people: layout.positions().map((p) => ({ x: r.left + p.x, y: r.top + p.y, table: p.gid })) };
-      } }).catch(() => {});
-    } catch (e) { console.error("intro", e); }
   }
   $("start-btn").addEventListener("click", begin);
-  // Coming from the host's Start button: no second Start screen. The intro plays at once (quietly: browsers only allow sound after a click on
-  // this page), and the first click anywhere turns the sound on.
-  if (qs.has("start")) {
-    $("start").classList.add("gone");
-    try { if (window.TapInIntro) TapInIntro.map(document.body, { quiet: qs.has("silent"), target: () => {
-      const r = $("room").getBoundingClientRect();
-      return { tables: [...layout.tables()].map(([id, t]) => ({ id, x: r.left + t.x, y: r.top + t.y, r: t.R })),
-               people: layout.positions().map((p) => ({ x: r.left + p.x, y: r.top + p.y, table: p.gid })) };
-    } }).catch(() => {}); } catch (e) { console.error("intro", e); }
-  }
+  // Coming from the host's Start button (?start): no Start screen and no intro, the wall just opens.
+  if (qs.has("start")) $("start").classList.add("gone");
   buildLayout();
   let rt = 0;
   new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(buildLayout, 250); }).observe($("stage"));
