@@ -5,12 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Where you stand · Tap In</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&family=IBM+Plex+Mono&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@800&family=DotGothic16&display=swap">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<header class="topbar">
+  <span class="wm" role="img" aria-label="Tap In">tap <span class="ii" aria-hidden="true">&#305;<svg class="wifi" viewBox="0 0 24 20" aria-hidden="true"><circle cx="12" cy="16.6" r="2.3"/><path d="M6.6 11.6a7.6 7.6 0 0 1 10.8 0"/><path d="M2.9 7.4a12.8 12.8 0 0 1 18.2 0"/></svg></span>n</span>
+</header>
+<div class="lines" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
 <main id="app">
-  <div class="brand">Tap In</div>
   <p class="muted">Loading...</p>
 </main>
 <script>const FAKE = false; // true = hard-coded replies, no server needed. false = the real server.</script>
@@ -43,7 +46,7 @@
       el("h2", {}, "Tables that fit you"),
       list(me.suggested_groups.map((s, i) => el("li", { class: i === 0 ? "top" : "" },
         // "Table 2 needs firmware" reads as a sentence; other reasons get a separator
-        el("div", { class: "title" }, s.group.name, s.reason.startsWith("needs") ? " " : " · ", el("span", { class: "why" }, s.reason)),
+        el("div", { class: "title" }, el("span", { class: "bullet " + "obgr"[i % 4], "aria-hidden": "true" }, s.group.name.replace(/\D+/g, "") || "?"), s.group.name, s.reason.startsWith("needs") ? " " : " · ", el("span", { class: "why" }, s.reason)),
         s.group.working_on ? el("div", {}, "Building ", s.group.working_on) : null,
         el("div", { class: "sub" }, `You know ${s.group.known_count} of its ${s.group.size} ${s.group.size === 1 ? "person" : "people"}`),
       )), me.here ? "No open tables fit you right now. Check back soon." : "Check in at a station to see tables that fit you."),
@@ -107,7 +110,6 @@
         post(`/me/${p.id}/focus`, { focus: e.target.checked });
       } });
     app.replaceChildren(
-      el("div", { class: "brand" }, "Tap In"),
       el("h1", {}, p.name, el("span", { class: "points" }, `${me.points} pts`)),
       el("p", {}, el("span", { class: "status" + (me.here ? " here" : "") }, me.here ? "Here now" : "Not checked in"),
         me.here ? null : el("span", { class: "muted" }, " Tap your badge alone at the Entrance.")),
@@ -127,7 +129,7 @@
       const r = await api("GET", "/me/" + encodeURIComponent(id));
       if (r.status === 404) {
         store.del("tapin_person");
-        app.replaceChildren(el("div", { class: "brand" }, "Tap In"), el("p", { class: "big" }, "We don't know that profile"),
+        app.replaceChildren(el("p", { class: "big" }, "We don't know that profile"),
           el("a", { class: "button", href: "index.html" }, "Make a profile"));
         return;
       }
@@ -136,7 +138,7 @@
       const key = JSON.stringify([r.data, needs]);
       if (key !== lastKey && !busy) { lastKey = key; render(r.data, needs); }
     } catch (_) {
-      if (!lastKey) app.replaceChildren(el("div", { class: "brand" }, "Tap In"),
+      if (!lastKey) app.replaceChildren(
         el("p", { class: "error" }, "Couldn't reach Tap In. Retrying..."));
     }
   }
