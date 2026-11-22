@@ -201,7 +201,7 @@
   @media (max-width: 800px) {
     .window { grid-template-columns: minmax(0, 1fr); width: auto; min-height: 0; margin: 12px 12px 60px; padding: 10px; border-radius: 22px; }
     .scene { height: 32vh; min-height: 190px; order: -1; }
-    .scene::after { font-size: 12.5px; left: 14px; bottom: 12px; }
+    .scene::after { font-size: 12px; line-height: 1.45; left: 0; right: 0; bottom: 0; padding: 8px 14px 9px; background: rgba(17, 17, 17, 0.82); text-shadow: none; }
     .panel { padding: 16px 8px 20px; }
     .wm { font-size: 44px; }
     .board { height: 40px; font-size: 12px; padding: 6px 12px 0; } .board i { display: none; }
@@ -228,6 +228,7 @@
           <span><b>Log in</b><small>Google, GitHub or your badge</small></span><i>▶</i>
         </button>
       </div>
+      <a class="alt" href="/landing/?skip">Back</a>
     </section>
 
     <section id="step-login" hidden>
@@ -271,6 +272,7 @@
         <a class="btn enter" href="index.html">Join room</a>
         <a class="btn decline" href="/landing/" id="decline">Decline</a>
       </div>
+      <button type="button" class="alt linkbtn" data-to="step-tap">Back</button>
     </section>
 
 

@@ -103,3 +103,15 @@ function ago(iso) {
   const min = Math.max(0, Math.round((Date.now() - new Date(iso)) / 60000));
   return min < 60 ? `${min} min` : `${Math.floor(min / 60)} h ${min % 60} min`;
 }
+
+// A small Back link at the top left of every phone page: back to where you came from on this site, otherwise the front page.
+(() => {
+  const a = document.createElement("a");
+  a.className = "pback"; a.href = "/landing/?skip"; a.textContent = "\u2039 Back";
+  a.addEventListener("click", (e) => {
+    let same = false;
+    try { same = !!document.referrer && new URL(document.referrer).origin === location.origin; } catch { /* no referrer */ }
+    if (same && history.length > 1) { e.preventDefault(); history.back(); }
+  });
+  document.body.prepend(a);
+})();
