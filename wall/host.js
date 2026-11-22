@@ -136,7 +136,7 @@
       ? top.map((g, i) => {
         const full = S.groups.get(g.id);
         const tn = parseInt(String(g.name).replace(/\D+/g, ""), 10) || i + 1;
-        return `<li class="${i === 0 && g.points > 0 ? "top" : ""}${full?.working_on ? "" : " nowo"}" data-n="${tn}" data-l="${tn % 4}"><span class="t"><b>${esc(g.name)}</b>${full?.working_on ? `<small>${esc(full.working_on.replace(/^an?s+/i, '').replace(/^./, (ch) => ch.toUpperCase()))}</small>` : ""}</span><span class="v ${chg("g:" + g.id, g.points) ? "bump" : ""}">${g.points}</span></li>`;
+        return `<li class="${i === 0 && g.points > 0 ? "top" : ""}${full?.working_on ? "" : " nowo"}" data-n="${tn}" data-l="${tn % 4}"><span class="t"><b>${esc(g.name)}</b>${full?.working_on ? `<small>${esc(full.working_on.replace(/^an?\s+/i, '').replace(/^./, (ch) => ch.toUpperCase()))}</small>` : ""}</span><span class="v ${chg("g:" + g.id, g.points) ? "bump" : ""}">${g.points}</span></li>`;
       }).join("")
       : `<li class="empty">No tables yet</li>`;
 
