@@ -130,6 +130,10 @@
 
   function render(me, needs) {
     const p = me.person;
+    try {   // keep the room map's profile (same site) on this person, so the map never shows a second, stale you
+      const prev = JSON.parse(localStorage.getItem("wall.me") || "null") || {};
+      if (prev.person_id !== p.id) localStorage.setItem("wall.me", JSON.stringify({ ...prev, person_id: p.id, name: p.name, role: p.role, face: prev.face || `face-${p.id}` }));
+    } catch (_) { /* private mode */ }
     const helper = p.role !== "student";
     const state = el("span", { class: "switch-state" + (p.focus ? " on" : ""), "aria-hidden": "true" }, p.focus ? "On" : "Off");
     const focus = el("input", { type: "checkbox", class: "switch", id: "focus", role: "switch", checked: p.focus,
