@@ -125,6 +125,7 @@
     const m = Math.max(0, Math.floor((Date.now() - new Date(iso)) / 60000));
     return m < 60 ? `${m}m` : `${Math.floor(m / 60)}h ${m % 60}m`;
   };
+  const disp = (str) => (document.documentElement.dataset.mk === "num" ? String(str) : String(str).replace(/\bTable (\d+)\b/gi, (m, n) => "Table " + letterOf(+n)));
   const letterOf = (n) => (n > 0 ? String.fromCharCode(65 + ((n - 1) % 26)) : "?");        // table 1 is A, 2 is B, ...
   // A number that changes flashes once, so a glance at the column shows what just moved.
   const prevVal = new Map();
@@ -138,7 +139,7 @@
       ? top.map((g, i) => {
         const full = S.groups.get(g.id);
         const tn = parseInt(String(g.name).replace(/\D+/g, ""), 10) || i + 1;
-        return `<li class="${i === 0 && g.points > 0 ? "top" : ""}${full?.working_on ? "" : " nowo"}" data-n="${tn}" data-k="${letterOf(tn)}" data-l="${tn % 4}"><span class="t"><b>${esc(g.name)}</b>${full?.working_on ? `<small>${esc(full.working_on.replace(/^an?\s+/i, '').replace(/^./, (ch) => ch.toUpperCase()))}</small>` : ""}</span><span class="v ${chg("g:" + g.id, g.points) ? "bump" : ""}">${g.points}</span></li>`;
+        return `<li class="${i === 0 && g.points > 0 ? "top" : ""}${full?.working_on ? "" : " nowo"}" data-n="${tn}" data-k="${letterOf(tn)}" data-r="${i + 1}" data-l="${tn % 4}"><span class="t"><b>${esc(disp(g.name))}</b>${full?.working_on ? `<small>${esc(full.working_on.replace(/^an?\s+/i, '').replace(/^./, (ch) => ch.toUpperCase()))}</small>` : ""}</span><span class="v ${chg("g:" + g.id, g.points) ? "bump" : ""}">${g.points}</span></li>`;
       }).join("")
       : `<li class="empty">No tables yet</li>`;
 
@@ -168,14 +169,14 @@
     const bmax = Math.max(1, ...buckets.map((b) => b.count));
     $("bars").innerHTML = buckets.map((b, i) => `<i class="${i === buckets.length - 1 ? "now" : ""}" style="height:${Math.max(3, Math.round((b.count / bmax) * 100))}%"></i>`).join("");
   }
-  const addLog = (html) => { activity.unshift({ t: clock().replace(/ ?[ap]m/, ""), html }); activity.length = Math.min(activity.length, 12); };
+  const addLog = (html) => { activity.unshift({ t: clock().replace(/ ?[ap]m/, ""), html: disp(html) }); activity.length = Math.min(activity.length, 12); };
 
   // ------------------------------------------------------------ moments (one at a time, about 8 s each)
   const queue = [];
   let cur = null;
   const stripHTML = (m) => {
     const tail = m.ice || m.tail;
-    return m.main + (tail ? ` <span>${esc(tail)}</span>` : "");
+    return disp(m.main + (tail ? ` <span>${esc(tail)}</span>` : ""));
   };
   function show(m, now) {
     m.until = now + (queue.length > 1 ? 4500 : 8000);
@@ -598,7 +599,7 @@
       ctx.restore();
 
       const needs = S.needs.filter((n) => n.group_id === gid && n.handled_by == null).map((n) => n.need);
-      const l1 = low(g.name);
+      const l1 = low(disp(g.name));
       const l2 = quiet ? "heads-down" : needs.length ? trunc("needs " + low(needs[0]) + (needs.length > 1 ? " +" + (needs.length - 1) : ""), 24) : "";
       ctx.font = `${hi ? 600 : 500} ${lab}px ${MONO}`;
       const half = Math.max(ctx.measureText(l1).width, ctx.measureText(l2).width) / 2;
