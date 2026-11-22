@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tap In · Host</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Bricolage+Grotesque:wght@800&display=swap">
+<link rel="stylesheet" href="host.css">
+</head>
+<body>
+<!-- Host screen: the room plan for the wall. Display only: nothing here is clickable. The mouse pushes the background smoke, and people and tables can be dragged around (they ease back). -->
+<canvas id="fume" aria-hidden="true"></canvas>
+
+<main id="stage">
+  <canvas id="room" aria-label="Room plan: who is here and which table they are at"></canvas>
+  <p id="conn" class="conn" hidden>Reconnecting…</p>
+  <header id="legend">
+    <p class="lede">Who is here, and who is working together</p>
+    <ul>
+      <li><i class="k dot"></i>person</li>
+      <li><i class="k sq"></i>mentor</li>
+      <li><i class="k ring"></i>heads-down</li>
+      <li><i class="k dash"></i>a table</li>
+      <li><i class="k line"></i>have met</li>
+      <li><i class="k pink"></i>just arrived</li>
+      <li id="more" hidden></li>
+    </ul>
+  </header>
+</main>
+
+<div id="brand" role="img" aria-label="Tap In">
+  <span class="wm" aria-hidden="true">tap <span class="ii">&#305;<svg class="wifi" viewBox="0 0 24 20" aria-hidden="true"><circle cx="12" cy="16.6" r="2.3"/><path d="M6.6 11.6a7.6 7.6 0 0 1 10.8 0"/><path d="M2.9 7.4a12.8 12.8 0 0 1 18.2 0"/></svg></span>n</span>
+  <span id="venue"></span>
+</div>
+
+<aside id="side" aria-label="Room numbers">
+  <p id="statline"></p>
+  <section>
+    <h2>Groups, by points</h2>
+    <ol id="groups" class="rows"></ol>
+    <p class="note">Groups get double for welcoming someone new.</p>
+  </section>
+  <section>
+    <h2>Needs</h2>
+    <ul id="needs" class="rows"></ul>
+  </section>
+  <section>
+    <h2>Activity</h2>
+    <ul id="activity" class="log"></ul>
+  </section>
+  <section class="chart">
+    <h2>Scans per 10 min <span>last 2h</span></h2>
+    <div id="bars" class="bars" aria-hidden="true"></div>
+  </section>
+</aside>
+
+<footer id="moment" aria-live="polite">
+  <time id="mtime"></time>
+  <p id="mtext"></p>
+</footer>
+
+<div id="start" class="start">
+  <button type="button" id="start-btn">Start</button>
+  <p>Click once to turn on sound.</p>
+</div>
+
+<script src="vendor/Tone.js"></script>
+<script src="sound.js"></script>
+<script src="room_layout.js"></script>
+<script src="host.js"></script>
+</body>
+</html>
