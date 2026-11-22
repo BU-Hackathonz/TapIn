@@ -413,3 +413,24 @@ body::before {
 /* the sound note sits low over the map, clear of the place name; the stat line leaves room for the gear */
 .soundnote { top: auto; bottom: calc(var(--strip-h) + 14px); left: calc((100vw - var(--side-w)) / 2); }
 #side #statline { padding-right: 40px; }
+
+/* Phones and narrow windows: the room on top, the moment strip under it, the numbers stacked below; the page scrolls. */
+@media (max-width: 760px) {
+  :root { --side-w: 0px; --strip-h: 64px; --stage-h: 56vh; }
+  html, body { height: auto; min-height: 100%; }
+  body { grid-template-columns: minmax(0, 1fr); grid-template-rows: var(--stage-h) var(--strip-h) auto;
+         grid-template-areas: "stage" "moment" "side"; overflow-x: hidden; overflow-y: auto; user-select: auto; -webkit-user-select: auto; }
+  body::before { position: absolute; inset: 0 0 auto 0; height: var(--stage-h); }          /* scanlines over the room only */
+  #side { border-left: 0; border-top: 1px solid var(--line); overflow: visible; padding: 20px 16px 28px; gap: 22px; }
+  #side .chart { margin-top: 0; }
+  #legend { left: 14px; top: 12px; max-width: calc(100% - 28px); }
+  #legend .lede { font-size: 17px; }
+  #legend ul { font-size: 12px; }
+  #loc { right: 14px; top: auto; bottom: 10px; font-size: 15px; }
+  :root:not([data-logo]) #brand, :root[data-logo="strip"] #brand { position: absolute; right: 12px; top: var(--stage-h); bottom: auto; height: var(--strip-h); padding-top: 0; }
+  #brand .wm { font-size: 30px; }
+  #moment { padding: 0 128px 0 14px; }
+  #mtext { font-size: 14px; }
+  .soundnote { left: 50%; bottom: auto; top: calc(var(--stage-h) - 52px); max-width: calc(100vw - 32px); }
+  #activity, .note { display: revert; }                                                    /* the page scrolls, so nothing has to hide */
+}
