@@ -19,7 +19,8 @@
   const VN = Math.min(11, Math.max(1, parseInt(qs.get("v"), 10) || 11)), V = VARIANTS[VN], LW = V.lw;
   if (VN > 1) document.documentElement.dataset.v = String(VN);
   document.documentElement.dataset.palette = VN > 1 ? "v" : qs.get("palette") || "sand";
-  if (qs.get("s")) document.documentElement.dataset.s = qs.get("s");      // ?s=1..6: Boston T (MBTA) style drafts for the side column and bottom bar
+  if (qs.get("s")) document.documentElement.dataset.s = qs.get("s");
+  if (qs.get("h")) { document.documentElement.dataset.h = qs.get("h"); if (!qs.get("s")) document.documentElement.dataset.s = "1"; }   // ?h=1..6: variations on draft 1 with the markers and heading rectangles of draft 2      // ?s=1..6: Boston T (MBTA) style drafts for the side column and bottom bar
   if (qs.get("logo")) document.documentElement.dataset.logo = qs.get("logo");
   const HOST = qs.get("server") || location.host;
   const HTTP = `${location.protocol}//${HOST}`;

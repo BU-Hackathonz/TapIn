@@ -249,6 +249,41 @@ body::before {
 :root[data-s="3"] #brand, :root[data-s="4"] #brand, :root[data-s="6"] #brand { --sand: #111; --pink: #DA291C; }
 :root[data-s="5"] #brand { --sand: #fff; --pink: #fff; }
 
+/* ---- ?h=1..6: draft 1 (white sign, amber bottom line) with the rounded-square markers and the colored heading rectangles of draft 2. */
+:root[data-h] #side section:nth-of-type(1) { --sc: #DA291C; --scl: #ff4b3e; } :root[data-h] #side section:nth-of-type(2) { --sc: #ED8B00; --scl: #ffa21a; }
+:root[data-h] #side section:nth-of-type(3) { --sc: #003DA5; --scl: #4a86ff; } :root[data-h] #side section:nth-of-type(4) { --sc: #00843D; --scl: #2fbf6a; }
+:root[data-h] #groups li::before { border-radius: 0.4em; }
+
+/* 1 Rectangle inside the black bar, before the heading */
+:root[data-h="1"] #side h2::before { content: ""; display: inline-block; width: 0.55em; height: 1.05em; border-radius: 0.14em; background: var(--scl); margin-right: 0.65em; vertical-align: -0.2em; }
+:root[data-h="1"] #side h2 { justify-content: flex-start; } :root[data-h="1"] #side h2 span { margin-left: auto; }
+
+/* 2 No black bar: black heading text on white with a thick colored rectangle on the left, like draft 2 turned inside out */
+:root[data-h="2"] #side h2 { background: none; color: #111; padding: 0.1em 0 0.1em 0.7em; border-left: 0.5em solid var(--sc); border-radius: 0.12em; font-size: calc(var(--u) * 1.05); letter-spacing: 0.04em; }
+:root[data-h="2"] #side h2 span { color: #555; }
+:root[data-h="2"] #mtime { color: #fff; }
+
+/* 3 Bigger squircle markers, a small colored square in the black bar, and a red NOW label at the bottom */
+:root[data-h="3"] #groups li::before { width: 2.1em; height: 2.1em; border-radius: 0.6em; }
+:root[data-h="3"] #side h2::before { content: ""; display: inline-block; width: 0.9em; height: 0.9em; border-radius: 0.25em; background: var(--scl); margin-right: 0.6em; vertical-align: -0.1em; }
+:root[data-h="3"] #side h2 { justify-content: flex-start; } :root[data-h="3"] #side h2 span { margin-left: auto; }
+:root[data-h="3"] #mtime::before { content: "NOW"; background: #DA291C; color: #fff; border-radius: 0.3em; padding: 0.15em 0.55em; margin-right: 0.8em; font: 700 calc(var(--u) * 0.75)/1 var(--hv); letter-spacing: 0.08em; }
+
+/* 4 Wide tab markers, and a thick colored stripe along the bottom edge of each black bar */
+:root[data-h="4"] #groups li::before { width: 2.9em; height: 1.8em; border-radius: 0.5em; font-size: 0.85em; }
+:root[data-h="4"] #side h2 { border-bottom: 0.32em solid var(--scl); padding-bottom: 0.25em; }
+:root[data-h="4"] #moment { border-top-width: 10px; }
+
+/* 5 A colored rectangle at the right end of each black bar, and the time in a red block at the bottom */
+:root[data-h="5"] #side h2 { box-shadow: inset -0.75em 0 0 var(--scl); padding-right: 1.5em; }
+:root[data-h="5"] #side h2 span { margin-right: 0.2em; }
+:root[data-h="5"] #mtime { background: #DA291C; color: #fff; border-radius: 0.25em; padding: 0.35em 0.7em; }
+
+/* 6 Each heading bar in its own line color, and a four-color rule along the top of the bottom bar */
+:root[data-h="6"] #side h2 { background: var(--sc); color: #fff; } :root[data-h="6"] #side h2 span { color: rgba(255, 255, 255, 0.85); }
+:root[data-h="6"] #moment { border-top: 0; }
+:root[data-h="6"] #moment::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 6px; background: linear-gradient(90deg, #DA291C 0 25%, #ED8B00 25% 50%, #003DA5 50% 75%, #00843D 75% 100%); }
+
 .start { position: fixed; inset: 0; display: grid; place-content: center; justify-items: center; gap: 1.2vh; background: color-mix(in srgb, var(--bg) 96%, transparent); z-index: 6; cursor: pointer; }
 .start.gone { display: none; }
 .start button { font: 500 calc(var(--u) * 1.6)/1 var(--sans); padding: 0.7em 2em; color: var(--bg); background: var(--green); border: 0; border-radius: 0; cursor: pointer; }
