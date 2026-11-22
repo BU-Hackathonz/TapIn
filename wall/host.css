@@ -89,6 +89,18 @@ body {
 #room { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
 body:not(.idle) #room.grab { cursor: grab; }
 body:not(.idle) #room.grabbing { cursor: grabbing; }
+/* A key to the plan, so a first-time viewer can read it. */
+#legend { position: absolute; left: 1.7vw; top: 2.6vh; z-index: 2; pointer-events: none; display: grid; gap: 1.1vh; max-width: 70%; }
+#legend .lede { margin: 0; font: 600 calc(var(--u) * 1.15)/1.2 var(--sans); letter-spacing: -0.01em; color: var(--fg); }
+#legend ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.5em 1.3em; font: 500 calc(var(--u) * 0.8)/1 var(--sans); color: var(--muted); }
+#legend li { display: inline-flex; align-items: center; gap: 0.55em; }
+.k { display: inline-block; width: 0.8em; height: 0.8em; flex: none; }
+.k.dot { border-radius: 50%; background: var(--green); }
+.k.sq { border: 2px solid var(--green); }
+.k.ring { border-radius: 50%; border: 2px solid var(--muted); }
+.k.pink { border-radius: 50%; background: var(--pink); }
+.k.dash, .k.line { width: 1.5em; height: 0; border-top: 2.5px dashed var(--deep); }
+.k.line { border-top-style: solid; }
 .conn { position: absolute; left: 2.5%; bottom: 3%; margin: 0; font: 500 var(--u)/1 var(--mono); color: var(--pink); }
 .mono { font-family: var(--sans); font-variant-numeric: tabular-nums; }
 

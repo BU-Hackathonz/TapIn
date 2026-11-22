@@ -15,7 +15,7 @@
     4: { ring: "solid", node: "ring", lw: 1.1, grid: true }, 5: { ring: "dash", node: "ring", lw: 1, grid: true }, 6: { ring: "dash", node: "dot", lw: 1 },
     7: { ring: "solid", node: "dot", lw: 1.35 }, 8: { ring: "dash", node: "glow", lw: 1 }, 9: { ring: "dot", node: "ring", lw: 1.1 }, 10: { ring: "dash", node: "glow", lw: 1 },
   };
-  const VN = Math.min(10, Math.max(1, parseInt(qs.get("v"), 10) || 1)), V = VARIANTS[VN], LW = V.lw;
+  const VN = Math.min(10, Math.max(1, parseInt(qs.get("v"), 10) || 6)), V = VARIANTS[VN], LW = V.lw;
   if (VN > 1) document.documentElement.dataset.v = String(VN);
   document.documentElement.dataset.palette = VN > 1 ? "v" : qs.get("palette") || "sand";
   if (qs.get("logo")) document.documentElement.dataset.logo = qs.get("logo");
@@ -146,12 +146,16 @@
       if (m.links) Sound.links(m.links);
     }
   }
-  let idleShown = false;
+  let idleShown = false, idleAt = -1e9, tipI = -1;
+  const TIPS = ["Tap your badge at a station to join the room.", "Each dashed circle is a table. A line means two people have met.", "Squares are mentors. Hollow dots are people who are heads-down.", "Groups earn points for welcoming someone new."];
   function pump(now) {
     if (cur && now < cur.until) return;
     cur = null;
     if (!queue.length) {
-      if (!idleShown) { idleShown = true; $("mtime").textContent = ""; $("mtext").innerHTML = "<span>Tap your badge at a station to join the room.</span>"; }
+      if (!idleShown || now - idleAt > 7000) {                       // between moments the strip explains the screen, one hint at a time
+        idleShown = true; idleAt = now; tipI = (tipI + 1) % TIPS.length;
+        $("mtime").textContent = ""; $("mtext").innerHTML = `<span>${TIPS[tipI]}</span>`;
+      }
       return;
     }
     idleShown = false;
@@ -558,6 +562,13 @@
       halo(l1, x, y2 - (l2 ? lineH : 0), quiet ? C.dim : hi ? hiColor : C.green);
     }
     ctx.globalAlpha = 1;
+
+    const soloPeople = pos.filter((p) => p.solo);                     // say what the row along the bottom is
+    if (soloPeople.length) {
+      ctx.font = `500 ${lab}px ${SANS}`; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic"; ctx.fillStyle = C.muted; ctx.globalAlpha = 0.9;
+      ctx.fillText("Waiting to join a table", soloPeople.reduce((a, p) => a + p.x, 0) / soloPeople.length, Math.min(...soloPeople.map((p) => p.y)) - 34 * K);
+      ctx.globalAlpha = 1;
+    }
 
     // ---- people
     const order = [...pos].sort((p, q) => (m && p.id === m.person ? 1 : 0) - (m && q.id === m.person ? 1 : 0));
