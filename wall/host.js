@@ -14,7 +14,7 @@
     1: { ring: "dash", node: "dot", lw: 1 }, 2: { ring: "dash", node: "dot", lw: 1 }, 3: { ring: "dot", node: "dot", lw: 1.1 },
     4: { ring: "solid", node: "ring", lw: 1.1, grid: true }, 5: { ring: "dash", node: "ring", lw: 1, grid: true }, 6: { ring: "dash", node: "dot", lw: 1 },
     7: { ring: "solid", node: "dot", lw: 1.35 }, 8: { ring: "dash", node: "glow", lw: 1 }, 9: { ring: "dot", node: "ring", lw: 1.1 }, 10: { ring: "dash", node: "glow", lw: 1 },
-    11: { ring: "dash", node: "glow", lw: 1.1 },
+    11: { ring: "dash", node: "dot", lw: 1 },
   };
   const VN = Math.min(11, Math.max(1, parseInt(qs.get("v"), 10) || 6)), V = VARIANTS[VN], LW = V.lw;
   if (VN > 1) document.documentElement.dataset.v = String(VN);

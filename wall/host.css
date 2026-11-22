@@ -75,11 +75,9 @@
 /* 10 Dusk */
 :root[data-v="10"] { --bg: #241f33; --line: #3b3454; --fg: #f1e8f3; --muted: #a99fbd; --dim: #665d82; --pink: #ff8fb3; --green: #bba9ff; --forest: #4a4272; --deep: #8e7fe0; --sand: #efe4f0; --fume: 0.8; --scan: 0.04; --vig: 0.1;
   --pn-bg: #19152a; --pn-line: #2c2644; --pn-fg: #f1e8f3; --pn-muted: #a99fbd; --pn-dim: #665d82; --pn-pink: #ff8fb3; --pn-green: #bba9ff; --pn-forest: #3e3763; --pn-sand: #efe4f0;  }
-/* 11 Green and red (a Tailord-style test): near-black ground, phosphor green, one red accent, mono in the panels, a little CRT. */
-:root[data-v="11"] { --bg: #101311; --line: #1f2b23; --fg: #cfe8d3; --muted: #78907f; --dim: #455248; --pink: #ff4b3e; --green: #8fe3a0; --forest: #2f5a3d; --deep: #5fbf78; --sand: #cfe8d3; --fume: 0.35; --scan: 0.12; --vig: 0.35;
-  --pn-bg: #0c0f0d; --pn-line: #1c2a21; --pn-fg: #d9efdc; --pn-muted: #86a08d; --pn-dim: #4d5e52; --pn-pink: #ff4b3e; --pn-green: #8fe3a0; --pn-forest: #2f5a3d; --pn-sand: #d9efdc; }
-:root[data-v="11"] #side, :root[data-v="11"] #moment { font-family: var(--mono); }
-:root[data-v="11"] #side h2 { font-family: var(--mono); color: var(--green); text-transform: lowercase; }
+/* 11 Rose with the pink swapped for red, nothing else changed. */
+:root[data-v="11"] { --bg: #ecd9d2; --line: #d4bab2; --fg: #2b1f23; --muted: #7a6066; --dim: #a88f93; --pink: #d63a2f; --green: #2f6d4e; --forest: #c9a99f; --deep: #1b4a33; --sand: #3a2b2b; --fume: 0.9; --scan: 0.04; --vig: 0.1;
+  --pn-bg: #2a1f24; --pn-line: #3d2d34; --pn-fg: #f6ece8; --pn-muted: #cdbcc0; --pn-dim: #a08e93; --pn-pink: #ff5f52; --pn-green: #a9d9b1; --pn-forest: #4b5f52; --pn-sand: #f1e0d3;  }
 * { box-sizing: border-box; }
 body.idle, body.idle * { cursor: none; }
 html, body { height: 100%; margin: 0; }
