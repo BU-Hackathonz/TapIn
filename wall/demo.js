@@ -117,17 +117,42 @@ const Demo = (() => {
     return [["person_created", { person_id: p.id, name: p.name, role: p.role }]];
   }
 
+  // The demo room: the same 14 people as tools/demo_people.py (stock photos in wall/img/people/), at tables of 4, 4, 3
+  // and 2, plus one person on their own. Fixed, so the room always looks the same; the photo path rides in `note`.
+  const ROSTER = [
+    ["a T delay predictor", ["design"], [["Jasmine", ["backend", "data"], ["design"], "women-44"], ["Tyler", ["frontend"], ["ml"], "men-32"],
+                                         ["Ananya", ["ml", "data"], ["frontend"], "women-68"], ["Andre", ["hardware", "firmware"], ["pitch"], "men-75"]]],
+    ["a study-room finder", ["hardware"], [["Sofia", ["design", "frontend"], ["backend"], "women-21"], ["Daniel", ["backend"], ["design"], "men-46"],
+                                           ["Fatima", ["pitch", "research"], ["mobile"], "women-90"], ["Kenji", ["mobile", "frontend"], ["data"], "men-11"]]],
+    ["a dining hall wait-time app", ["pitch"], [["Olivia", ["data", "research"], ["firmware"], "women-57"], ["Liam", ["firmware", "hardware"], ["design"], "men-86"],
+                                                ["Hana", ["design"], ["ml"], "women-12"]]],
+    ["a bike-share rebalancer", ["frontend"], [["Carlos", ["backend", "ml"], ["frontend"], "men-64"], ["Grace", ["hardware"], ["backend"], "women-33"]]],
+  ];
+  const SOLO = ["Diego", ["frontend", "design"], ["hardware", "backend"], "men-52", "Looking for a team"];
+  let fixed = false;
+  function person(name, skills, looking_for, photo, working_on) {
+    const id = people.size + 1;
+    const p = { id, name, role: "student", group_id: null, here: true, focus: false, points: 0, note: `/wall/img/people/${photo}.jpg`,
+                skills, looking_for, working_on };
+    people.set(id, p);
+    return p;
+  }
   function build() {
-    for (let i = 0; i < 32; i++) addPerson(i % 13 === 12 ? "mentor" : "student", i < 22);
-    const studs = sample([...people.values()].filter((p) => p.role === "student" && p.here).map((p) => p.id), 99);
-    for (let g = 0; g < 5; g++) formGroup(studs.splice(0, 3 + Math.floor(rnd() * 2)), true);
-    for (let i = 0; i < 6; i++) { const [a, b] = sample([...people.keys()], 2); if (!links.has(lk(a, b))) links.set(lk(a, b), { a: Math.min(a, b), b: Math.max(a, b), strength: 1 }); }
+    fixed = true;
+    for (const [working_on, want, team] of ROSTER) {
+      const ids = team.map(([n, s, lf, ph]) => person(n, s, lf, ph, working_on).id);
+      formGroup(ids, true);
+      const g = groups.get(groups.size);
+      Object.assign(g, { working_on, looking_for: want, mode: "open" });
+      needs.splice(0, needs.length, ...needs.filter((x) => x.group_id !== g.id), ...want.map((t) => ({ group_id: g.id, need: t, since: new Date(Date.now() - 600000).toISOString(), handled_by: null })));
+    }
+    person(...SOLO.slice(0, 4), SOLO[4]);
   }
 
   // Same shapes as the real GET endpoints.
   function snapshot(path) {
     if (path === "/api/graph") {
-      return { people: [...people.values()].map(({ id, name, role, group_id, here, focus, points, note }) => ({ id, name, role, group_id, here, focus, points, note })),
+      return { people: [...people.values()].map(({ id, name, role, group_id, here, focus, points, note, skills, looking_for, working_on }) => ({ id, name, role, group_id, here, focus, points, note, skills, looking_for, working_on })),
                groups: [...groups.values()].map((g) => ({ ...g })), links: [...links.values()].map((l) => ({ ...l })) };
     }
     if (path === "/api/needs") return needsList();
@@ -137,6 +162,7 @@ const Demo = (() => {
   // Runs one change every `every` ms and hands each event to `emit({type, ts, data})`.
   function start(emit, every = 2600) {
     if (!people.size) build();
+    if (fixed) return;                      // the fixed demo room stays as it is
     setInterval(() => {
       for (const [type, data] of step()) {
         const send = () => emit({ type, ts: now(), data });
