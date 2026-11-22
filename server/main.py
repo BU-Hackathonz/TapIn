@@ -66,7 +66,7 @@ async def ws(socket: WebSocket):
 
 
 # Wall, phone and intro are owned by other teammates; mount them once their folders exist.
-for name in ("wall", "phone", "intro"):
+for name in ("wall", "phone", "intro", "landing"):
     folder = ROOT / name
     if folder.is_dir():
         app.mount(f"/{name}", StaticFiles(directory=folder, html=True), name=name)
