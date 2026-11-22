@@ -20,7 +20,7 @@ we submit by **8:45 AM**. Items marked **(refresh 8:15)** come from `tools/count
 ## Project overview
 
 - **Project name:** Tap In
-- **Tagline (elevator pitch):** Tap your badge when you walk in, and the room shows you which table needs you.
+- **Tagline (elevator pitch):** Tap in, find your people.
 - **Team:** David, Avery, Jun and Yaovi (each adds themselves on Devpost; add any missing member before submitting)
 
 ## Short summary (if a field asks for one)
@@ -40,22 +40,22 @@ javascript, html5, css3, canvas, tone.js, web-audio, vercel, cloudflare
 
 ## Gallery, in upload order (every image 3:2, PNG, under 5 MB)
 
-| # | File (media/devpost/) | Caption (140 characters max) |
+| # | File (media/devpost/) | Caption (none, except the sample-data note on the host wall) |
 |---|---|---|
-| 1 | landing.png | The landing page at tapin.boston: a pixel Green Line train down Comm Ave, then Join a space or Host a space. |
-| 2 | host-wall.png | Sample data, no real attendees: the host wall with tables by letter, groups by points, open needs and scans per 10 minutes. |
-| 3 | phone-signup-claim.png | The real phone sign-up, then 30 seconds to tap a blank badge on any station. |
-| 4 | join.png | Join a space: Sign up goes to the real sign-up; Log in is a prototype that stays in the browser. |
-| 5 | host-pin.png | Host a space: a PIN on the venue Wi-Fi, then create the event (name and tables, saved on the server). |
-| 6 | system.png | How it fits: two ESP32 stations and a laptop server on the venue Wi-Fi, Tiger Data and Gemini, and tapin.boston through a tunnel. |
-| 7 | access.png | What is public: six API routes. Names, taps, hosting and live updates stay on the venue network. |
-| 8 | sound-map.png | The room plays it: one pentatonic scale, a bell in your own note, plucks for links, a trolley bell for every 10th person. |
-| 9 | live-activity.png | Every tap since Saturday 10 AM from the taps hypertable, by hour and station, our own testing included. (refresh 8:15) |
-| 10 | tiger-data.png | Tap In on Tiger Data: two hypertables and two continuous aggregates, the second built on the first. |
-| 11 | evidence-tap-latency.png | 31 real taps: median 259 ms from tap to reply. A quarter missed our 300 ms target; all beat 1 second. |
-| 12 | evidence-soak.png | A 40-minute soak on both stations with no failed polls, reboots or time offline. |
-| 13 | evidence-gemini-models.png | Choosing the Gemini model by measuring it with our real prompt. |
-| 14 | evidence-recovery.png | The server down for 19 s: both stations showed offline and came back on their own. |
+| 1 | landing.png |  |
+| 2 | host-wall.png | Sample data, no real attendees. |
+| 3 | phone-signup-claim.png |  |
+| 4 | join.png |  |
+| 5 | host-pin.png |  |
+| 6 | system.png |  |
+| 7 | access.png |  |
+| 8 | sound-map.png |  |
+| 9 | live-activity.png |  |
+| 10 | tiger-data.png |  |
+| 11 | evidence-tap-latency.png |  |
+| 12 | evidence-soak.png |  |
+| 13 | evidence-gemini-models.png |  |
+| 14 | evidence-recovery.png |  |
 
 Not in the gallery (used inside "About the project" or kept for reference): `cover.png`, `enclosure.png`,
 `scan-pipeline.png`, `tap-sequence.png`, `evidence-scan-runs.png`. Removed as outdated: the old wall, the old phone
