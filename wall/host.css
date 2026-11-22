@@ -308,6 +308,17 @@ body::before {
 }
 @media (max-height: 700px) { #activity { display: none; } #activity ~ * { } .note { display: none; } }
 
+/* ---- no repeated labels: the number marker names the table, so the text beside it only says what is new */
+.rows .n { font-weight: inherit; }
+:root[data-s] #groups .t b { display: none; } :root[data-s] #groups li.nowo .t b { display: block; }
+:root[data-s] #groups .t small { display: block; margin: 0; font-size: 1em; font-weight: 700; color: var(--fg); }
+:root[data-s] #groups li.top .t small { color: var(--fg); }
+:root[data-s] #needs .n { display: none; }
+:root[data-s] #needs li::before, :root[data-s] #needs li.wait::before, :root[data-s] #needs li.done::before { content: attr(data-n); display: grid; place-items: center; flex: none; width: 1.7em; height: 1.7em; border-radius: 0.4em; color: #fff; font-weight: 700; font-size: 0.82em; background: #111; align-self: center; }
+:root[data-s] #needs li[data-l="0"]::before { background: #DA291C; } :root[data-s] #needs li[data-l="1"]::before { background: #ED8B00; }
+:root[data-s] #needs li[data-l="2"]::before { background: #003DA5; } :root[data-s] #needs li[data-l="3"]::before { background: #00843D; }
+:root[data-s] #needs li.done::before { opacity: 0.45; } :root[data-s] #needs li { align-items: center; }
+
 .start { position: fixed; inset: 0; display: grid; place-content: center; justify-items: center; gap: 1.2vh; background: color-mix(in srgb, var(--bg) 96%, transparent); z-index: 6; cursor: pointer; }
 .start.gone { display: none; }
 .start button { font: 500 calc(var(--u) * 1.6)/1 var(--sans); padding: 0.7em 2em; color: var(--bg); background: var(--green); border: 0; border-radius: 0; cursor: pointer; }
