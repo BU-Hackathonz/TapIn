@@ -191,9 +191,9 @@
     $("mtime").textContent = clock();
     $("mtext").innerHTML = stripHTML(m);
     if (typeof Sound !== "undefined" && Sound.started) {           // host_sound.js: each table has its own key
-      if (m.kind === "checkin") Sound.arrive(m.group);
-      else if (m.kind === "formed") Sound.formed(m.group);
-      else if (m.kind === "joined") Sound.joined(m.group, m.links || 1);
+      if (m.kind === "checkin") Sound.arrive(m.person);                 // the bell in the person's own note
+      else if (m.kind === "formed") Sound.formed(m.group, m.links, m.pairs);
+      else if (m.kind === "joined") Sound.joined(m.group, m.links || 1, m.pairs);
       else if (m.kind === "help") Sound.help(m.group);
     }
   }
@@ -215,6 +215,7 @@
   }
   const enqueue = (m) => { if (queue.length >= 4) queue.shift(); queue.push(m); };
   const table = (gid) => S.groups.get(gid)?.name || "a table";
+  const pairsOf = (ids) => ids.flatMap((a, i) => ids.slice(i + 1).map((b) => [a, b]));   // every pair in a new group is a new link
   const needKeys = (list) => new Set((list || []).filter((n) => n.handled_by == null).map((n) => `${n.group_id}|${n.need}`));   // open needs, one per table and tag
   const first = (ids) => ids.map((id) => S.people.get(id)?.name).filter(Boolean);
 
@@ -238,14 +239,14 @@
       const names = first(d.member_ids || []);
       const n = (d.member_ids || []).length;
       addLog(`<em>${esc(low(table(d.group_id)))}</em> formed`);
-      enqueue({ kind: "formed", group: d.group_id, known: [], links: (n * (n - 1)) / 2, main: `<b>${esc(table(d.group_id))}</b> formed: ${esc(list(names))}.`, tail: "" });
+      enqueue({ kind: "formed", group: d.group_id, known: [], links: (n * (n - 1)) / 2, pairs: pairsOf(d.member_ids || []), main: `<b>${esc(table(d.group_id))}</b> formed: ${esc(list(names))}.`, tail: "" });
       syncSoon(600);
     },
     async group_joined(d) {
       await syncGraph().catch((e) => console.error("sync", e));
       const names = first(d.new_member_ids || []);
       addLog(`${esc(low(list(names)))} joined <em>${esc(low(table(d.group_id)))}</em>`);
-      enqueue({ kind: "joined", group: d.group_id, known: [], links: (d.new_links || []).length, main: `<b>${esc(list(names))}</b> joined ${esc(table(d.group_id))}.`, tail: "" });
+      enqueue({ kind: "joined", group: d.group_id, known: [], links: (d.new_links || []).length, pairs: d.new_links || [], main: `<b>${esc(list(names))}</b> joined ${esc(table(d.group_id))}.`, tail: "" });
       syncSoon(600);
     },
     help(d) {
@@ -854,7 +855,7 @@
       const loud = () => { try { return Promise.resolve(Sound.start()).catch(() => {}); } catch { return null; } };
       loud(); addEventListener("pointerdown", loud, { once: true }); addEventListener("keydown", loud, { once: true });
       setTimeout(() => {                                                // the browser held the sound back: a small note until the first click
-        if (window.Sound && (Sound.started || Sound.muted)) return;   // already on, or the host turned sound off
+        if (typeof Sound !== "undefined" && (Sound.started || Sound.muted)) return;   // already on, or the host turned sound off
         const n = document.createElement("div"); n.className = "soundnote"; n.textContent = "Click anywhere to turn on sound"; document.body.append(n);
         const gone = () => n.remove(); addEventListener("pointerdown", gone, { once: true }); addEventListener("keydown", gone, { once: true });
         setTimeout(gone, 15000);
@@ -871,7 +872,10 @@
       if (!qs.get("venue") && r.name) $("locname").textContent = r.name;
       if (!qs.has("tables") && r.tables > 0) MAXT = r.tables;
     }
-    if (localStorage.getItem("wall.hostSound") === "off" && window.Sound && Sound.setMuted) Sound.setMuted(true);
+    if (localStorage.getItem("wall.hostSound") === "off" && typeof Sound !== "undefined" && Sound.setMuted) Sound.setMuted(true);
+    // ?mode=quiet or ?mode=event (spec), else the host's choice in the panel; quiet = study hours: no check-in bell, plucks for groups
+    const mode = qs.get("mode") || (localStorage.getItem("wall.hostQuiet") === "on" ? "quiet" : "event");
+    if (typeof Sound !== "undefined" && Sound.setMode) Sound.setMode(mode);
   } catch { /* private mode or no room saved */ }
   fetch("/api/room-settings").then((r) => (r.ok ? r.json() : null)).then((s) => {
     if (!s) return;
