@@ -426,8 +426,9 @@
       const btn = ui.querySelector("button"), statsEl = ui.querySelector("[data-stats]");
       const head = ui.querySelector("[data-head]"), readout = ui.querySelector("[data-readout]");
 
+      // The phone never asks for /api/graph (it lists names and is private on tapin.boston); a page can pass graphUrl.
       let stats = null;
-      readGraph(opts.graphUrl === undefined ? "/api/graph" : opts.graphUrl).then((d) => { stats = countRoom(d); });
+      if (opts.graphUrl) readGraph(opts.graphUrl).then((d) => { stats = countRoom(d); });
 
       // The room: 10 m by 11 m, the door at the front edge.
       const W = 10, D = 11, PITCH = 0.5, DOOR = { x: 0, z: D / 2 }, READER = { x: 1.1, z: D / 2 + 0.2 };
