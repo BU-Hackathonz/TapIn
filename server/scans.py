@@ -103,6 +103,17 @@ async def on_tap(station_id: int, uid: str) -> dict:
         await hub.broadcast("unknown_badge", {"station_id": station_id})
         return set_result(station_id, "unknown")
 
+    # One scan at a time per person: tapping here moves you out of any other station's open window (you are where you
+    # tapped last), so nobody is counted at two tables at once. A window left empty closes without a scan.
+    for sid, other in list(windows.items()):
+        if sid != station_id and person["id"] in other.person_ids:
+            other.person_ids.remove(person["id"])
+            if not other.person_ids:
+                if other.timer:
+                    other.timer.cancel()
+                windows.pop(sid, None)
+            log.info("tap station=%s person=%s moved from station %s", station_id, person["id"], sid)
+
     w = windows.setdefault(station_id, Window())
     if person["id"] not in w.person_ids:
         w.person_ids.append(person["id"])
