@@ -6,6 +6,7 @@
 // Env (Vercel project settings): GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET,
 // optional PUBLIC_URL (default https://www.tapin.boston: the bare domain redirects there). Callback URLs to register: <PUBLIC_URL>/api/auth/github and /api/auth/google.
 const crypto = require("crypto");
+const DB = require("./_db");
 
 const BASE = (process.env.PUBLIC_URL || "https://www.tapin.boston").replace(/\/+$/, "");
 const COOKIE = "tapin_oauth";
@@ -94,11 +95,77 @@ module.exports = (key) => async (req, res) => {
   try { prof = await P.profile(q.get("code"), redirect); } catch (e) { return fail(res, `${P.label} didn't confirm who you are (${e.message}).`); }
   const name = String(prof.name || "Guest").trim().split(/\s+/)[0].slice(0, 30) || "Guest";
   const me = { name, photo: prof.photo || undefined, email: prof.email || undefined, via: P.label, oauth: prof.oauth, links: prof.links };
-  // JSON inside a <script>: escape "<" so nothing in a name can close the tag
-  const json = JSON.stringify(me).replace(/</g, "\\u003c");
-  return page(res, 200, "Signed in", `<h1>Signed in as ${esc(name)}</h1><p>Taking you back…</p><a href="${esc(safeNext(cnext))}">Continue</a>
-<script>(function(){var m=${json},p={};try{p=JSON.parse(localStorage.getItem("wall.me")||"null")||{}}catch(e){}
-var n=Object.assign({},p,m,{role:p.role||"student",face:p.face||("face-"+Date.now()),links:Object.assign({},p.links||{},m.links||{})});
-if(p.person_id!=null&&p.oauth&&p.oauth!==m.oauth){delete n.person_id}
-try{localStorage.setItem("wall.me",JSON.stringify(n))}catch(e){}location.replace(${JSON.stringify(safeNext(cnext))})})();</script>`);
+  const next = safeNext(cnext);
+
+  // Is this login already linked to a Tap In person? Then you're signed in as them.
+  let person = null, dbDown = false;
+  try { person = await DB.personFor(prof.oauth); } catch (e) { dbDown = true; console.error("oauth lookup", e.message); }
+  if (person) {
+    Object.assign(me, { person_id: person.id, name: person.name, role: person.role, skills: person.skills || [], looking_for: person.looking_for || [], working_on: person.working_on || "" });
+    return finish(res, me, next, `Signed in as ${person.name}`);
+  }
+  // Not linked yet (and accounts are on): remember who signed in (a signed cookie only the link endpoint reads), then
+  // sign up. The phone's claim page links the new person to this login once the badge is claimed. If this browser
+  // already has a Tap In person, link to them straight away instead.
+  if (DB.enabled() && !dbDown) {
+    res.setHeader("set-cookie", [res.getHeader("set-cookie"), `${PENDING}=${sign({ oauth: prof.oauth, email: prof.email || null, exp: Date.now() + 3600e3 })}; Path=/api/auth; Max-Age=3600; HttpOnly; Secure; SameSite=Lax`].flat().filter(Boolean));
+    return finish(res, me, next, `Hi ${name}, let's set up your Tap In`, true);
+  }
+  return finish(res, me, next, `Signed in as ${name}`);
+};
+
+// The landing page for a finished sign-in: save the profile as this browser's "wall.me" and go on.
+// signup: no Tap In person yet. With one already on this browser (localStorage tapin_person), link to it now;
+// otherwise open the sign-up with your name and email filled in (sessionStorage tapin_form, as the sign-up page keeps it).
+function finish(res, me, next, title, signup = false) {
+  const json = JSON.stringify(me).replace(/</g, "\\u003c");          // JSON inside a <script>: "<" can't close the tag
+  return page(res, 200, title, `<h1>${esc(title)}</h1><p>${signup ? "No Tap In account for this login yet. Taking you to sign up…" : "Taking you back…"}</p>
+<script>(function(){var m=${json},next=${JSON.stringify(next)},signup=${signup},p={};
+try{p=JSON.parse(localStorage.getItem("wall.me")||"null")||{}}catch(e){}
+var n=Object.assign({},p,m,{role:m.role||p.role||"student",face:p.face||("face-"+(m.person_id||Date.now())),links:Object.assign({},p.links||{},m.links||{})});
+if(m.person_id==null&&p.person_id!=null&&p.oauth&&p.oauth!==m.oauth){delete n.person_id}
+var save=function(){try{localStorage.setItem("wall.me",JSON.stringify(n))}catch(e){}};save();
+if(!signup){location.replace(next);return}
+var known=null;try{known=JSON.parse(localStorage.getItem("tapin_person"))}catch(e){}
+var toSignup=function(){try{sessionStorage.setItem("tapin_oauth_pending","1");var f=JSON.parse(sessionStorage.getItem("tapin_form")||"null")||{};
+f.name=f.name||m.name;f.contact=f.contact||m.email||"";sessionStorage.setItem("tapin_form",JSON.stringify(f))}catch(e){}location.replace("/phone/")};
+if(known==null){toSignup();return}
+fetch("/api/auth/link",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({person_id:known})})
+.then(function(r){return r.ok?r.json():null}).then(function(d){if(!d||!d.person){toSignup();return}
+n=Object.assign(n,{person_id:d.person.id,name:d.person.name});save();location.replace(next)}).catch(toSignup)})();</script>`);
+}
+
+const PENDING = "tapin_link";
+const KEY = () => crypto.createHash("sha256").update("tapin-link|" + env("GITHUB_CLIENT_SECRET") + "|" + env("GOOGLE_CLIENT_SECRET")).digest();
+function sign(obj) {
+  const body = Buffer.from(JSON.stringify(obj)).toString("base64url");
+  return body + "." + crypto.createHmac("sha256", KEY()).update(body).digest("base64url");
+}
+function unsign(v) {
+  const [body, mac] = String(v || "").split(".");
+  if (!body || !mac) return null;
+  const want = crypto.createHmac("sha256", KEY()).update(body).digest("base64url");
+  if (mac.length !== want.length || !crypto.timingSafeEqual(Buffer.from(mac), Buffer.from(want))) return null;
+  try { const o = JSON.parse(Buffer.from(body, "base64url").toString()); return o.exp > Date.now() ? o : null; } catch { return null; }
+}
+
+// POST /api/auth/link {person_id}: links the login waiting in the signed cookie to that person, then forgets the cookie.
+module.exports.link = async (req, res) => {
+  const json = (status, o) => { res.statusCode = status; res.setHeader("content-type", "application/json"); res.setHeader("cache-control", "no-store"); res.end(JSON.stringify(o)); };
+  if (req.method !== "POST") return json(405, { error: "POST only" });
+  const pending = unsign(cookies(req)[PENDING]);
+  if (!pending) return json(401, { error: "No sign-in waiting to be linked" });
+  let body = req.body;
+  if (typeof body === "string") { try { body = JSON.parse(body); } catch { body = null; } }
+  if (!body || typeof body !== "object") {
+    const chunks = []; for await (const c of req) chunks.push(c);
+    try { body = JSON.parse(Buffer.concat(chunks).toString() || "{}"); } catch { body = {}; }
+  }
+  const pid = Number(body.person_id);
+  if (!Number.isInteger(pid) || pid <= 0) return json(400, { error: "person_id must be a number" });
+  let person;
+  try { person = await DB.link(pending.oauth, pid, pending.email); } catch (e) { console.error("oauth link", e.message); return json(503, { error: "Couldn't reach the database" }); }
+  if (!person) return json(404, { error: "No such person" });
+  res.setHeader("set-cookie", `${PENDING}=; Path=/api/auth; Max-Age=0; HttpOnly; Secure; SameSite=Lax`);
+  return json(200, { person: { id: person.id, name: person.name, role: person.role } });
 };

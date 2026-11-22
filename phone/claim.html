@@ -64,6 +64,12 @@
         clearInterval(timer);
         store.set("tapin_person", claim.person_id);
         store.del("tapin_claim", sessionStorage);
+        // Came here from Continue with Google / GitHub with no account yet: link that login to this new person
+        if (store.get("tapin_oauth_pending", sessionStorage)) {
+          store.del("tapin_oauth_pending", sessionStorage);
+          fetch("/api/auth/link", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ person_id: claim.person_id }) })
+            .then((r) => (r.ok ? r.json() : null)).then((d) => { if (!d) return; const m = store.get("wall.me") || {}; store.set("wall.me", { ...m, person_id: d.person.id, name: d.person.name }); }).catch(() => {});
+        }
         document.getElementById("got").textContent = `Got it, ${form.name}`;
         if (typeof UISound !== "undefined") UISound.ok();   // the badge is yours
         show("done");
