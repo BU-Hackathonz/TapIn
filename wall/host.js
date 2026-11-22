@@ -848,14 +848,15 @@
       }, 900);
     }
   }
-  // The host's settings (host/settings.html): place name, how many tables, table names, sound. The URL still wins.
-  fetch("/api/room-settings").then((r) => (r.ok ? r.json() : null)).then((s) => {
-    if (!s) return;
-    if (!qs.get("venue") && s.venue) { $("locname").textContent = s.venue; $("venue").textContent = ""; }
-    if (!qs.has("tables") && Number.isFinite(s.tables)) { MAXT = s.tables; if (graphRaw) applyGraph(graphRaw); }
-    if (!qs.get("mk")) { document.documentElement.dataset.mk = s.marker === "numbers" ? "num" : "let"; if (graphRaw) renderSide(); }
-    if (s.sound === false && window.Sound && Sound.setMuted) Sound.setMuted(true);
-  }).catch(() => {});
+  // The room the host made on the join page (wall.room in this browser): its name and how many tables to draw. The URL still wins.
+  try {
+    const r = JSON.parse(localStorage.getItem("wall.room") || "null");
+    if (r && r.host) {
+      if (!qs.get("venue") && r.name) { $("locname").textContent = r.name; $("venue").textContent = ""; }
+      if (!qs.has("tables") && r.tables > 0) MAXT = r.tables;
+    }
+    if (localStorage.getItem("wall.hostSound") === "off" && window.Sound && Sound.setMuted) Sound.setMuted(true);
+  } catch { /* private mode or no room saved */ }
   async function begin() {
     $("start").classList.add("gone");
     try { await Sound.start(); } catch (e) { console.error("sound", e); }

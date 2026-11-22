@@ -1,47 +1,62 @@
-// The gear on the host wall opens this panel, in the same look as the room map's corner panel: a You tab (who is hosting) and a
-// Settings tab (place name, sound), plus End room, which asks "Are you sure?" first. Nothing here changes how the wall looks
-// (no views, styles, tables or names): that is set once, before Start.
+// The host pill at the top left of the host wall opens this panel, the same You / Settings panel as on the room map:
+// your profile, sound, and End room (which asks "Are you sure?" first). There is nothing here to change how the wall looks:
+// no styles, views, 2D or plan, names or spin. The host wall is one fixed view.
+// Everything is kept in this browser (wall.me, wall.room), the same keys the join page writes.
 (() => {
-  const gear = document.getElementById("hostset");
-  if (!gear) return;
+  const pill = document.getElementById("hostset");
+  if (!pill) return;
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
   const DOOR = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4H6v16h8"/><path d="M14 4l5 2v12l-5 2z"/><path d="M3 12h7M7 9l3 3-3 3"/></svg>';
-  const panel = el("aside", "hp"); panel.id = "hostpanel"; panel.hidden = true; panel.setAttribute("aria-label", "Host account and settings");
+  const get = (k) => { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch { return null; } };
+  const put = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } };
+  const panel = el("aside", "hp"); panel.id = "hostpanel"; panel.hidden = true; panel.setAttribute("aria-label", "Your profile and settings");
   document.body.append(panel);
-  let me = {}, cur = {}, tab = "you";
-
-  const save = async (patch) => {
-    const r = await fetch("/api/host/settings", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...cur, ...patch }) });
-    if (r.ok) cur = await r.json();
-    return r.ok;
-  };
+  let tab = "you";
+  const mine = () => get("wall.me") || {};
+  const room = () => get("wall.room") || {};
   const bar = (t) => el("h3", "hp-bar", t);
 
-  const you = (body) => {
-    body.append(bar("You"), el("p", "hp-big", "Host"), el("p", "hp-note", cur.venue ? `Hosting ${cur.venue}` : "Hosting this room"),
-                el("p", "hp-note", "Signed in with the room PIN."),
-                el("p", "hp-note", "How the wall looks (views, display, tables) is set before Start and can't be changed here."));
+  const trigger = () => {
+    const name = mine().name || "Host";
+    pill.querySelector(".hs-name").textContent = name;
+    pill.querySelector(".hs-pic").textContent = name.trim().charAt(0).toUpperCase() || "H";
+    pill.setAttribute("aria-label", `${name}: profile and settings`);
   };
+
+  const you = (body) => {
+    const m = mine(), r = room();
+    body.append(bar("You"), el("p", "hp-big", m.name || "Host"));
+    if (m.school || m.major) body.append(el("p", "hp-note", [m.school, m.major].filter(Boolean).join(" · ")));
+    if (m.bio) body.append(el("p", "hp-note", m.bio));
+    body.append(el("p", "hp-note", r.name ? `Hosting ${r.name}${r.place ? " · " + r.place : ""}` : "Hosting this room"),
+                el("p", "hp-note", "The host wall is one fixed view: its look can't be changed here."));
+  };
+
   const settings = (body) => {
-    body.append(bar("Room"));
-    const form = el("form", "hp-form"), lab = el("label", "", "Place name"), inp = el("input");
-    inp.type = "text"; inp.maxLength = 40; inp.required = true; inp.value = cur.venue || ""; lab.append(inp);
-    const ok = el("button", "hp-save", "Save"), msg = el("span", "hp-msg"), row = el("div", "hp-row");
-    ok.type = "submit"; row.append(ok, msg); form.append(lab, row);
-    form.addEventListener("submit", async (e) => {
+    const m = mine();
+    body.append(bar("Profile"));
+    const form = el("form", "hp-form");
+    const field = (label, name, value, ph, max) => { const l = el("label", "", label), i = el("input"); i.type = "text"; i.name = name; i.value = value || ""; i.placeholder = ph; i.maxLength = max; l.append(i); return l; };
+    const save = el("button", "hp-save", "Save"), msg = el("span", "hp-msg"), row = el("div", "hp-row");
+    save.type = "submit"; row.append(save, msg);
+    form.append(field("Name", "name", m.name, "First name", 30), field("School", "school", m.school, "Boston University", 60),
+                field("Major", "major", m.major, "Computer Engineering", 40), field("One line about you", "bio", m.bio, "Likes soldering more than slides.", 80), row);
+    form.addEventListener("submit", (e) => {
       e.preventDefault();
-      const v = inp.value.trim();
-      if (v && await save({ venue: v })) { document.getElementById("locname").textContent = cur.venue; document.getElementById("venue").textContent = ""; msg.textContent = "Saved"; }
-      else msg.textContent = "Could not save";
+      const f = form.elements, next = { role: "student", skills: [], looking_for: [], links: {}, socials: [], ...mine() };
+      next.name = f.name.value.trim() || "Host";
+      for (const k of ["school", "major", "bio"]) { const v = f[k].value.trim(); if (v) next[k] = v; else delete next[k]; }
+      msg.textContent = put("wall.me", next) ? "Saved" : "Couldn't save in this browser";
+      trigger();
       setTimeout(() => { msg.textContent = ""; }, 1800);
     });
-    const sw = el("label", "hp-sw"), cb = el("input"); cb.type = "checkbox"; cb.checked = cur.sound !== false;
-    sw.append(el("span", "", "Sound on the wall"), cb);
+    const sw = el("label", "hp-sw"), cb = el("input"); cb.type = "checkbox";
+    cb.checked = !!(window.Sound && Sound.started && !Sound.muted);
+    sw.append(el("span", "", "Bell and plucks"), cb);
     cb.addEventListener("change", async () => {
-      if (await save({ sound: cb.checked }) && window.Sound) {
-        if (cb.checked) { try { await Sound.start(); } catch { /* no audio yet */ } }
-        if (Sound.setMuted) Sound.setMuted(!cb.checked);
-      }
+      if (cb.checked) { try { await Sound.start(); } catch { /* no audio yet */ } }
+      if (window.Sound && Sound.setMuted) Sound.setMuted(!cb.checked);
+      try { localStorage.setItem("wall.hostSound", cb.checked ? "on" : "off"); } catch { /* private mode */ }
     });
     body.append(form, bar("Sound"), sw);
   };
@@ -54,51 +69,46 @@
       tabs.append(b);
     }
     const body = el("div", "hp-body");
-    if (!me.signed_in) {
-      body.append(bar("Host"), el("p", "hp-note", "Not signed in as a host."));
-      const a = el("a", "hp-save", "Host sign in"); a.href = "/host/"; body.append(a);
-      panel.replaceChildren(body); return;
-    }
     (tab === "you" ? you : settings)(body);
-    const leave = el("button", "hp-leave"); leave.type = "button"; leave.innerHTML = DOOR; leave.append(el("span", "", "End room"));   // static icon markup
-    leave.addEventListener("click", ask);
-    body.append(bar("End"), leave);
+    const end = el("button", "hp-leave"); end.type = "button"; end.innerHTML = DOOR; end.append(el("span", "", "End room"));   // static icon markup
+    end.addEventListener("click", ask);
+    body.append(bar("Room"), end);
     panel.replaceChildren(tabs, body);
   };
 
-  // End room asks first, like the room map does.
+  // End room asks first, like Leave room on the room map.
   const shade = el("div", "hp-shade"); shade.hidden = true;
   const win = el("div", "hp-win"); win.setAttribute("role", "alertdialog"); win.setAttribute("aria-modal", "true"); win.setAttribute("aria-labelledby", "hp-t");
   const title = el("h2", null, "Are you sure?"); title.id = "hp-t";
-  const yes = el("button", "hp-yes", "Yes, end it"), no = el("button", "hp-no", "No, keep going"), row = el("div", "hp-yn");
-  yes.type = no.type = "button"; row.append(yes, no);
-  win.append(el("p", "hp-wbar", "End room"), title, el("p", "hp-wtext", "You'll stop hosting and go back to the front door. Nothing is deleted: the wall and the people on it stay as they are."), row);
+  const wtext = el("p", "hp-wtext");
+  const yes = el("button", "hp-yes", "Yes, end it"), no = el("button", "hp-no", "No, keep going"), yn = el("div", "hp-yn");
+  yes.type = no.type = "button"; yn.append(yes, no);
+  win.append(el("p", "hp-wbar", "End room"), title, wtext, yn);
   shade.append(win); document.body.append(shade);
   let last = null;
-  const ask = () => { last = document.activeElement; shade.hidden = false; no.focus(); };
+  const ask = () => {
+    const r = room();
+    wtext.textContent = `You'll stop hosting ${r.name || "this room"} and go back to the front page. You can host again any time.`;
+    last = document.activeElement; shade.hidden = false; no.focus();
+  };
   const close = () => { shade.hidden = true; if (last && last.focus) last.focus(); };
   no.addEventListener("click", close);
   shade.addEventListener("click", (e) => { if (e.target === shade) close(); });
-  yes.addEventListener("click", async () => {
+  yes.addEventListener("click", () => {
     yes.disabled = true;
-    await fetch("/api/host/logout", { method: "POST" }).catch(() => {});
+    try { localStorage.removeItem("wall.room"); } catch { /* private mode */ }
     document.body.classList.add("hp-leaving");
     setTimeout(() => location.assign("/landing/?skip"), 380);
   });
 
-  const open = async (v) => {
-    panel.hidden = !v; gear.setAttribute("aria-expanded", String(v));
-    if (!v) return;
-    me = await fetch("/api/host/me").then((r) => r.json()).catch(() => ({}));
-    cur = await fetch("/api/room-settings").then((r) => r.json()).catch(() => ({}));
-    render();
-  };
-  gear.setAttribute("aria-haspopup", "dialog"); gear.setAttribute("aria-expanded", "false");
-  gear.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); open(panel.hidden); });
+  const open = (v) => { panel.hidden = !v; pill.setAttribute("aria-expanded", String(v)); if (v) render(); };
+  pill.setAttribute("aria-haspopup", "dialog"); pill.setAttribute("aria-expanded", "false");
+  pill.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); open(panel.hidden); });
   panel.addEventListener("click", (e) => e.stopPropagation());
   addEventListener("click", () => open(false));
   addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
     if (!shade.hidden) close(); else open(false);
   });
+  trigger();
 })();
