@@ -184,7 +184,22 @@
     const tail = m.ice || m.tail;
     return disp(m.main + (tail ? ` <span>${esc(tail)}</span>` : ""));
   };
+  // While a station is collecting badges, the strip says so with a countdown, so people see their tap landed and stop
+  // re-tapping. Any real moment (check-in, table formed, join) replaces it.
+  let collectTimer = null;
+  function showCollecting(d) {
+    clearInterval(collectTimer);
+    const until = Date.now() + (d.closes_in || 0) * 1000;
+    const draw = () => {
+      const left = Math.max(0, Math.ceil((until - Date.now()) / 1000));
+      $("mtime").textContent = "";
+      $("mtext").innerHTML = `<b>Station ${esc(String(d.station_id))}</b>: ${d.count} ${d.count === 1 ? "badge" : "people"} tapping in together <span>${left ? `… ${left} s` : "…"}</span>`;
+      if (!left) clearInterval(collectTimer);
+    };
+    draw(); collectTimer = setInterval(draw, 500);
+  }
   function show(m, now) {
+    clearInterval(collectTimer);
     m.until = now + (queue.length > 1 ? 4500 : 8000);
     m.start = now;
     if (!m.ice && m.person != null && ice.has(m.person)) m.ice = ice.get(m.person);
@@ -279,6 +294,7 @@
       setTimeout(() => ice.delete(d.person_id), 120000);
     },
     person_created() { syncSoon(150); },
+    collecting(d) { showCollecting(d); },
     badges_changed() { syncSoon(150); },             // the admin panel unlinked a badge or removed someone: redraw now
   };
 

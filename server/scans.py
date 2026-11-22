@@ -15,6 +15,7 @@ from .hub import hub
 
 log = logging.getLogger("tapin.scans")
 
+WINDOW_MAX_SECONDS = float(os.environ.get("TAPIN_WINDOW_MAX", "20"))   # a window always closes this long after its first tap
 WINDOW_SECONDS = float(os.environ.get("TAPIN_WINDOW", "12"))   # 12 s (David, for the demo): time to pass a badge and tap; each tap restarts it
 DEDUPE_SECONDS = float(os.environ.get("TAPIN_DEDUPE", "3"))
 RESULT_SECONDS = 2.0  # result states last this long, then back to idle
@@ -27,6 +28,8 @@ DEFAULT_COLOR = "#5CC8A0"
 class Window:
     person_ids: list = field(default_factory=list)
     timer: "asyncio.Task | None" = None
+    opened: float = 0.0       # monotonic time of the first tap, for the hard cap
+    closes: float = 0.0       # monotonic time the window will close (shown on the host wall)
 
 
 windows: dict = {}      # station_id -> open Window
@@ -115,12 +118,20 @@ async def on_tap(station_id: int, uid: str) -> dict:
                 windows.pop(sid, None)
             log.info("tap station=%s person=%s moved from station %s", station_id, person["id"], sid)
 
-    w = windows.setdefault(station_id, Window())
+    w = windows.get(station_id)
+    if w is None:
+        w = windows[station_id] = Window(opened=now)
+    # Only a NEW person extends the window; someone already in it tapping again doesn't (people re-tap when nothing seems
+    # to happen, and that kept windows open for over a minute). The window always closes WINDOW_MAX after its first tap.
     if person["id"] not in w.person_ids:
         w.person_ids.append(person["id"])
-    if w.timer:
-        w.timer.cancel()
-    w.timer = asyncio.create_task(close_after(station_id, WINDOW_SECONDS))
+        delay = max(0.2, min(WINDOW_SECONDS, w.opened + WINDOW_MAX_SECONDS - now))
+        if w.timer:
+            w.timer.cancel()
+        w.closes = now + delay
+        w.timer = asyncio.create_task(close_after(station_id, delay))
+    await hub.broadcast("collecting", {"station_id": station_id, "count": len(w.person_ids),
+                                       "closes_in": round(max(0.0, w.closes - now), 1)})
     log.info("tap station=%s uid=%s outcome=collecting count=%d", station_id, uid, len(w.person_ids))
     log_tap_soon(station_id, uid, "collecting")
     return station_state(station_id, "collecting", len(w.person_ids))
