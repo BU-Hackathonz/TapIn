@@ -365,22 +365,42 @@ body::before {
 
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 
-/* The host's account panel (host_panel.js): white sign, black label bar, red Leave room. No display or view controls. */
-.hp { position: fixed; z-index: 8; top: 52px; right: 12px; width: min(320px, calc(100vw - 24px)); background: #fff; color: #2b1f23; box-shadow: 0 10px 30px rgba(0,0,0,.28); font: 400 15px/1.35 var(--sans); }
+/* The host's account panel (host_panel.js), in the room map's corner-panel look: tabs, black label bars, grey fields, Leave room with an Are-you-sure window. No display or view controls. */
+.hp { position: fixed; z-index: 8; top: 52px; right: 12px; width: min(330px, calc(100vw - 24px)); max-height: calc(100vh - 70px); overflow: auto; background: #fff; color: #111; box-shadow: 0 10px 30px rgba(0,0,0,.28); font: 400 15px/1.35 var(--sans); }
 .hp[hidden] { display: none; }
-.hp-bar { display: flex; align-items: center; justify-content: space-between; background: #111; color: #fff; padding: 9px 12px 9px 14px; box-shadow: inset -8px 0 0 #DA291C; }
-.hp-bar b { font: 800 16px/1 "Bricolage Grotesque", var(--sans); }
-.hp-x { margin-right: 8px; background: none; border: 0; color: #fff; font-size: 22px; line-height: 1; cursor: pointer; }
-.hp-body { padding: 4px 14px 14px; display: grid; gap: 8px; }
-.hp-h { margin: 10px 0 0; font: 600 11px/1 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: #6a4f55; }
-.hp-note { margin: 0; color: #6a4f55; font-size: 13px; }
-.hp-form { display: grid; gap: 8px; }
-.hp-form label { display: grid; gap: 4px; font-size: 13px; color: #6a4f55; }
-.hp-form input[type=text] { font: inherit; color: #2b1f23; padding: 8px; border: 2px solid #111; border-radius: 0; background: #fff; }
-.hp-msg { font-size: 13px; color: #00843D; min-height: 1em; }
-.hp-sw { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; }
+.hp-tabs { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 2px solid #111; }
+.hp-tabs button { padding: 13px 8px; border: 0; background: #fff; color: #6a4f55; font: 600 13px/1 var(--sans); letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
+.hp-tabs button.on { background: #111; color: #fff; }
+.hp-body { padding: 12px 14px 16px; display: grid; gap: 10px; }
+.hp-bar { margin: 6px 0 0; padding: 7px 26px 6px 10px; background: #111; color: #fff; font: 400 12px "DotGothic16", monospace; text-transform: uppercase; letter-spacing: .1em; box-shadow: inset -12px 0 0 #ff4b3e; }
+.hp-big { margin: 2px 0 0; font: 800 26px/1 "Bricolage Grotesque", var(--sans); }
+.hp-note { margin: 0; color: #6a4f55; font-size: 14px; }
+.hp-form { display: grid; gap: 10px; }
+.hp-form label { display: grid; gap: 4px; font: 600 12px/1 var(--sans); color: #444; }
+.hp-form input[type=text] { font: 400 16px var(--sans); color: #111; padding: 12px; border: 0; border-bottom: 2px solid #111; border-radius: 0; background: #f1efeb; }
+.hp-row { display: flex; align-items: center; gap: 12px; }
+.hp-msg { font-size: 13px; color: #00843D; }
+.hp-sw { display: flex; justify-content: space-between; align-items: center; padding: 2px 0; }
 .hp-sw input { width: 20px; height: 20px; accent-color: #111; }
-.hp-btn { display: inline-block; text-align: left; font: 700 14px/1 var(--sans); padding: 11px 14px; color: #fff; background: #111; border: 0; border-radius: 0; cursor: pointer; text-decoration: none; box-shadow: inset -8px 0 0 #00843D; }
-.hp-btn.leave { box-shadow: inset -8px 0 0 #DA291C; }
-.hp-btn:hover, .hp-btn:focus-visible, .hp-x:focus-visible, .hp-sw input:focus-visible { outline: 3px solid #003DA5; outline-offset: 2px; }
+.hp-save { display: inline-block; font: 700 15px/1 var(--sans); padding: 14px 20px; color: #fff; background: #111; border: 0; border-radius: 0; cursor: pointer; text-decoration: none; }
+.hp-leave { display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 14px; cursor: pointer; background: #fff; color: #111; border: 2px solid #111; box-shadow: 4px 4px 0 #DA291C; font: 400 14px "DotGothic16", monospace; text-transform: uppercase; letter-spacing: .05em; justify-self: start; transition: transform .06s, box-shadow .06s; }
+.hp-leave:hover, .hp-leave:focus-visible { background: #DA291C; color: #fff; outline: none; }
+.hp-leave:active { transform: translate(4px, 4px); box-shadow: 0 0 0 #DA291C; }
+.hp-save:focus-visible, .hp-tabs button:focus-visible, .hp-sw input:focus-visible, .hp-form input:focus-visible { outline: 3px solid #003DA5; outline-offset: 2px; }
+.hp-shade { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; padding: 16px; background: rgba(17,17,17,.4); animation: hp-in .18s ease-out; }
+.hp-shade[hidden] { display: none; }
+.hp-win { width: min(380px, 100%); background: #fbf9f6; border: 3px solid #111; box-shadow: 0 0 0 3px #fbf9f6, 0 0 0 6px #111, 10px 10px 0 6px rgba(17,17,17,.85); padding: 18px 20px 20px; color: #111; animation: hp-pop .28s cubic-bezier(.2,.9,.25,1.25); }
+.hp-wbar { margin: 0 0 12px; padding: 7px 26px 6px 10px; background: #111; color: #fff; font: 400 13px "DotGothic16", monospace; text-transform: uppercase; letter-spacing: .06em; box-shadow: inset -12px 0 0 #ff4b3e; }
+.hp-win h2 { margin: 0 0 6px; font: 700 26px/1.1 var(--sans); letter-spacing: -.02em; }
+.hp-wtext { margin: 0 0 18px; color: #444; font-size: 15px; line-height: 1.4; }
+.hp-yn { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.hp-yn button { min-height: 50px; cursor: pointer; border: 0; font: 400 16px "DotGothic16", monospace; text-transform: uppercase; letter-spacing: .05em; transition: transform .06s, box-shadow .06s; }
+.hp-yes { background: #DA291C; color: #fff; box-shadow: 6px 6px 0 #111; }
+.hp-no { background: #111; color: #ffb000; box-shadow: 6px 6px 0 #DA291C; }
+.hp-yes:hover, .hp-yes:focus-visible { background: #a31c12; outline: none; }
+.hp-no:hover, .hp-no:focus-visible { background: #2a2a2a; outline: 2px solid #ffb000; outline-offset: 2px; }
+.hp-yn button:active { transform: translate(6px, 6px); box-shadow: none; }
+@keyframes hp-in { from { opacity: 0; } }
+@keyframes hp-pop { from { transform: scale(.85); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .hp-shade, .hp-win { animation: none; } }
 .hp-leaving { opacity: 0; transition: opacity .35s ease; }
