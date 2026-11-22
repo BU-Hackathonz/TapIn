@@ -120,7 +120,7 @@
     TapInIntro._reset();
     const t = performance.now();
     $("logSignIn").textContent = "waiting for the Tap in button…";
-    const how = await TapInIntro.signIn($("phone"), opts());
+    const how = await TapInIntro.signIn($("phone"), { ...opts(), force: true });
     $("logSignIn").textContent = how + " · " + Math.round(performance.now() - t) + " ms after load";
   }
 
