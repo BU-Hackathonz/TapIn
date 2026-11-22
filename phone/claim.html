@@ -5,17 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tap your badge · Tap In</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono&family=IBM+Plex+Sans:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@800&family=DotGothic16&display=swap">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<header class="topbar">
+  <span class="wm" role="img" aria-label="Tap In">tap <span class="ii" aria-hidden="true">&#305;<svg class="wifi" viewBox="0 0 24 20" aria-hidden="true"><circle cx="12" cy="16.6" r="2.3"/><path d="M6.6 11.6a7.6 7.6 0 0 1 10.8 0"/><path d="M2.9 7.4a12.8 12.8 0 0 1 18.2 0"/></svg></span>n</span>
+</header>
+<div class="lines" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
 <main aria-live="polite">
-  <div class="brand">TAP IN</div>
 
   <section id="waiting">
-    <p class="big">Tap your badge on any station now</p>
-    <p class="muted">Use a blank badge from the table. The stations are pulsing white.</p>
-    <div class="count" id="count" aria-label="seconds left">30</div>
+    <div class="board">
+      <div class="count" id="count" aria-label="seconds left">30</div>
+      <p class="board-text">Tap your badge on any station now</p>
+    </div>
+    <p class="muted">Use a blank badge from the table. The station's blue light blinks slowly while it waits.</p>
   </section>
 
   <section id="done" hidden>

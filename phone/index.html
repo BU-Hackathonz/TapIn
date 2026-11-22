@@ -5,17 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tap In</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono&family=IBM+Plex+Sans:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@800&family=DotGothic16&display=swap">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<header class="topbar">
+  <span class="wm" role="img" aria-label="Tap In">tap <span class="ii" aria-hidden="true">&#305;<svg class="wifi" viewBox="0 0 24 20" aria-hidden="true"><circle cx="12" cy="16.6" r="2.3"/><path d="M6.6 11.6a7.6 7.6 0 0 1 10.8 0"/><path d="M2.9 7.4a12.8 12.8 0 0 1 18.2 0"/></svg></span>n</span>
+</header>
+<div class="lines" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
 <main>
-  <div class="brand">TAP IN</div>
   <h1>Find the table that needs you</h1>
-  <p class="muted">Make a profile, tap a badge, and see who you already know here.</p>
+  <p class="lede">Make a profile, tap a blank badge at a station, and see who you already know here.</p>
   <p id="back" hidden><a class="button secondary" id="back-link" href="me.html">Go to your page</a></p>
 
   <form id="form" novalidate>
+    <section class="step" aria-labelledby="step1">
+    <h2 class="step-title" id="step1"><span class="bullet o" aria-hidden="true">1</span>About you</h2>
     <label class="field" for="name">First name</label>
     <input type="text" id="name" name="name" maxlength="30" autocomplete="given-name" autocapitalize="words" placeholder="e.g. Maya" required>
 
@@ -28,6 +33,10 @@
       </div>
     </fieldset>
 
+    </section>
+
+    <section class="step" aria-labelledby="step2">
+    <h2 class="step-title" id="step2"><span class="bullet b" aria-hidden="true">2</span>Your skills</h2>
     <fieldset>
       <legend>What I'm good at <small id="skills-count">(up to 3)</small></legend>
       <div id="skills"></div>
@@ -38,16 +47,24 @@
       <div id="looking"></div>
     </fieldset>
 
-    <label class="field" for="working">Working on today <small>(optional)</small></label>
+    </section>
+
+    <section class="step" aria-labelledby="step3">
+    <h2 class="step-title" id="step3"><span class="bullet g" aria-hidden="true">3</span>Extras <small>(optional)</small></h2>
+    <label class="field" for="working">Working on today</label>
     <input type="text" id="working" name="working_on" maxlength="80" placeholder="a robot arm, a study-room finder...">
 
-    <label class="field" for="contact">How should people reach you after tonight? <small>(Instagram or LinkedIn, optional)</small></label>
+    <label class="field" for="contact">How should people reach you after tonight? <small>(Instagram or LinkedIn)</small></label>
     <input type="text" id="contact" name="contact" maxlength="80" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="@yourname or linkedin.com/in/..." aria-describedby="contact-help">
     <p class="note" id="contact-help">Nobody sees it tonight. After the event we share it only with people you connected with here.</p>
 
-    <button type="submit" id="go">Get my badge</button>
+    </section>
+
+    <div class="submit-bar">
+      <p class="error" id="error" role="alert"></p>
+      <button type="submit" id="go">Get my badge</button>
+    </div>
     <p class="note">Only your first name shows on screen. Ask us and we'll delete your profile.</p>
-    <p class="error" id="error" role="alert"></p>
   </form>
 </main>
 <script>const FAKE = false; // true = hard-coded replies, no server needed. false = the real server.</script>
