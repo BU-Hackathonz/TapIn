@@ -413,7 +413,8 @@ const View3D = (() => {
       const col = greenOn && known.has(id) ? T.known : !person.here ? T.away
         : T.lines && person.group_id ? T.lines[person.group_id % T.lines.length] : T[person.role] || T.student;
       // Dot below ~14 px on screen, profile picture above ~22 px, cross-fade between.
-      const pic = Math.max(0, Math.min(1, (r - 14) / 8));
+      // People with a real photo (demo people's stock portraits, a signed-in Google/GitHub picture) always show it.
+      const pic = person.photo ? 1 : Math.max(0, Math.min(1, (r - 14) / 8));
       if (pic < 1) {
         ctx.globalAlpha = base * (1 - pic);
         if (T.host && person.role !== "student") {                    // mentors and staff are squares, as on the host screen
@@ -426,7 +427,7 @@ const View3D = (() => {
         }
       }
       if (pic > 0) {
-        const rr = r * 1.25;
+        const rr = person.photo ? Math.max(11, r * 1.25) : r * 1.25;
         ctx.globalAlpha = base * pic * (person.here ? 1 : 0.5);
         ctx.save();
         ctx.beginPath(); ctx.arc(p.x, p.y, rr, 0, Math.PI * 2); ctx.clip();

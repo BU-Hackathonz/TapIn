@@ -176,3 +176,11 @@ body.signup button[type=submit] { border-radius: 12px; }
 
 /* the privacy line sits inside the sticky bar, under the steps, so the bar never covers it */
 .submit-bar .note { margin: 8px 0 0; font-size: 12.5px; line-height: 1.35; }
+
+/* sign-up: optional profile photo */
+.photo-row { display: flex; align-items: center; gap: 14px; }
+#photo-preview { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 2px solid #111; }
+.photo-btn { position: relative; overflow: hidden; cursor: pointer; }
+.photo-btn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; font-size: 0; }
+.photo-btn:focus-within { outline: 3px solid #ffb000; outline-offset: 3px; }
+.me-photo { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 2px solid #111; }

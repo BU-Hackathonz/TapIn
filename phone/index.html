@@ -22,6 +22,12 @@
     <label class="field" for="name">First name</label>
     <input type="text" id="name" name="name" maxlength="30" autocomplete="given-name" autocapitalize="words" placeholder="e.g. Maya" required>
 
+    <label class="field" for="photo">Profile photo <small>(optional, shows as you on the room map)</small></label>
+    <div class="photo-row">
+      <img id="photo-preview" alt="" hidden>
+      <label class="button secondary photo-btn"><input type="file" id="photo" accept="image/*"><span id="photo-label">Add a photo</span></label>
+    </div>
+
     <fieldset>
       <legend>I'm a</legend>
       <div class="chips" id="role">
@@ -109,6 +115,29 @@
     document.getElementById("back-link").href = "me.html?id=" + encodeURIComponent(me);
   }
 
+  // Profile photo: cut to a 128 px circle-ready square and kept on this device (wall.me.photo, what the room map draws for
+  // you). The server stores no photos.
+  let photo = null;
+  try { photo = (JSON.parse(localStorage.getItem("wall.me") || "null") || {}).photo || null; } catch (_) {}
+  const preview = document.getElementById("photo-preview"), photoLabel = document.getElementById("photo-label");
+  const showPhoto = () => { preview.hidden = !photo; if (photo) preview.src = photo; photoLabel.textContent = photo ? "Change photo" : "Add a photo"; };
+  showPhoto();
+  document.getElementById("photo").addEventListener("change", (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement("canvas"); c.width = c.height = 128;
+      const side = Math.min(img.width, img.height);
+      c.getContext("2d").drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, 128, 128);
+      photo = c.toDataURL("image/jpeg", 0.85);
+      URL.revokeObjectURL(img.src);
+      showPhoto();
+    };
+    img.src = URL.createObjectURL(f);
+  });
+  const keepPhoto = () => { if (!photo) return; try { const m = JSON.parse(localStorage.getItem("wall.me") || "null") || {}; localStorage.setItem("wall.me", JSON.stringify({ ...m, photo })); } catch (_) {} };
+
   document.getElementById("form").addEventListener("submit", async (e) => {
     e.preventDefault();
     const err = document.getElementById("error");
@@ -129,6 +158,7 @@
       const { status, data } = await api("POST", "/signup", body);
       if (status !== 200) { err.textContent = signupError(status, data); return; }
       store.set("tapin_claim", data, sessionStorage);
+      keepPhoto();
       location.href = "claim.html";
     } catch (_) {
       err.textContent = signupError(0);
