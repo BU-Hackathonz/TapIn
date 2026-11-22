@@ -74,7 +74,7 @@ The server must also serve `intro/` (for example a `StaticFiles` mount at `/intr
 | `sound` | `true` | `false` mutes the intro |
 | `quiet` | `false` | The wall's quiet mode: no sound |
 | `reducedMotion` | the OS setting | Force the 300 ms fade on or off |
-| `graphUrl` | `"/api/graph"` | `map` only. `null` means always use the generic room |
+| `graphUrl` | `map`: `"/api/graph"`; `signIn`: none | Where to read room counts. `null` means the generic room. The phone intro reads nothing unless a page passes one, because `/api/graph` is private on tapin.boston |
 | `zIndex` | `50` | Stacking order of the intro layer |
 | `target` | none | `map` only. A function returning where the page draws its room, so the intro can land on it (see below) |
 
