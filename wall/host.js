@@ -39,6 +39,7 @@
   const list = (xs) => (xs.length < 2 ? xs.join("") : xs.slice(0, -1).join(", ") + " and " + xs[xs.length - 1]);
 
   if (qs.get("venue")) $("venue").textContent = qs.get("venue");
+  if (qs.get("venue")) $("locname").textContent = qs.get("venue");      // the place shown on the map (default: spark!)
 
   // ------------------------------------------------------------ state
   const S = { people: new Map(), groups: new Map(), links: [], needs: [], stats: null, board: null };
