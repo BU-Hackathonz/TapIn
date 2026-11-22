@@ -16,7 +16,7 @@
     7: { ring: "solid", node: "dot", lw: 1.35 }, 8: { ring: "dash", node: "glow", lw: 1 }, 9: { ring: "dot", node: "ring", lw: 1.1 }, 10: { ring: "dash", node: "glow", lw: 1 },
     11: { ring: "dash", node: "dot", lw: 1 },
   };
-  const VN = Math.min(11, Math.max(1, parseInt(qs.get("v"), 10) || 6)), V = VARIANTS[VN], LW = V.lw;
+  const VN = Math.min(11, Math.max(1, parseInt(qs.get("v"), 10) || 11)), V = VARIANTS[VN], LW = V.lw;
   if (VN > 1) document.documentElement.dataset.v = String(VN);
   document.documentElement.dataset.palette = VN > 1 ? "v" : qs.get("palette") || "sand";
   if (qs.get("logo")) document.documentElement.dataset.logo = qs.get("logo");
