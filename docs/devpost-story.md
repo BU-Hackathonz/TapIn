@@ -7,11 +7,11 @@ Sponsor Notes with one section per track, prose paragraphs. People numbers come 
 
 ## Inspiration
 
-Boston is America's college city, and it is easy to be alone in it. You walk into a library, a lab or a hackathon room full of students, and nothing tells you which table to walk up to, so you sit alone next to a group you could have joined. Every shared space we know has the same gap: a room full of people who would help each other, and no way for a newcomer to see where they fit. Spark!'s own list of ideas includes RFID taps that trigger sounds. We built that, with one rule on top: joining a table only counts when everyone taps the same station together, so the room itself proves people met.
+Boston is America's college city, and it is easy to be alone in it. You walk into a library, a lab or a hackathon room full of students, and nothing tells you which table to walk up to, so you sit alone next to a group you could have joined. Every shared space we know has the same gap: a room full of people who would help each other, and no way for a newcomer to see where they fit. Spark!'s own list of ideas includes RFID taps that trigger sounds. We built that, with one rule on top: you only join a table by tapping the same station together with someone from it, so the room itself proves people met.
 
 ## What it does
 
-You make a profile on your phone in about 30 seconds (first name, role, skills, what you're looking for and what you're up to today, which can be "Just hanging out"), then tap any blank badge on a station and it becomes yours. From then on there is one action: tap your badge. Alone, it checks you in, and your phone shows who you already know here, which table needs you and why, and your points. Tap together with a table and you join it: everyone is linked, everyone earns points, and a mentor who taps in counts as help. The projector shows the room as it happens, with tables by letter, open needs and the latest activity, and every event plays a note from one pentatonic scale. A host sets up the event with a PIN on the venue Wi-Fi and can switch the room to quiet mode for study hours.
+You make a profile on your phone in about 30 seconds (first name, role, skills, what you're looking for and what you're up to today, which can be "Just hanging out"), then tap any blank badge on a station and it becomes yours. From then on there is one action: tap your badge. Alone, it checks you in, and your phone shows who you already know here, which table needs you and why, and your points. Tap the same station together with someone from a table and you join it (leaving your old table): everyone in the scan is linked, everyone earns points, and a mentor who taps in counts as help. Coming back later, you log in by tapping your badge on the join page. The projector shows the room as it happens, with tables by letter, open needs and the latest activity, and every event plays a note from one pentatonic scale. A host sets up the event with a PIN on the venue Wi-Fi and can switch the room to quiet mode for study hours.
 
 ## How we built it
 
@@ -21,7 +21,7 @@ Each station is an ESP32 and an RC522 reader in a box, reading through the lid. 
 
 ### Server
 
-Python FastAPI on one laptop on the venue Wi-Fi. Each station has a scan window of 4 seconds that restarts on every tap, and the same badge within 3 seconds counts once. When the window closes, one database transaction decides what the scan means (check-in, new group, join, help or repeat), awards points and pushes the result over a WebSocket.
+Python FastAPI on one laptop on the venue Wi-Fi. Each station has a scan window of 6 seconds that restarts on every tap, and the same badge within 3 seconds counts once. When the window closes, one database transaction decides what the scan means (check-in, new group, join, help or repeat), awards points and pushes the result over a WebSocket.
 
 ### Wall and phone
 
@@ -29,7 +29,7 @@ The wall is plain JavaScript on a canvas with Tone.js for sound. The phone pages
 
 ### tapin.boston
 
-The pages are static files on Vercel. Six API routes (sign-up, claim, where you stand, focus, table mode and needs) reach the laptop through a Cloudflare tunnel. Names, taps, hosting and live updates never leave the venue network.
+The pages are static files on Vercel. Nine API routes reach the laptop through a Cloudflare tunnel: sign-up, claim, where you stand, focus, table mode and needs, plus a read-only view of the room (graph, stats and leaderboard), which the public room map refreshes every 5 seconds because Vercel doesn't carry WebSockets. Taps, stations, hosting, badge log-in and the admin page never leave the venue network.
 
 ![How Tap In fits together](https://github.com/BU-Hackathonz/TapIn/blob/main/media/devpost/system.png?raw=true)
 
@@ -45,7 +45,7 @@ Most of Boston's students work in shared rooms: libraries, dorm lounges, labs an
 
 #### INTERACTION IS THE INPUT
 
-A join only counts when everyone taps the same station within seconds of each other. The scan is the proof that people met, and nobody can join a table from across the room.
+A join only counts when the newcomer and someone already at the table tap the same station within 6 seconds of each other. The scan is the proof that people met, and nobody can join a table from across the room.
 
 #### TAPS THAT PLAY
 
@@ -57,7 +57,7 @@ Every event and its sound, all from one pentatonic scale.
 
 #### FOR THE SPACE'S STAFF
 
-The wall's needs list shows what each open table is looking for and how long it has waited. Hosts set the room up with a PIN, and an admin page on the venue network can unlink a badge from a person so it can be handed to someone else.
+The wall's needs list shows what each open table is looking for and how long it has waited. Hosts set the room up with a PIN, and an admin page on the venue network can unlink a badge from a person so it can be handed to someone else, or give someone a new badge, with live status as it lands.
 
 #### EVIDENCE
 
@@ -82,11 +82,11 @@ Taps arrive milliseconds apart, sometimes at two stations at once, so each stati
 
 ## Accomplishments that we're proud of
 
-Both stations passed soak tests, a server outage and a router unplug, and recovered on their own every time. A phone on any network can sign up at tapin.boston while names, taps and hosting stay on the venue network. And four people merged 105 pull requests in about 24 hours without breaking main, each working with a coding agent, all coordinating on one pinned GitHub issue.
+Both stations passed soak tests, a server outage and a router unplug, and recovered on their own every time. A phone on any network can sign up at tapin.boston while names, taps and hosting stay on the venue network. And four people merged more than 115 pull requests in about 24 hours without breaking main, each working with a coding agent, all coordinating on one pinned GitHub issue.
 
 ## What we learned
 
-Writing every JSON shape down before coding let the stations, server, wall and phone meet on the first try. Measuring beat assuming every time: the Gemini model in our plan didn't exist for our key, and timing the alternatives with our real prompt picked the one we use. And deciding what is public on purpose, six routes and nothing else, kept names, taps and the host PIN off the internet.
+Writing every JSON shape down before coding let the stations, server, wall and phone meet on the first try. Measuring beat assuming every time: the Gemini model in our plan didn't exist for our key, and timing the alternatives with our real prompt picked the one we use. And deciding what is public on purpose kept taps, hosting and the host PIN off the internet: the public site can sign people up and show the room, but nothing on it can change the room.
 
 ## What's next for Tap In
 
