@@ -411,17 +411,34 @@
       const ui = document.createElement("div");
       ui.style.cssText = "position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;" +
         "max-width:480px;margin:0 auto;padding:20px 16px 28px;box-sizing:border-box;pointer-events:none;text-align:left;";
+      // The T-map theme (phone/style.css defines --display): graph paper, a red line chip, chunky type and the page's
+      // own yellow sticker button. Otherwise the plain v5 look.
+      const root = document.documentElement, DISPLAY = cssVar(root, "--display").replace(/"/g, "'");   // it goes inside style="…"
+      if (DISPLAY) {
+        const bs = global.getComputedStyle(document.body);
+        Object.assign(L.root.style, { backgroundColor: bs.backgroundColor, backgroundImage: bs.backgroundImage, backgroundSize: bs.backgroundSize });
+        L.clear = true;
+      }
+      const brandHtml = DISPLAY
+        ? `<div style="display:inline-flex;align-items:center;gap:8px;font:400 15px/1 ${DISPLAY};letter-spacing:0;color:#fff;` +
+          `background:${cssVar(root, "--red") || K.you};padding:9px 14px 8px;border-radius:999px;border:3px solid ${K.text};box-shadow:3px 3px 0 ${K.text}">` +
+          maskWords("TAP IN", 60, 50, true) + `<span style="font:600 10px/1 ${MONO};letter-spacing:.12em">LINE</span></div>`
+        : `<div style="font:500 14px ${MONO};letter-spacing:.08em;color:${K.mint}">` + maskWords("TAP IN", 60, 50, true) + `</div>`;
+      const h1Style = DISPLAY
+        ? `margin:18px 0 6px;font:400 31px/1.08 ${DISPLAY};letter-spacing:.005em;text-transform:uppercase;color:${K.text}`
+        : `margin:4px 0 4px;font:700 28px/1.25 ${SANS};letter-spacing:-.01em;text-transform:none;color:${K.text}`;
+      const btnStyle = DISPLAY      // the page styles <button> as its sticker; only lay it out
+        ? `animation-delay:900ms;pointer-events:auto;width:100%;margin:0`
+        : `animation-delay:900ms;pointer-events:auto;display:flex;align-items:center;justify-content:center;width:100%;` +
+          `min-height:52px;margin:0;border:0;border-radius:0;background:${K.you};color:#fff;font:600 17px ${SANS};cursor:pointer`;
       ui.innerHTML =
-        `<div data-head>` +
-        `<div style="font:500 14px ${MONO};letter-spacing:.08em;color:${K.mint}">` + maskWords("TAP IN", 60, 50, true) + `</div>` +
-        `<h1 style="margin:4px 0 4px;font:700 28px/1.25 ${SANS};letter-spacing:-.01em;text-transform:none;color:${K.text}">` +
+        `<div data-head>` + brandHtml +
+        `<h1 style="${h1Style}">` +
         maskWords("Tap in.", 260, 70) + `<br>` + maskWords("Find the table that needs you.", 400, 55) + `</h1>` +
         `<div data-stats class="ti-f" style="font:500 13px ${MONO};letter-spacing:.06em;color:${K.dim};animation-delay:800ms;min-height:1.3em"></div>` +
         `</div>` +
-        `<div><div data-readout style="font:500 13px ${MONO};letter-spacing:.06em;color:${K.dim};min-height:1.3em;margin-bottom:10px"></div>` +
-        `<button type="button" class="ti-f" style="animation-delay:900ms;pointer-events:auto;display:flex;align-items:center;` +
-        `justify-content:center;width:100%;min-height:52px;margin:0;border:0;border-radius:0;background:${K.you};color:#fff;` +
-        `font:600 17px ${SANS};cursor:pointer">Tap in</button></div>`;
+        `<div><div data-readout style="font:500 13px ${MONO};letter-spacing:.06em;color:${K.dim};min-height:1.3em;margin-bottom:12px"></div>` +
+        `<button type="button" class="ti-f" style="${btnStyle}">Tap in</button></div>`;
       L.root.appendChild(ui);
       const btn = ui.querySelector("button"), statsEl = ui.querySelector("[data-stats]");
       const head = ui.querySelector("[data-head]"), readout = ui.querySelector("[data-readout]");
@@ -457,7 +474,7 @@
       pick.forEach((p) => { p.meet = true; });
 
       const cam = camera();
-      let btnRect = null, view = null;
+      let btnRect = null, view = null, btnFill = null;
       function measure() {
         const o = L.root.getBoundingClientRect(), r = btn.getBoundingClientRect(), hb = head.getBoundingClientRect();
         btnRect = { x: r.left - o.left, y: r.top - o.top, w: r.width, h: r.height };
@@ -490,7 +507,8 @@
         const tau = reduced ? 4000 : now() - born;
         const T = pressAt < 0 ? -1 : now() - pressAt;
         g.setTransform(L.dpr, 0, 0, L.dpr, 0, 0);
-        g.globalAlpha = 1; g.fillStyle = K.bg; g.fillRect(0, 0, L.w, L.h);
+        g.globalAlpha = 1;
+        if (L.clear) g.clearRect(0, 0, L.w, L.h); else { g.fillStyle = K.bg; g.fillRect(0, 0, L.w, L.h); }
 
         // camera: rises into place on load, drifts while you wait, cranes down onto you after the press
         const enter = easeInOut(seg(tau, 0, 1500));
@@ -590,7 +608,7 @@
             const fold = easeInOut(seg(T, 0, 300));
             const bw = lerp(btnRect.w, 12, fold), bh = lerp(btnRect.h, 12, fold);
             const cx = lerp(btnRect.x + btnRect.w / 2, at.x, fold), cy = lerp(btnRect.y + btnRect.h / 2, at.y - 120, fold);
-            g.globalAlpha = 1; g.fillStyle = K.you; g.fillRect(cx - bw / 2, cy - bh / 2, bw, bh);
+            g.globalAlpha = 1; g.fillStyle = fold < 0.5 && btnFill ? btnFill : K.you; g.fillRect(cx - bw / 2, cy - bh / 2, bw, bh);
           } else {
             const drop = easeBack(seg(T, 300, 560)), lift = Math.max(-0.08, 3.2 * (1 - drop));
             const h = pin(g, cam, YOU.x, YOU.z, lift, K.you, 1, 0.95);
@@ -666,6 +684,7 @@
           return;
         }
         measure();
+        btnFill = global.getComputedStyle(btn).backgroundColor;
         pressAt = now();
         const tau = pressAt - born;
         // your tap: one wave from where you land, timed against the landing clock
