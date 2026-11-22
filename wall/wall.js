@@ -320,6 +320,37 @@
   Room.onChange(() => { Corner.refresh(); applyMainScreen(); });
   View3D.setActive(true);
 
+  // Your table status, impossible to miss (above all on a phone): a loud banner while you're not at a table, a small
+  // green chip once you are. Not on the projector (?kiosk), and not while the room is offline.
+  const tableBar = document.createElement("div");
+  tableBar.id = "my-table"; tableBar.className = "my-table"; tableBar.setAttribute("role", "status"); tableBar.hidden = true;
+  document.body.append(tableBar);
+  let tableKey = "";
+  function updateTableBar() {
+    const off = mainScreen || !Corner.signedIn() || document.body.classList.contains("no-room") || (!demo && !S.people.size);
+    const me = off ? null : Corner.me();
+    const g = me && me.group_id != null ? S.groups.get(me.group_id) : null;
+    const key = off ? "off" : g ? `in:${g.id}:${g.name}` : "out";
+    if (key === tableKey) return;
+    tableKey = key;
+    tableBar.hidden = off;
+    tableBar.classList.toggle("out", !off && !g);
+    tableBar.classList.toggle("in", !!g);
+    document.body.classList.toggle("no-table", !off && !g);
+    if (off) return;
+    if (g) { tableBar.replaceChildren(Object.assign(document.createElement("b"), { textContent: `You're at ${View3D.tableName(g) || "a table"}` })); return; }
+    const head = Object.assign(document.createElement("b"), { textContent: "You're not at a table" });
+    const how = Object.assign(document.createElement("span"), { textContent: "Find a table below, then tap your badge at its station with someone from that table." });
+    tableBar.replaceChildren(Object.assign(document.createElement("i"), { className: "mt-dot" }), head, how);
+    const mine = (() => { try { return JSON.parse(localStorage.getItem("wall.me") || "null"); } catch { return null; } })();
+    if (mine && mine.person_id != null) {
+      const a = Object.assign(document.createElement("a"), { className: "mt-go", textContent: "Which table needs me?", href: "/phone/me.html?id=" + encodeURIComponent(mine.person_id) });
+      tableBar.append(a);
+    }
+  }
+  setInterval(updateTableBar, 1000);
+  setTimeout(updateTableBar, 300);
+
   // ?demo, or no Tap In server behind this page (e.g. hosted on its own): run the built-in demo room.
   function startDemo() {
     demo = true;
