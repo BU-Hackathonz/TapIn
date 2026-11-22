@@ -8,8 +8,8 @@ when someone arrives, a pluck for each new line, and a quick rising run when a g
 
 | Intro | Where | What happens | Length |
 |---|---|---|---|
-| `TapInIntro.signIn(container)` | Phone, before the sign-up form | A landing that is alive before you touch it: the dot floor breathes from the door, people tap in at the Entrance reader and walk to a seat, tables turn, links flicker, and the button pulses. Pressing **Tap in** folds the raspberry button into you and walks you in through the door. Three ripples light the floor and knock the tables, three people turn mint and line up to you (+1, +2, +3), and the table that needs you locks on. Then the camera pushes in and the screen lifts away to the form. | ~1.9 s after the press |
-| `TapInIntro.map(container)` | Wall, right after its Start click | The floor lights up from the door, and the room, the Entrance reader and the tables draw in with typed labels. Every arrival is a tap: the reader flashes, then the person walks in with a trail and lands with a ping. Each group wires up with a rising run of plucks and locks, and links reach across tables. The big "here now" number and the TABLES, LINKS and TAPS counters count what actually happened. Then the plan tilts back into the 3D map and hands over. | ~4 s |
+| `TapInIntro.signIn(container)` | Phone, before the sign-up form | The phone's own header and raspberry button over a small room seen in 3D. When the page opens, a wave from the door lifts the floor into a skyline and the tables and people rise out of it. While you wait, the camera drifts, people tap the Entrance reader and walk to a seat, and links leap between people at a table. Pressing **Tap in** folds the button into you and drops you in at the door. Your tap sends a raspberry wave across the floor. As it reaches three people they turn mint and leap a line to you (+1, +2, +3), the table that needs you rises, and the camera cranes down onto you before the screen lifts away to the form. | ~2 s after the press |
+| `TapInIntro.map(container)` | Wall, right after its Start click | In the wall's current theme. The camera starts at floor level by the Entrance. One tap on the reader sends a wave across the whole floor, which rises into a skyline and settles, and the tables lift out of it with typed labels. People tap in one after another, each tap rippling the floor, and walk to their seats. Each group's lines leap between them with a rising run of plucks, and links arc across tables. Meanwhile the camera cranes up from the door to straight overhead, where the map starts, and the big "here now" number counts what actually walked in. | ~4.5 s |
 
 Open `intro/demo.html` straight from disk to see both, with switches for sound, the wall's quiet mode, reduced motion
 and the wall theme.
@@ -60,7 +60,8 @@ The server must also serve `intro/` (for example a `StaticFiles` mount at `/intr
   - **Wall:** whatever `wall/themes.js` has selected right now: Minimal (the default: white, black ink), Night, White, Sketch or Blueprint. It reads `Theme.c` and the body's CSS variables.
   - **Style:** flat, with hairline lines and square corners: no glows, gradients, blur or glass. "You" always has a ring as well as a colour.
 - **Light:**
-  - Plain canvas and Web Audio, with no libraries and nothing from a CDN, so it works offline.
+  - Plain canvas and Web Audio, with no libraries and nothing from a CDN, so it works offline. The 3D is a small
+    hand-written perspective camera (no WebGL): hairlines and flat fills only.
   - `devicePixelRatio` is capped at 2, and it targets 60 fps.
   - The audio voices are synthesised once, then replayed.
 
