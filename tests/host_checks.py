@@ -51,5 +51,16 @@ host._fails.clear()
 codes = [c.post("/api/host/login", json={"pin": "bad"}).status_code for _ in range(7)]
 check("five wrong PINs, then 429", codes[:5] == [401] * 5 and codes[5] == 429, codes)
 check("even the right PIN waits during the lockout (429)", c.post("/api/host/login", json={"pin": "4821"}).status_code == 429)
+# .env values as people write them, and a quoted HOST_PIN
+from server.envfile import env_value  # noqa: E402
+check(".env: plain", env_value("1234") == "1234")
+check(".env: double quotes", env_value('"1234"') == "1234")
+check(".env: single quotes", env_value("'1234'") == "1234")
+check(".env: trailing note", env_value("1234   # the host PIN") == "1234")
+check(".env: spaces", env_value("  1234  ") == "1234")
+host._fails.clear()
+os.environ["HOST_PIN"] = '"1234"'
+check("quoted HOST_PIN still takes 1234", c.post("/api/host/login", json={"pin": "1234"}).status_code == 200)
+check("spaces around the typed PIN are fine", c.post("/api/host/login", json={"pin": " 1234 "}).status_code == 200)
 print("\n%d failed" % fails if fails else "\nall passed")
 sys.exit(1 if fails else 0)
