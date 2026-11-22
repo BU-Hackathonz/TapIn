@@ -68,6 +68,8 @@
   </form>
 </main>
 <script>const FAKE = false; // true = hard-coded replies, no server needed. false = the real server.</script>
+<script src="/landing/ui-sound.js"></script>
+<script>UISound.setup({ ambient: true, toggle: true, corner: "top-right", map: { "#go": "go" } });</script>
 <script src="common.js"></script>
 <script src="pixel.js"></script>
 <script>/* the moving pixel Boston (pixel.js) replaces the still scene; the image stays if it can't run */ if (typeof PixelBoston !== "undefined") PixelBoston.mount(document.getElementById("px"));</script>

@@ -43,7 +43,9 @@
       const f = form.elements, next = { role: "student", skills: [], looking_for: [], links: {}, socials: [], ...mine() };
       next.name = f.name.value.trim() || "Host";
       for (const k of ["school", "major", "bio"]) { const v = f[k].value.trim(); if (v) next[k] = v; else delete next[k]; }
-      msg.textContent = put("wall.me", next) ? "Saved" : "Couldn't save in this browser";
+      const saved = put("wall.me", next);
+      msg.textContent = saved ? "Saved" : "Couldn't save in this browser";
+      if (typeof UISound !== "undefined") (saved ? UISound.ok : UISound.no)();
       trigger();
       setTimeout(() => { msg.textContent = ""; }, 1800);
     });
@@ -95,6 +97,7 @@
   shade.addEventListener("click", (e) => { e.stopPropagation(); if (e.target === shade) close(); });
   yes.addEventListener("click", () => {
     yes.disabled = true;
+    if (typeof UISound !== "undefined") UISound.end();
     try { localStorage.removeItem("wall.room"); } catch { /* private mode */ }
     fetch("/api/host/logout", { method: "POST" }).catch(() => {});
     document.body.classList.add("hp-leaving");

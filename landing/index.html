@@ -176,6 +176,8 @@ document.querySelectorAll(".choice").forEach((a) => a.addEventListener("click", 
   requestAnimationFrame(loop);
 })();
 </script>
+<script src="ui-sound.js"></script>
+<script>UISound.setup({ ambient: true, toggle: true, corner: "bottom-left", map: { ".choice": "go" } });   // door chime on Join / Host, quiet city bed</script>
 <script src="pixel.js"></script>
 <script>window.heroScene = PixelBoston.mount(document.getElementById("hscene"));</script>
 <script src="/wall/account.js"></script>

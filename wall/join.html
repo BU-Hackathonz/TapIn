@@ -412,6 +412,8 @@
 </div>
 <footer class="board"><b>NEXT</b><span>Tap your badge · join the space · find your table</span></footer>
 
+<script src="/landing/ui-sound.js"></script>
+<script>UISound.setup({ ambient: true, toggle: true, corner: "top-left", map: { ".enter": "go", ".decline": "end", "#create-form [type=submit]": "none", "#pin-form [type=submit]": "none" } });</script>
 <script src="pixel.js"></script>
 <script src="logo.js"></script>
 <script src="loading.js"></script>
@@ -664,8 +666,8 @@
       btn.disabled = true;
       try {
         const r = await fetch("/api/host/login", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ pin }) });
-        if (r.ok) { $("host-pin").value = ""; show("step-host"); }
-        else $("pin-err").textContent = r.status === 429 ? "Too many tries. Wait a minute." : r.status === 503 ? "Hosting isn't set up on this server." : r.status === 404 ? "Hosting only works on the venue network." : "That PIN isn't right.";
+        if (r.ok) { $("host-pin").value = ""; if (typeof UISound !== "undefined") UISound.ok(); show("step-host"); }
+        else { $("pin-err").textContent = r.status === 429 ? "Too many tries. Wait a minute." : r.status === 503 ? "Hosting isn't set up on this server." : r.status === 404 ? "Hosting only works on the venue network." : "That PIN isn't right."; }
       } catch { $("pin-err").textContent = "Couldn't reach the server."; }
       btn.disabled = false;
     });
@@ -675,10 +677,14 @@
       e.preventDefault();
       const n = $("ev-name").value.trim();
       if (!n) { $("ev-err").textContent = "Give the event a name."; $("ev-name").focus(); return; }
+      if (typeof UISound !== "undefined") UISound.go();
       $("ev-err").textContent = "";
       const ev = { status: "in", host: true, name: n.slice(0, 50), place: $("ev-place").value.trim(), date: $("ev-date").value, start: $("ev-time").value,
                    tables: Math.max(1, Math.min(26, +$("ev-tables").value || 5)), time: Date.now() };
       try { localStorage.setItem("wall.room", JSON.stringify(ev)); } catch { /* private mode */ }
+      // the server keeps the event's name and table count (the host is signed in by the PIN step), so the projector computer shows it too
+      fetch("/api/host/settings", { method: "PUT", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ venue: ev.name, tables: ev.tables, marker: "letters", sound: true }), keepalive: true }).catch(() => {});
       // the host ends up on the host wall (host.html), with the event name and table count the host just chose
       const wall = `host.html?start&venue=${encodeURIComponent(ev.name)}&tables=${ev.tables}`;
       if (typeof TapLoading !== "undefined") TapLoading.go(wall, { sub: `Next stop: ${ev.name}` }); else location.href = wall;

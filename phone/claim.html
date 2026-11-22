@@ -36,6 +36,8 @@
   <ol class="journey" aria-label="Steps"><li>Sign up</li><li aria-current="step">Tap your badge</li><li>Find your table</li></ol>
 </main>
 <script>const FAKE = false; // true = hard-coded replies, no server needed. false = the real server.</script>
+<script src="/landing/ui-sound.js"></script>
+<script>UISound.setup({ ambient: true, toggle: true, corner: "top-right", map: { "#go": "go" } });</script>
 <script src="common.js"></script>
 <script>
   const form = store.get("tapin_form", sessionStorage);
@@ -59,6 +61,7 @@
         store.set("tapin_person", claim.person_id);
         store.del("tapin_claim", sessionStorage);
         document.getElementById("got").textContent = `Got it, ${form.name}`;
+        if (typeof UISound !== "undefined") UISound.ok();   // the badge is yours
         show("done");
         setTimeout(() => location.replace("me.html?id=" + encodeURIComponent(claim.person_id)), 1500);
       } else if (status === "expired" || left === 0 && status !== "waiting") {
