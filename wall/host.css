@@ -337,7 +337,9 @@ body::before {
 :root:not([data-logo]) #brand, :root[data-logo="strip"] #brand { right: calc(var(--side-w) + (100vw - var(--side-w)) * 0.025); padding-top: 1vh; }
 :root[data-s] #moment { padding-right: 12vw; }
 
-#legend .lede b { font-weight: 800; }
+/* where we are: the same plain style as the headline, at the top right of the map, with a small pin */
+#loc { position: absolute; right: 1.7vw; top: 2.6vh; z-index: 2; pointer-events: none; display: flex; align-items: center; gap: 0.5em; font: 600 calc(var(--u) * 1.15)/1.2 var(--sans); letter-spacing: -0.01em; color: var(--fg); }
+#loc svg { width: 0.75em; height: 0.95em; fill: var(--pink); stroke: none; } #loc svg circle { fill: var(--bg); }
 
 .start { position: fixed; inset: 0; display: grid; place-content: center; justify-items: center; gap: 1.2vh; background: color-mix(in srgb, var(--bg) 96%, transparent); z-index: 6; cursor: pointer; }
 .start.gone { display: none; }
