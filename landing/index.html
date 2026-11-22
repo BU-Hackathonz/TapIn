@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tap In</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  /* Jun's moving pixel scene (train down Comm Ave) fills the upper half of the hero, fading into the page at its lower edge */
+  #hscene { position: fixed; left: 0; right: 0; top: 0; height: 46vh; z-index: 0; pointer-events: none; -webkit-mask-image: linear-gradient(to bottom, #000 70%, transparent 100%); mask-image: linear-gradient(to bottom, #000 70%, transparent 100%); opacity: 0; transition: opacity .8s ease .2s; }
+  body.ready #hscene { opacity: 1; }
+  #hscene .px-scene { width: 100%; height: 100%; display: block; image-rendering: pixelated; image-rendering: crisp-edges; object-fit: cover; }
+
+
+  /* the opening scene: a pixel Green Line train drops people at spark!, they tap in, then the hero appears */
+  #scene { position: fixed; inset: 0; z-index: 4; background: #ecd9d2; transition: opacity .5s ease; }
+  #scene.gone { opacity: 0; pointer-events: none; }
+  #scene canvas { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; image-rendering: crisp-edges; }
+  #skip { position: absolute; right: 18px; bottom: 22px; z-index: 2; border: 0; background: #111; color: #fff; font: 600 13px/1 "IBM Plex Sans", sans-serif; letter-spacing: .08em; text-transform: uppercase; padding: 10px 14px; cursor: pointer; box-shadow: inset -6px 0 0 #00843D; }
+  body:not(.ready) main { opacity: 0; } body:not(.ready) main * { animation-play-state: paused !important; } body:not(.ready) .stripe { animation-play-state: paused; }
+  main { transition: opacity .3s; }
+
+  :root { --bg: #ecd9d2; --ink: #2b1f23; --muted: #6a4f55; --red: #d4151b; --sand: #ece0c6; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--bg); color: var(--ink); font: 400 18px/1.4 "IBM Plex Sans", system-ui, sans-serif; overflow: hidden; display: grid; place-items: center; }
+  body::before { content: ""; position: fixed; inset: 0; z-index: 2; pointer-events: none; background: repeating-linear-gradient(to bottom, rgba(0,0,0,.04) 0 1px, transparent 1px 3px); }
+  canvas#fume { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; image-rendering: pixelated; image-rendering: crisp-edges; pointer-events: none; }
+  .stripe { position: fixed; left: 0; right: 0; bottom: 0; height: 8px; z-index: 3; background: linear-gradient(90deg, #DA291C 0 25%, #ED8B00 25% 50%, #003DA5 50% 75%, #00843D 75% 100%); transform-origin: left; animation: draw 0.9s 0.2s cubic-bezier(.2,.8,.2,1) both; }
+  main { position: relative; z-index: 1; width: min(720px, calc(100vw - 40px)); text-align: center; margin-top: 30vh; }
+  .wm { position: relative; display: inline-block; font: 800 clamp(64px, 11vw, 150px)/1 "Bricolage Grotesque", sans-serif; letter-spacing: -0.05em; color: var(--ink); padding: .46em .1em .08em; margin: -.46em -.1em -.08em; animation: rise 0.7s cubic-bezier(.2,.8,.2,1) both; }
+  .ii { position: relative; display: inline-block; }
+  .wifi { position: absolute; left: 50%; bottom: .66em; width: .62em; height: .52em; transform: translateX(-50%); overflow: visible; color: var(--red); fill: none; stroke: currentColor; stroke-width: 2.3; stroke-linecap: round; }
+  .wifi circle { fill: currentColor; stroke: none; }
+  .wifi path { animation: pulse 1.8s ease-in-out infinite; } .wifi path + path { animation-delay: .25s; }
+  .tag { margin: 18px 0 0; font: 600 clamp(18px, 2.6vw, 24px)/1.25 "IBM Plex Sans", sans-serif; color: var(--muted); animation: rise 0.7s 0.25s cubic-bezier(.2,.8,.2,1) both; }
+  .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: clamp(20px, 4vh, 40px); animation: rise 0.7s 0.55s cubic-bezier(.2,.8,.2,1) both; }
+  .choice { position: relative; display: block; text-align: left; padding: 22px 28px 22px 24px; background: #111; color: #fff; text-decoration: none; box-shadow: inset -14px 0 0 var(--bar); transition: transform .15s ease, box-shadow .15s ease; }
+  .choice:hover, .choice:focus-visible { transform: translateY(-3px); box-shadow: inset -22px 0 0 var(--bar); outline: none; }
+  .choice b { display: block; font: 800 clamp(24px, 3.4vw, 32px)/1.05 "Bricolage Grotesque", sans-serif; letter-spacing: -.02em; }
+  .choice span { display: block; margin-top: 6px; color: #cfc6bd; font-size: 15px; }
+  .choice.join { --bar: #DA291C; } .choice.host { --bar: #003DA5; }
+  body.leaving main { opacity: 0; transition: opacity .35s ease; }
+  .fade { position: fixed; inset: 0; z-index: 5; background: var(--bg); opacity: 0; pointer-events: none; transition: opacity .35s ease; }
+  .fade.on { opacity: 1; }
+  @keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+  @keyframes draw { from { transform: scaleX(0); } to { transform: none; } }
+  @keyframes pulse { 50% { opacity: .35; } }
+  @media (max-width: 560px) { .choices { grid-template-columns: 1fr; } }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div id="scene"><canvas id="sc" width="320" height="180" aria-label="A green line train arrives and people tap in"></canvas><button id="skip" type="button">Skip</button></div>
+<canvas id="fume" aria-hidden="true"></canvas>
+<div id="hscene" aria-hidden="true"></div>
+<main>
+  <h1 class="wm" aria-label="tap in" style="margin-block:0">tap <span class="ii">&#305;<svg class="wifi" viewBox="0 0 24 20" aria-hidden="true"><circle cx="12" cy="16.6" r="2.3"/><path d="M6.6 11.6a7.6 7.6 0 0 1 10.8 0"/><path d="M2.9 7.4a12.8 12.8 0 0 1 18.2 0"/></svg></span>n</h1>
+  <p class="tag">Find the people you should be sitting with.</p>
+  <nav class="choices" aria-label="Choose">
+    <a class="choice join" href="/phone/"><b>Join a space</b><span>Sign up and link your badge</span></a>
+    <a class="choice host" href="/host/"><b>Host a space</b><span>Sign in and set up the room</span></a>
+  </nav>
+</main>
+<i class="stripe"></i>
+<div class="fade" id="fade"></div>
+<script>
+// a quick fade out when a choice is picked, then the next page
+document.querySelectorAll(".choice").forEach((a) => a.addEventListener("click", (e) => {
+  if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+  e.preventDefault();
+  const go = () => (location.href = a.href), fade = document.getElementById("fade");
+  document.body.classList.add("leaving");
+  const rush = window.heroScene && window.heroScene.leave ? window.heroScene.leave(650) : Promise.resolve();
+  setTimeout(() => fade.classList.add("on"), 420);          // the fade starts while the train is still going
+  rush.then(() => setTimeout(go, 250));
+}));
+// the red pixel smoke from the host wall, behind everything
+(() => {
+  const cv = document.getElementById("fume"), g = cv.getContext("2d"), FW = 256, FH = 144; cv.width = FW; cv.height = FH;
+  const img = g.createImageData(FW, FH), BAY = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map((x) => (x + 0.5) / 16);
+  const hash = (x, y) => { let h = Math.imul(x, 374761393) + Math.imul(y, 668265263); h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967295; };
+  const vn = (x, y) => { const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi, u = xf * xf * (3 - 2 * xf), w = yf * yf * (3 - 2 * yf); const a = hash(xi, yi), b = hash(xi + 1, yi), c = hash(xi, yi + 1), d = hash(xi + 1, yi + 1); return a + (b - a) * u + (c - a) * w + (a - b - c + d) * u * w; };
+  const fbm = (x, y) => 0.55 * vn(x, y) + 0.3 * vn(x * 2.1, y * 2.1) + 0.15 * vn(x * 4.3, y * 4.3);
+  const draw = (t) => {
+    const tt = t / 1000, d = img.data;
+    for (let y = 0; y < FH; y++) for (let x = 0; x < FW; x++) {
+      const nx = (x / FW) * 3.4, ny = (y / FH) * 2.1, w = fbm(nx + tt * 0.045, ny - tt * 0.038), sm = fbm(nx * 1.1 + w * 1.7 - tt * 0.03, ny * 1.1 + w * 1.3 + tt * 0.028);
+      const u1 = (x / FW) * 0.8 + (1 - y / FH) * 0.4 + (w - 0.5) * 0.45, c1 = -0.35 + ((tt / 9) % 1) * 2.0;
+      const lv = sm * 0.5 + Math.exp(-(((u1 - c1) / 0.26) ** 2)) * (0.3 + 0.75 * sm) * 1.2;
+      const q = Math.floor(lv * 3.6 + BAY[(y & 3) * 4 + (x & 3)]), i = (y * FW + x) * 4;
+      if (q <= 1) { d[i + 3] = 0; continue; }
+      d[i] = 212; d[i + 1] = 21; d[i + 2] = 27; d[i + 3] = (q === 2 ? 28 : q === 3 ? 62 : 105) * 0.9;
+    }
+    g.putImageData(img, 0, 0);
+  };
+  let last = -1e9; const loop = (t) => { requestAnimationFrame(loop); if (t - last > 90) { last = t; draw(t); } }; requestAnimationFrame(loop);
+})();
+</script>
+<script>
+// ---- the scene, drawn at 320x180 and scaled up with hard pixels. Everything is a function of time, so it never drifts.
+(() => {
+  const sceneEl = document.getElementById("scene"), cv = document.getElementById("sc"), g = cv.getContext("2d"), W = 320, H = 180;
+  const qs = new URLSearchParams(location.search), FIXED = qs.get("t"), SKIP = qs.has("skip") || (!qs.has("replay") && (() => { try { return sessionStorage.getItem("tapin-intro") === "1"; } catch { return false; } })());
+  const ease = (x) => 1 - Math.pow(1 - Math.min(1, Math.max(0, x)), 3), clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+  const R = (x, y, w, h2, c) => { g.fillStyle = c; g.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h2)); };
+  const GROUND = 140, DOORX = 236, STOP = 74, T_TRAIN = 2.6, T_DOORS = 3.0, PEOPLE = [["#ff7ab2", "#2b1f23"], ["#ffc46b", "#2b1f23"], ["#7cc7ff", "#2b1f23"], ["#c9a2ff", "#2b1f23"], ["#ece0c6", "#2b1f23"]];
+  const T_END = 7.2;
+  const hashN = (n) => { const s = Math.sin(n * 12.9898) * 43758.5453; return s - Math.floor(s); };
+
+  function sky() {
+    for (let i = 0; i < 9; i++) R(0, i * 14, W, 14, ["#f3e4dc", "#f1e0d8", "#efdcd3", "#edd9d0", "#ecd6cc", "#ead2c8", "#e8cfc4", "#e6cbc0", "#e4c8bc"][i]);
+    for (let b = 0; b < 14; b++) { const x = b * 26 - 8, hh = 30 + hashN(b) * 52; R(x, GROUND - hh - 14, 22, hh + 14, "#dcbdb2"); for (let w = 0; w < 5; w++) for (let r = 0; r < hh / 9; r++) if (hashN(b * 9 + w * 3 + r) > 0.45) R(x + 3 + w * 4, GROUND - hh - 8 + r * 9, 2, 3, "#ecd3c8"); }
+  }
+  function building(lit) {
+    const x = 196, y = 52, w = 84, hh = GROUND - y;
+    R(x, y, w, hh, "#a8584d"); R(x - 3, y - 4, w + 6, 6, "#7d3d36"); R(x, y + 6, w, 2, "#8e4a44");
+    for (let r = 0; r < 4; r++) for (let c = 0; c < 5; c++) { const on = lit > ((r * 5 + c) % 9) / 9 + 0.05; R(x + 6 + c * 15, y + 14 + r * 17, 9, 10, on ? "#ffd98a" : "#5a2d2a"); if (on) R(x + 6 + c * 15, y + 14 + r * 17, 9, 2, "#fff0c4"); }
+    R(DOORX - 9, GROUND - 28, 18, 28, "#2b1f23"); R(DOORX - 7, GROUND - 26, 14, 26, lit > 0.2 ? "#ffd98a" : "#3a2b2b"); R(DOORX, GROUND - 26, 1, 26, "#2b1f23");
+    R(x + 18, y - 16, 48, 11, "#111"); g.font = "10px DotGothic16, monospace"; g.fillStyle = "#ffb000"; g.textBaseline = "top"; g.fillText("spark!", x + 22, y - 15);
+  }
+  function platform(t) {
+    R(0, GROUND, W, 6, "#6a4f55"); R(0, GROUND + 6, W, 3, "#4a3a3d"); R(0, GROUND + 9, W, H - GROUND - 9, "#2b1f23");
+    for (let i = 0; i < 16; i++) R(i * 22 + 2, GROUND + 12, 12, 2, "#3a2b2e");           // ties
+    R(0, GROUND + 10, W, 1, "#8a7a7e");
+    R(16, 112, 3, 28, "#2b1f23"); R(6, 108, 24, 8, "#00843D"); R(8, 110, 20, 4, "#f3e4dc");                    // station sign post
+  }
+  function train(t) {
+    const x = -112 + ease(t / T_TRAIN) * (STOP + 112), y = GROUND - 30, moving = t < T_TRAIN, bob = moving ? Math.round(Math.sin(t * 40) * 0.6) : 0;
+    const doors = clamp((t - T_TRAIN) / 0.35) * clamp((T_DOORS + 3.2 - t) / 0.35);
+    R(x + 2, y - 8 + bob, 108, 2, "#2b1f23"); R(x + 40, y - 14 + bob, 2, 8, "#2b1f23"); R(x + 34, y - 15 + bob, 14, 2, "#2b1f23");                // pantograph
+    R(x, y + bob, 112, 26, "#00843D"); R(x, y + bob, 112, 4, "#2fbf6a"); R(x, y + 20 + bob, 112, 3, "#f3e4dc"); R(x, y + 23 + bob, 112, 3, "#005c2a");
+    for (let i = 0; i < 6; i++) R(x + 6 + i * 16, y + 6 + bob, 12, 9, "#cfe8d9");
+    const dx = x + 70; R(dx, y + 4 + bob, 14, 19, "#005c2a"); R(dx + 2, y + 6 + bob, 4 + doors * 4, 17, doors > 0.05 ? "#3a2b2b" : "#cfe8d9"); R(dx + 8 - doors * 4, y + 6 + bob, 4, 17, "#cfe8d9");
+    R(x + 106, y + 8 + bob, 6, 8, "#ffe9a8"); R(x + 108, y + 18 + bob, 4, 3, "#ffe9a8");
+    for (const wx of [12, 30, 78, 96]) { R(x + wx, y + 24 + bob, 8, 5, "#111"); R(x + wx + 2, y + 26 + bob, 4, 2, "#8a7a7e"); }
+    if (moving) for (let i = 0; i < 6; i++) R(x - 10 - i * 8 - (t * 60) % 8, GROUND - 8 + (i % 2) * 3, 5 - i * 0.6, 1, "#fff");            // speed streaks
+    return { x, doorX: dx + 7 };
+  }
+  function person(i, t, doorStart) {
+    const [col, ink] = PEOPLE[i], t0 = T_DOORS + 0.1 + i * 0.32, d = t - t0; if (d < 0) return null;
+    const x0 = doorStart, x1 = DOORX, sp = 70, x = x0 + sp * d, lim = x1 - 2;
+    const tapAt = (lim - x0) / sp; if (d > tapAt + 0.55) return { gone: true };
+    const px = Math.min(x, lim), walking = x < lim, step = walking ? Math.floor(d * 8) % 2 : 0, y = GROUND - 12;
+    R(px - 2, y + 1, 5, 6, col); R(px - 2, y - 3, 5, 4, "#f1c7a8"); R(px - 2, y - 4, 5, 2, ink); R(px - 2 + (step ? 0 : 1), y + 7, 2, 5, ink); R(px + 1 - (step ? 0 : 1), y + 7, 2, 5, ink);
+    return { px, tapping: !walking, tapT: d - tapAt };
+  }
+  function tapFx(p) {
+    if (!p || !p.tapping || p.tapT > 0.5) return;
+    const k = p.tapT / 0.5, cx = DOORX - 16, cy = GROUND - 22;
+    R(cx - 3, cy - 3, 6, 6, "#111"); R(cx - 1, cy - 1, 2, 2, "#ffb000");
+    for (let i = 1; i <= 3; i++) { const rr = i * 4 + k * 10; if (rr > 4) { g.strokeStyle = "rgba(212,21,27," + (1 - k) + ")"; g.lineWidth = 1; g.beginPath(); g.arc(cx, cy, rr, -0.9, 0.9); g.stroke(); } }
+  }
+  function frame(t) {
+    g.imageSmoothingEnabled = false; g.clearRect(0, 0, W, H);
+    sky();
+    const DS = STOP + 77, entered = PEOPLE.reduce((n, _, i) => n + (person(i, t, DS)?.gone ? 1 : 0), 0);
+    building(clamp(entered / PEOPLE.length + (t > T_DOORS ? 0.15 : 0)));
+    platform(t);
+    const tr = train(t);
+    PEOPLE.forEach((_, i) => { const p = person(i, t, DS); if (p && !p.gone) tapFx(p); });
+  }
+  function reveal() { if (document.body.classList.contains("ready")) return; try { sessionStorage.setItem("tapin-intro", "1"); } catch {} sceneEl.classList.add("gone"); document.body.classList.add("ready"); setTimeout(() => sceneEl.remove(), 700); }
+  document.getElementById("skip").addEventListener("click", reveal);
+  addEventListener("keydown", (e) => { if (e.key === "Escape" || e.key === " ") reveal(); });
+  if (FIXED != null) { frame(+FIXED); return; }
+  if (SKIP) { sceneEl.remove(); document.body.classList.add("ready"); return; }
+  const t0 = performance.now();
+  const loop = (now) => { const t = (now - t0) / 1000; frame(Math.min(t, T_END)); if (t < T_END) requestAnimationFrame(loop); else reveal(); };
+  requestAnimationFrame(loop);
+})();
+</script>
+<script src="pixel.js"></script>
+<script>window.heroScene = PixelBoston.mount(document.getElementById("hscene"));</script>
+</body>
+</html>
