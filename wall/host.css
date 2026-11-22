@@ -135,7 +135,7 @@ body::before {
 .ii { position: relative; display: inline-block; }
 .wifi { position: absolute; left: 50%; bottom: 0.66em; width: 0.62em; height: 0.52em; transform: translateX(-50%); overflow: visible; color: var(--pink); fill: none; stroke: currentColor; stroke-width: 2.3; stroke-linecap: round; }
 .wifi circle { fill: currentColor; stroke: none; }
-#venue { font: 400 var(--u)/1 var(--mono); color: var(--muted); }
+#venue { display: none; }   /* the place name sits top right on the map, not next to the logo */
 :root:not([data-logo]) #brand, :root[data-logo="strip"] #brand { right: calc(var(--side-w) + 2.2vw); bottom: 0; height: var(--strip-h); align-items: center; }
 :root[data-logo="ghost"] #brand { left: calc((100vw - var(--side-w)) / 2); top: 47%; transform: translate(-50%, -50%); opacity: 0.1; }
 :root[data-logo="ghost"] .wm { font-size: calc(var(--u) * 11); }
