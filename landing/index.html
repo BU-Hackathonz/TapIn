@@ -76,7 +76,6 @@
 document.querySelectorAll(".choice").forEach((a) => a.addEventListener("click", (e) => {
   if (e.metaKey || e.ctrlKey || e.shiftKey) return;
   e.preventDefault();
-  if (typeof UISound !== "undefined" && UISound.go) UISound.go();                                       // the Green Line door chime as the train pulls away
   const go = () => (location.href = a.href), fade = document.getElementById("fade");
   document.body.classList.add("leaving");
   const rush = window.heroScene && window.heroScene.leave ? window.heroScene.leave(650) : Promise.resolve();
@@ -178,6 +177,7 @@ document.querySelectorAll(".choice").forEach((a) => a.addEventListener("click", 
 })();
 </script>
 <script src="ui-sound.js"></script>
+<script>UISound.setup({ ambient: true, toggle: true, corner: "bottom-left", map: { ".choice": "go" } });   // door chime on Join / Host, quiet city bed</script>
 <script src="pixel.js"></script>
 <script>window.heroScene = PixelBoston.mount(document.getElementById("hscene"));</script>
 <script src="/wall/account.js"></script>
