@@ -107,9 +107,6 @@ document.querySelectorAll(".choice").forEach((a) => a.addEventListener("click", 
   const R = (x, y, w, h2, c) => { g.fillStyle = c; g.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h2)); };
   const GROUND = 140, DOORX = 236, STOP = 74, T_TRAIN = 2.6, T_DOORS = 3.0, PEOPLE = [["#ff7ab2", "#2b1f23"], ["#ffc46b", "#2b1f23"], ["#7cc7ff", "#2b1f23"], ["#c9a2ff", "#2b1f23"], ["#ece0c6", "#2b1f23"]];
   const T_END = 7.2;
-  let CH = 180, OFF = 0;
-  const fit = () => { const r = cv.getBoundingClientRect(); CH = Math.max(180, Math.round(320 * r.height / Math.max(1, r.width))); if (cv.height !== CH) cv.height = CH; OFF = Math.round((CH - 180) * 0.6); };
-  fit(); addEventListener("resize", fit);
   const hashN = (n) => { const s = Math.sin(n * 12.9898) * 43758.5453; return s - Math.floor(s); };
 
   function sky() {
@@ -155,18 +152,7 @@ document.querySelectorAll(".choice").forEach((a) => a.addEventListener("click", 
     for (let i = 1; i <= 3; i++) { const rr = i * 4 + k * 10; if (rr > 4) { g.strokeStyle = "rgba(212,21,27," + (1 - k) + ")"; g.lineWidth = 1; g.beginPath(); g.arc(cx, cy, rr, -0.9, 0.9); g.stroke(); } }
   }
   function frame(t) {
-    g.setTransform(1, 0, 0, 1, 0, 0); g.imageSmoothingEnabled = false;
-    // sky above the scene on tall screens: dusk bands getting lighter towards the scene, a sun and a few pixel clouds
-    const TOP = ["#e9c7c9", "#edcfcc", "#f0d7d1", "#f2ddd5", "#f3e1d8", "#f3e4dc"];
-    for (let i = 0; i < TOP.length; i++) { g.fillStyle = TOP[i]; g.fillRect(0, Math.round(OFF * i / TOP.length), W, Math.ceil(OFF / TOP.length) + 1); }
-    if (OFF > 40) {
-      const sy = Math.round(OFF * 0.45), sx = 250;
-      for (let yy = -9; yy <= 9; yy++) for (let xx = -9; xx <= 9; xx++) if (xx * xx + yy * yy <= 81) { g.fillStyle = xx * xx + yy * yy > 60 ? "#f7b98c" : "#fbcf9f"; g.fillRect(sx + xx, sy + yy, 1, 1); }
-      const cloud = (cx, cy, w) => { g.fillStyle = "#fbf1ea"; g.fillRect(cx + 3, cy, w - 6, 2); g.fillRect(cx, cy + 2, w, 3); g.fillStyle = "#f0dcd2"; g.fillRect(cx + 2, cy + 5, w - 4, 1); };
-      cloud(28, Math.round(OFF * 0.3), 30); cloud(130, Math.round(OFF * 0.62), 24); cloud(196, Math.round(OFF * 0.18), 34);
-    }
-    g.fillStyle = "#2b1f23"; g.fillRect(0, OFF + 150, W, CH);
-    g.translate(0, OFF); g.clearRect(0, 0, W, H);
+    g.imageSmoothingEnabled = false; g.clearRect(0, 0, W, H);
     sky();
     const DS = STOP + 77, entered = PEOPLE.reduce((n, _, i) => n + (person(i, t, DS)?.gone ? 1 : 0), 0);
     building(clamp(entered / PEOPLE.length + (t > T_DOORS ? 0.15 : 0)));
