@@ -15,7 +15,7 @@ from .hub import hub
 
 log = logging.getLogger("tapin.scans")
 
-WINDOW_SECONDS = float(os.environ.get("TAPIN_WINDOW", "4"))   # spec said 6 s; 4 s makes every check-in land sooner, and each tap still extends it
+WINDOW_SECONDS = float(os.environ.get("TAPIN_WINDOW", "6"))   # 6 s (spec): at 4 s, real pairs 5-7 s apart split into two check-ins
 DEDUPE_SECONDS = float(os.environ.get("TAPIN_DEDUPE", "3"))
 RESULT_SECONDS = 2.0  # result states last this long, then back to idle
 

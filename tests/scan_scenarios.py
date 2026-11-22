@@ -102,26 +102,15 @@ async def main() -> int:
         check("3 need created from the first tapper's looking_for", [(r["need"], r["handled_by"]) for r in n3] == [("design", None)], str([tuple(r) for r in n3]))
         check("3 needs_updated emitted", len(of_type("needs_updated")) == 1)
 
-        # 4a. third person taps with only ONE member -> refused: everyone at the table has to tap in together
+        # 4. third person taps with one member -> group_joined, welcome bonus (one member is enough)
         events.clear()
         await scans.on_tap(2, "TST04")
         await scans.on_tap(2, "TST02")
-        await settle()
-        inc = of_type("join_incomplete")
-        check("4a join_incomplete, nobody joins", len(inc) == 1 and inc[0]["missing_ids"] == [c] and not of_type("group_joined"), str(inc))
-        check("4a station blinks red", scans.current_state(2)["state"] == "unknown")
-        check("4a no points", await points(d) == 0 and await points(b) == 5, f"{await points(d)},{await points(b)}")
-
-        # 4b. third person taps with BOTH members -> group_joined, welcome bonus
-        events.clear()
-        await scans.on_tap(2, "TST04")
-        await scans.on_tap(2, "TST02")
-        await scans.on_tap(2, "TST03")
         await settle()
         joined = of_type("group_joined")
         check("4 group_joined", len(joined) == 1 and joined[0]["new_member_ids"] == [d] and joined[0]["group_id"] == gid)
-        check("4 joiner +10 +5 per new link (2)", await points(d) == 20, str(await points(d)))
-        check("4 members +5 welcome +5 link each", await points(b) == 15 and await points(c) == 15,
+        check("4 joiner +10 +5 link", await points(d) == 15, str(await points(d)))
+        check("4 members +5 welcome (+5 link for Ben)", await points(b) == 15 and await points(c) == 10,
               f"{await points(b)},{await points(c)}")
         gp = await db.pool.fetchval("SELECT points FROM groups WHERE id=$1", gid)
         check("4 group welcome bonus doubled (5x2 members x2)", gp == 20, str(gp))

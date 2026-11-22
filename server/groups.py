@@ -101,8 +101,8 @@ def choose_table(station_id: int, ids: list, active: dict, table_station: dict, 
     - ids: the people in the scan, in tap order. active: person -> their active table (or None).
     - table_station: table -> the station it is pinned to. here_members: table -> its members who are here now.
     Rules: a table pinned to THIS station wins (you joined the table you walked up to); otherwise the table with the most
-    people in the scan; a tie goes to the first tapper's table. A join only counts when every member of that table who is
-    here now is in the scan, so the whole table has to tap in together. Returns (table or None, missing member ids)."""
+    people in the scan; a tie goes to the first tapper's table. One member of the table in the scan is enough to bring
+    someone in. Also returns the table's here-now members who were not in the scan (informational only)."""
     tables = [active[i] for i in ids if active.get(i)]
     if not tables:
         return None, set()
@@ -192,19 +192,8 @@ async def resolve(conn, station_id: int, person_ids: list[int]):
             events.append(("needs_updated", {"needs": await list_needs(conn)}))
             kind, state = "help", "joined"
         else:
-            gid, missing = await _table_for(conn, station_id, ids)
+            gid, _ = await _table_for(conn, station_id, ids)   # one member of the table tapping in with you is enough (David, for the demo)
             joiners: list = []
-            table_members = set(await _members(conn, gid)) if gid is not None else set()
-            adding = gid is not None and any(i not in table_members for i in ids)
-            if adding and missing:   # only a JOIN needs the whole table; members re-tapping together is a repeat
-                # Not everyone at that table tapped in: nobody joins and nothing is linked. The station blinks red and the
-                # wall says the whole table has to tap in together.
-                events.append(("join_incomplete", {"group_id": gid, "station_id": station_id,
-                                                   "scanned_ids": ids, "missing_ids": sorted(missing)}))
-                await conn.execute(
-                    "INSERT INTO scan_events (station_id, kind, size, group_id) VALUES ($1,'incomplete',$2,$3)",
-                    station_id, len(ids), gid)
-                return "incomplete", "unknown", events
             if gid is None:
                 gid = await _new_group(conn, station_id, rows[ids[0]])
                 for i in ids:

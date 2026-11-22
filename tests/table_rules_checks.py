@@ -27,13 +27,13 @@ check("rescan at a different table with its member: you join THAT table",
 check("...even when you tapped first", choose_table(2, [1, 2], {1: 10, 2: 20}, ST, {20: {2}})[0] == 20)
 # table 20 has 3 people here; only 1 of them taps with the newcomer: join refused, the other 2 are missing
 g, missing = choose_table(2, [5, 2], {5: None, 2: 20}, ST, {20: {2, 3, 4}})
-check("join needs everyone at that table: missing members named", g == 20 and missing == {3, 4}, (g, missing))
+check("missing members are reported (informational; one member is enough to join)", g == 20 and missing == {3, 4}, (g, missing))
 g, missing = choose_table(2, [5, 2, 3, 4], {5: None, 2: 20, 3: 20, 4: 20}, ST, {20: {2, 3, 4}})
-check("everyone at the table tapped: join goes through", g == 20 and missing == set(), (g, missing))
+check("everyone at the table tapped: nobody missing", g == 20 and missing == set(), (g, missing))
 # no table pinned to this station: the table with the most people in the scan, tie to the first tapper
 check("most people in the scan wins", choose_table(3, [1, 2, 3], {1: 10, 2: 20, 3: 20}, ST, {20: {2, 3}})[0] == 20)
 check("tie goes to the first tapper's table", choose_table(3, [1, 2], {1: 10, 2: 20}, ST, {10: {1}})[0] == 10)
-check("away members don't block a join (only here-now members count)",
+check("away members are never counted as missing",
       choose_table(2, [5, 2], {5: None, 2: 20}, ST, {20: {2}}) == (20, set()))
 
 
