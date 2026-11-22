@@ -13,7 +13,7 @@
   <canvas id="room" aria-label="Room map"></canvas>
   <div id="loc"><span id="locname">spark!</span></div>
   <header id="legend"><p class="lede">Who is here, and who is working together</p><ul><li><i class="k dot"></i>person</li><li><i class="k sq"></i>mentor</li><li><i class="k ring"></i>heads-down</li><li><i class="k dash"></i>a table</li><li><i class="k line"></i>have met</li><li><i class="k pink"></i>just arrived</li></ul></header>
-  <p class="mocktag">MOCK · SAMPLE DATA</p>
+  <p class="mockhint">Drag to turn · scroll to zoom · tap a table or a person · double-tap to reset</p><p class="mocktag">MOCK · SAMPLE DATA</p>
 </main>
 <div id="brand" role="img" aria-label="Tap In"><span class="wm" aria-hidden="true">tap <span class="ii">&#305;<svg class="wifi" viewBox="0 0 24 20" aria-hidden="true"><circle cx="12" cy="16.6" r="2.3"/><path d="M6.6 11.6a7.6 7.6 0 0 1 10.8 0"/><path d="M2.9 7.4a12.8 12.8 0 0 1 18.2 0"/></svg></span>n</span></div>
 <aside id="side"><p id="statline"><b>24</b> here · <b>5</b> tables · <b>25</b> links today</p>
@@ -27,6 +27,6 @@
 <script src="../../wall/room_layout.js"></script>
 <script src="mock-data.js"></script>
 <script src="mock.js"></script>
-<script>MockRoom.render({ canvas: document.getElementById("room"), select: null, you: 1 });</script>
+<script>MockRoom.render({ canvas: document.getElementById("room"), select: null, you: 1, rotY: 0.55, rotX: -0.28 });</script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 # Room map mocks
 
-The interactive room map (what a signed-in person sees) redrawn in the Boston T look from the host screen. These are static pages with sample data; nothing talks to the server. They reuse `wall/host.css` and `wall/room_layout.js` read-only, so they stay in step with the host screen.
+The interactive 3D room map (tables on a sphere, people orbit inside them; drag to turn, scroll to zoom, tap to select) redrawn in the Boston T look from the host screen. These are static pages with sample data; nothing talks to the server. They reuse `wall/host.css` read-only for the look. The 3D drawing here is a stand-in for `wall/view3d.js`, which is Jun's.
 
 - `room-map.html`: the map signed in as Maya, with suggestions and the groups.
 - `table.html`: a table selected: who is there, what it needs, links, how to join.

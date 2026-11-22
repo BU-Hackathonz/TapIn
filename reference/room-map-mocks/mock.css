@@ -39,3 +39,5 @@ body.phonepage { display: block; background: #1a1416; }
 .phone .bar b { font-weight: 400; color: #fff; }
 
 body.phonepage::before { display: none; }
+
+.mockhint { position: absolute; left: 50%; bottom: 1.6vh; transform: translateX(-50%); margin: 0; z-index: 2; padding: 0.5em 1em; background: #111; color: #fff; font: 600 calc(var(--u) * 0.8)/1 var(--hv); letter-spacing: 0.02em; }
