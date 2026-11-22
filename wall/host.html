@@ -36,23 +36,29 @@
 </div>
 
 <aside id="side" aria-label="Room numbers">
-  <p id="summary"></p>
-  <section id="lead"></section>
-  <ol id="groups" class="board"></ol>
+  <p id="statline"></p>
   <section>
-    <h2 id="needh"></h2>
+    <h2>Groups, by points</h2>
+    <ol id="groups" class="rows"></ol>
+    <p class="note">Groups get double for welcoming someone new.</p>
+  </section>
+  <section>
+    <h2>Needs</h2>
     <ul id="needs" class="rows"></ul>
   </section>
-  <p id="people"></p>
+  <section>
+    <h2>Activity</h2>
+    <ul id="activity" class="log"></ul>
+  </section>
   <section class="chart">
-    <h2>Scans, last 2 hours</h2>
+    <h2>Scans per 10 min <span>last 2h</span></h2>
     <div id="bars" class="bars" aria-hidden="true"></div>
   </section>
 </aside>
 
 <footer id="moment" aria-live="polite">
   <time id="mtime"></time>
-  <div id="mmain"><p id="mtext"></p><p id="msub"></p></div>
+  <p id="mtext"></p>
 </footer>
 
 <div id="start" class="start">
