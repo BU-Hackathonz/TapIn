@@ -177,8 +177,11 @@
   // Phone colours: phone/style.css variables when the page has them, else the same values built in.
   function phonePalette() {
     const root = document.documentElement, v = (n, d) => cssVar(root, n) || d;
-    return { bg: v("--bg", C.bg), you: v("--you", C.you), mint: v("--group", C.mint), grey: v("--grey", C.grey),
-             line: v("--line", C.line), text: v("--text", C.text), dim: v("--muted", C.textDim), walker: C.walker };
+    // v5 names first, then the pixel Boston look's names (--paper, --ink, --rose, --teal), then the built-in v5 values.
+    const bg = v("--bg", v("--paper", C.bg)), text = v("--text", v("--ink", C.text)), pixel = !!cssVar(root, "--ink");
+    return { bg, you: v("--you", v("--rose", C.you)), mint: v("--group", v("--teal", C.mint)),
+             grey: v("--grey", pixel ? mix(bg, text, 0.45) : C.grey), line: v("--line", v("--rule", C.line)),
+             text, dim: v("--muted", C.textDim), walker: pixel ? mix(bg, text, 0.6) : C.walker };
   }
   // Wall colours: whatever wall/themes.js has selected right now (Minimal, Night, White, Sketch, Blueprint).
   const WALL_BG = { night: "#121212", white: "#fafafa", sketch: "#f6f1e4", minimal: "#ffffff", blueprint: "#123a6b" };
@@ -411,17 +414,30 @@
       const ui = document.createElement("div");
       ui.style.cssText = "position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;" +
         "max-width:480px;margin:0 auto;padding:20px 16px 28px;box-sizing:border-box;pointer-events:none;text-align:left;";
+      // On the pixel Boston look (phone/style.css defines --dot) the landing reuses the page's own wordmark element,
+      // heading face and button style, so it reads as the same page. Otherwise the plain v5 header.
+      const root = document.documentElement, PIXEL = !!cssVar(root, "--dot");
+      const pageWm = PIXEL && document.querySelector(".wm:not(.wm-solo)");
+      const pageH1 = PIXEL && document.querySelector("h1");
+      const h1Font = pageH1 ? global.getComputedStyle(pageH1).font.replace(/"/g, "'") : "";
+      const brandHtml = pageWm
+        ? pageWm.outerHTML.replace(/ role="img"/, ' aria-hidden="true"').replace(/ aria-label="[^"]*"/, "")
+        : `<div style="font:500 14px ${MONO};letter-spacing:.08em;color:${K.mint}">` + maskWords("TAP IN", 60, 50, true) + `</div>`;
+      const h1Style = h1Font
+        ? `margin:18px 0 6px;font:${h1Font};text-transform:none;letter-spacing:normal;color:${K.text}`
+        : `margin:4px 0 4px;font:700 28px/1.25 ${SANS};letter-spacing:-.01em;text-transform:none;color:${K.text}`;
+      const btnStyle = PIXEL       // the page styles <button> itself; only lay it out
+        ? `animation-delay:900ms;pointer-events:auto;width:100%;margin:0`
+        : `animation-delay:900ms;pointer-events:auto;display:flex;align-items:center;justify-content:center;width:100%;` +
+          `min-height:52px;margin:0;border:0;border-radius:0;background:${K.you};color:#fff;font:600 17px ${SANS};cursor:pointer`;
       ui.innerHTML =
-        `<div data-head>` +
-        `<div style="font:500 14px ${MONO};letter-spacing:.08em;color:${K.mint}">` + maskWords("TAP IN", 60, 50, true) + `</div>` +
-        `<h1 style="margin:4px 0 4px;font:700 28px/1.25 ${SANS};letter-spacing:-.01em;text-transform:none;color:${K.text}">` +
+        `<div data-head>` + brandHtml +
+        `<h1 style="${h1Style}">` +
         maskWords("Tap in.", 260, 70) + `<br>` + maskWords("Find the table that needs you.", 400, 55) + `</h1>` +
         `<div data-stats class="ti-f" style="font:500 13px ${MONO};letter-spacing:.06em;color:${K.dim};animation-delay:800ms;min-height:1.3em"></div>` +
         `</div>` +
-        `<div><div data-readout style="font:500 13px ${MONO};letter-spacing:.06em;color:${K.dim};min-height:1.3em;margin-bottom:10px"></div>` +
-        `<button type="button" class="ti-f" style="animation-delay:900ms;pointer-events:auto;display:flex;align-items:center;` +
-        `justify-content:center;width:100%;min-height:52px;margin:0;border:0;border-radius:0;background:${K.you};color:#fff;` +
-        `font:600 17px ${SANS};cursor:pointer">Tap in</button></div>`;
+        `<div><div data-readout style="font:500 13px ${MONO};letter-spacing:.06em;color:${K.dim};min-height:1.3em;margin-bottom:12px"></div>` +
+        `<button type="button" class="ti-f" style="${btnStyle}">Tap in</button></div>`;
       L.root.appendChild(ui);
       const btn = ui.querySelector("button"), statsEl = ui.querySelector("[data-stats]");
       const head = ui.querySelector("[data-head]"), readout = ui.querySelector("[data-readout]");
@@ -457,7 +473,7 @@
       pick.forEach((p) => { p.meet = true; });
 
       const cam = camera();
-      let btnRect = null, view = null;
+      let btnRect = null, view = null, btnFill = null;
       function measure() {
         const o = L.root.getBoundingClientRect(), r = btn.getBoundingClientRect(), hb = head.getBoundingClientRect();
         btnRect = { x: r.left - o.left, y: r.top - o.top, w: r.width, h: r.height };
@@ -590,7 +606,7 @@
             const fold = easeInOut(seg(T, 0, 300));
             const bw = lerp(btnRect.w, 12, fold), bh = lerp(btnRect.h, 12, fold);
             const cx = lerp(btnRect.x + btnRect.w / 2, at.x, fold), cy = lerp(btnRect.y + btnRect.h / 2, at.y - 120, fold);
-            g.globalAlpha = 1; g.fillStyle = K.you; g.fillRect(cx - bw / 2, cy - bh / 2, bw, bh);
+            g.globalAlpha = 1; g.fillStyle = fold < 0.5 && btnFill ? btnFill : K.you; g.fillRect(cx - bw / 2, cy - bh / 2, bw, bh);
           } else {
             const drop = easeBack(seg(T, 300, 560)), lift = Math.max(-0.08, 3.2 * (1 - drop));
             const h = pin(g, cam, YOU.x, YOU.z, lift, K.you, 1, 0.95);
@@ -666,6 +682,7 @@
           return;
         }
         measure();
+        btnFill = global.getComputedStyle(btn).backgroundColor;
         pressAt = now();
         const tau = pressAt - born;
         // your tap: one wave from where you land, timed against the landing clock
