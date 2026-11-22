@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en" data-palette="v" data-v="11" data-s="1" data-h="7" data-mk="let">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Room map (mock)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Bricolage+Grotesque:wght@500;700;800&family=DotGothic16&display=swap">
+<link rel="stylesheet" href="../../wall/host.css">
+<link rel="stylesheet" href="mock.css">
+</head>
+<body>
+<!-- MOCK: room-map.html. Static sample data, nothing here talks to the server. -->
+<main id="stage">
+  <canvas id="room" aria-label="Room map"></canvas>
+  <div id="loc"><span id="locname">spark!</span></div>
+  <header id="legend"><p class="lede">Who is here, and who is working together</p><ul><li><i class="k dot"></i>person</li><li><i class="k sq"></i>mentor</li><li><i class="k ring"></i>heads-down</li><li><i class="k dash"></i>a table</li><li><i class="k line"></i>have met</li><li><i class="k pink"></i>just arrived</li></ul></header>
+  <p class="mockhint">Drag to turn · scroll to zoom · tap a table or a person · double-tap to reset</p><p class="mocktag">MOCK · SAMPLE DATA</p>
+</main>
+<div id="brand" role="img" aria-label="Tap In"><span class="wm" aria-hidden="true">tap <span class="ii">&#305;<svg class="wifi" viewBox="0 0 24 20" aria-hidden="true"><circle cx="12" cy="16.6" r="2.3"/><path d="M6.6 11.6a7.6 7.6 0 0 1 10.8 0"/><path d="M2.9 7.4a12.8 12.8 0 0 1 18.2 0"/></svg></span>n</span></div>
+<aside id="side"><p id="statline"><b>24</b> here · <b>5</b> tables · <b>25</b> links today</p>
+  <section><h2>You</h2><ul class="rows mk round"><li data-k="M" data-l="1"><span class="t">Maya<small>Table A · knows 6 people</small></span><span class="v">55</span></li></ul></section>
+  <section><h2>Suggested for you</h2><ul class="rows mk">
+    <li data-k="B" data-l="2"><span class="t">Table B needs backend<small>That is your thing</small></span><span class="v">49m</span></li>
+    <li data-k="C" data-l="3"><span class="t">Table C has design<small>You are looking for design</small></span></li></ul></section>
+  <section><h2>Groups, by points</h2><ol id="groups" class="rows"><li data-r="1" data-n="1" data-k="A" data-l="1"><span class="t"><b>Table A</b><small>Bike-lane heatmap</small></span><span class="v">90</span></li><li data-r="2" data-n="2" data-k="B" data-l="2"><span class="t"><b>Table B</b><small>Lab-bench scheduler</small></span><span class="v">75</span></li><li data-r="3" data-n="3" data-k="C" data-l="3"><span class="t"><b>Table C</b><small>AR campus map</small></span><span class="v">65</span></li><li data-r="4" data-n="4" data-k="D" data-l="0"><span class="t"><b>Table D</b><small>Noise meter for libraries</small></span><span class="v">50</span></li></ol></section>
+  <section><h2>Activity</h2><ul class="log"><li><span class="tm">8:21</span>noah joined <em>table b</em></li><li><span class="tm">8:19</span>nina helped <em>table d</em></li><li><span class="tm">8:16</span>hugo and cole linked</li></ul></section></aside>
+<footer id="moment"><time id="mtime">8:21 PM</time><p id="mtext"><b>Table B</b> needs backend, and that's your thing, <b>Maya</b>.</p></footer>
+<script src="../../wall/room_layout.js"></script>
+<script src="mock-data.js"></script>
+<script src="mock.js"></script>
+<script>MockRoom.render({ canvas: document.getElementById("room"), select: null, you: 1, rotY: 0.55, rotX: -0.28 });</script>
+</body>
+</html>

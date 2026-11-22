@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en" data-palette="v" data-v="11" data-s="1" data-h="7" data-mk="let">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Table selected (mock)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Bricolage+Grotesque:wght@500;700;800&family=DotGothic16&display=swap">
+<link rel="stylesheet" href="../../wall/host.css">
+<link rel="stylesheet" href="mock.css">
+</head>
+<body>
+<!-- MOCK: table.html. Static sample data, nothing here talks to the server. -->
+<main id="stage">
+  <canvas id="room" aria-label="Room map"></canvas>
+  <div id="loc"><span id="locname">spark!</span></div>
+  <header id="legend"><p class="lede">Table C: what they are building and who is there</p><ul><li><i class="k dot"></i>person</li><li><i class="k sq"></i>mentor</li><li><i class="k ring"></i>heads-down</li><li><i class="k dash"></i>a table</li><li><i class="k line"></i>have met</li><li><i class="k pink"></i>just arrived</li></ul></header>
+  <p class="mockhint">Drag to turn · scroll to zoom · tap a table or a person · double-tap to reset</p><p class="mocktag">MOCK · SAMPLE DATA</p>
+</main>
+<div id="brand" role="img" aria-label="Tap In"><span class="wm" aria-hidden="true">tap <span class="ii">&#305;<svg class="wifi" viewBox="0 0 24 20" aria-hidden="true"><circle cx="12" cy="16.6" r="2.3"/><path d="M6.6 11.6a7.6 7.6 0 0 1 10.8 0"/><path d="M2.9 7.4a12.8 12.8 0 0 1 18.2 0"/></svg></span>n</span></div>
+<aside id="side"><div class="hd"><span class="mk1" data-l="3">C</span><div><h1>Table C</h1><small>AR campus map</small></div></div>
+  <p class="plain"><b>5 people</b> and 65 points, third place. They need <b>hardware</b> and have been waiting 12 minutes.</p>
+  <section><h2>Who is here</h2><ul class="rows mk round"><li data-k="Z" data-l="3"><span class="t">Zoe<small>ml, data</small></span><span class="v">57</span></li><li data-k="K" data-l="3"><span class="t">Kai<small>hardware</small></span><span class="v">52</span></li><li data-k="R" data-l="3"><span class="t">Ruby<small>backend</small></span><span class="v">49</span></li><li data-k="I" data-l="3"><span class="t">Iris<small>design</small></span><span class="v">45</span></li><li data-k="J" data-l="3"><span class="t">Jonah<small>frontend</small></span><span class="v">38</span></li></ul></section>
+  <section><h2>Links to other tables</h2><ul class="rows mk"><li data-k="B" data-l="2"><span class="t">Table B</span><span class="v">2 links</span></li><li data-k="A" data-l="1"><span class="t">Table A</span><span class="v">1 link</span></li><li data-k="E" data-l="1"><span class="t">Table E</span><span class="v">1 link</span></li></ul></section>
+  <span class="cta">Join: tap your badge at station 2</span></aside>
+<footer id="moment"><time id="mtime">8:21 PM</time><p id="mtext"><b>Table C</b> is building an AR campus map and needs <b>hardware</b>. <b>Kai</b> has it.</p></footer>
+<script src="../../wall/room_layout.js"></script>
+<script src="mock-data.js"></script>
+<script src="mock.js"></script>
+<script>MockRoom.render({ canvas: document.getElementById("room"), select: { type: "table", id: 3 }, rotY: 0.2, rotX: -0.22, zoom: 0.98 });</script>
+</body>
+</html>
