@@ -176,7 +176,7 @@
     }
   }
   let idleShown = false, idleAt = -1e9, tipI = -1;
-  const TIPS = ["Tap your badge at a station to join the room.", "Each dashed circle is a table. A line means two people have met.", "Squares are mentors. Hollow dots are people who are heads-down.", "Groups earn points for welcoming someone new."];
+  const TIPS = ["Tap your badge at a station to join the room.", "Each dashed circle is a table. A line means two people have met.", "Squares are mentors. Hollow dots are people who are heads-down.", "A dot on its own is someone who has tapped in and is waiting to join a table.", "Groups earn points for welcoming someone new."];
   function pump(now) {
     if (cur && now < cur.until) return;
     cur = null;
@@ -595,13 +595,6 @@
       halo(l1, x, y2 - (l2 ? lineH : 0), quiet ? C.dim : hi ? hiColor : C.green);
     }
     ctx.globalAlpha = 1;
-
-    const soloPeople = pos.filter((p) => p.solo);                     // say what the row along the bottom is
-    if (soloPeople.length) {
-      ctx.font = `500 ${lab}px ${SANS}`; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic"; ctx.fillStyle = C.muted; ctx.globalAlpha = 0.9;
-      ctx.fillText("Waiting to join a table", soloPeople.reduce((a, p) => a + p.x, 0) / soloPeople.length, Math.min(...soloPeople.map((p) => p.y)) - 34 * K);
-      ctx.globalAlpha = 1;
-    }
 
     // ---- people
     const order = [...pos].sort((p, q) => (m && p.id === m.person ? 1 : 0) - (m && q.id === m.person ? 1 : 0));

@@ -64,7 +64,7 @@ const RoomLayout = (() => {
 
       // ---- grid of tables
       const solosAndMentors = solos.length + mentors.filter((p) => !mentorTable(p, graph, byGroup)).length;
-      const stripH = solosAndMentors ? o.margin.bottom : o.margin.bottom * 0.5;
+      const stripH = o.margin.bottom * 0.5;                       // people without a table no longer queue along the bottom
       const areaX = o.margin.x, areaY = o.margin.top;
       const areaW = o.width - 2 * o.margin.x, areaH = o.height - o.margin.top - stripH;
       const n = gids.length;
@@ -142,23 +142,26 @@ const RoomLayout = (() => {
         } else row.push(p);
       }
       row.push(...solos);
-      // The bottom row: each person gets a slot as wide as their name, so names never run into each other.
-      const slot = (p) => Math.max(100 * S, ((p.label ?? p.name ?? "").length * 11 + 44) * S);
-      const lines = []; let line = [], used = 0;
-      for (const p of row) {
-        const w = slot(p);
-        if (line.length && used + w > areaW) { lines.push(line); line = []; used = 0; }
-        line.push({ p, w }); used += w;
-      }
-      if (line.length) lines.push(line);
-      lines.forEach((ln, ri) => {
-        let x = o.width / 2 - ln.reduce((s, e) => s + e.w, 0) / 2;
-        for (const { p, w } of ln) {
-          touch(p, x + w / 2, o.height - o.margin.bottom * 0.55 + ri * 52 * S, Math.PI / 2, null, null);
-          nodes.get(p.id).seatTable = null;
-          x += w;
+      // People without a table stand in free spots, scattered but steady: a person's spot comes from their id, so it does not
+      // jump about, and it is chosen clear of every table and of the other people standing alone.
+      const circles = [...tableObjs.values()].map((t) => ({ x: t.tx, y: t.ty, r: t.R + 68 * S }));
+      const placed = [];
+      const rnd = (id, k) => { const h = Math.sin(id * 127.1 + k * 311.7) * 43758.5453; return h - Math.floor(h); };
+      const x0 = o.margin.x, x1 = o.width - o.margin.x, y0 = o.margin.top, y1 = o.height - o.margin.bottom * 0.4;
+      for (const p of row.sort((a, b) => a.id - b.id)) {
+        let best = [x0, y0], bestClear = -Infinity;
+        for (let k = 0; k < 70; k++) {
+          const x = x0 + rnd(p.id, 2 * k) * (x1 - x0), y = y0 + rnd(p.id, 2 * k + 1) * (y1 - y0);
+          let clear = Infinity;
+          for (const c of circles) clear = Math.min(clear, Math.hypot(x - c.x, y - c.y) - c.r);
+          for (const q of placed) clear = Math.min(clear, Math.hypot(x - q.x, y - q.y) - 96 * S);
+          if (clear > bestClear) { bestClear = clear; best = [x, y]; }
+          if (clear > 0) break;
         }
-      });
+        placed.push({ x: best[0], y: best[1] });
+        touch(p, best[0], best[1], Math.PI / 2, null, null);
+        nodes.get(p.id).seatTable = null;
+      }
 
       for (const id of [...nodes.keys()]) if (!keepNodes.has(id)) nodes.delete(id);
       for (const id of [...tableObjs.keys()]) if (!keepTables.has(id)) tableObjs.delete(id);
