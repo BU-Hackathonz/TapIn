@@ -279,3 +279,21 @@ body.kiosk .pb-you, body:not(.kiosk) .pb-room { display: none; }
 body.kiosk .me { display: none; }
 body.kiosk .k-you { display: none !important; }
 .arrive { position: fixed; left: 0; top: 0; z-index: 40; pointer-events: none; image-rendering: pixelated; }
+/* phones: the bottom bar's line wraps instead of being cut off */
+@media (max-width: 800px) {
+  .plan-bar { height: auto; min-height: 50px; padding: 10px 14px 6px; }
+  .plan-bar .pb-text { white-space: normal; font-size: 12px; line-height: 1.25; }
+}
+
+/* the room's latest update (the icebreaker strip) takes the bottom bar's place instead of floating over it */
+body.hw .wall-icebreaker {
+  position: fixed; left: 0; bottom: 0; top: auto; z-index: 4; max-width: none; margin: 0; border-radius: 0; border: 0;
+  width: calc(100% - clamp(360px, 25vw, 560px) - 150px); height: 56px; display: flex; align-items: center; padding: 6px 24px 0;
+  overflow: hidden; white-space: nowrap; text-overflow: ellipsis; background: #111; color: #ffb000; box-shadow: none;
+  font: 400 15px "DotGothic16", monospace; text-transform: uppercase; letter-spacing: 0.05em;
+}
+body.hw .wall-icebreaker::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 6px; background: linear-gradient(90deg, #DA291C 0 25%, #ED8B00 25% 50%, #003DA5 50% 75%, #00843D 75% 100%); }
+body.hw .wall-icebreaker:not([hidden]) ~ .plan-bar .pb-text, body.hw:has(.wall-icebreaker:not([hidden])) .plan-bar .pb-text { visibility: hidden; }
+@media (max-width: 800px) {
+  body.hw .wall-icebreaker { width: calc(100% - 120px); height: auto; min-height: 50px; padding: 10px 14px 6px; white-space: normal; font-size: 12px; line-height: 1.25; }
+}

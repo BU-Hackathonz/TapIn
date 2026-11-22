@@ -268,16 +268,40 @@
     View3D.setOption("flat", false);
     // Your page is the host wall's room plan (David's seating and look) with your own layer on it; ?view=3d or the
     // Settings switch brings back the 3D map.
-    let plan = qs.get("view") !== "3d";                     // the projector (?kiosk) gets the same room plan, without your layer
-    try { if (!qs.has("view") && localStorage.getItem("wall.view") === "3d") plan = false; } catch { /* private mode */ }
+    // You get the 3D map (in the host wall's frame); the projector (?kiosk) gets the flat room plan. ?view=plan or the
+    // Settings switch puts the room plan on your page too.
+    let plan = mainScreen || qs.get("view") === "plan";
+    try { if (!mainScreen && !qs.has("view") && localStorage.getItem("wall.view") === "plan") plan = true; } catch { /* private mode */ }
     document.body.classList.toggle("plan", plan);
     document.body.classList.toggle("plan-side", true);
     document.body.classList.add("hw");                       // David's host wall frame (key, side column, bottom bar) on every view
     View3D.setOption("plan", plan);
   };
+  // Keep the graph out from under the UI: measure what covers the map at the top and bottom, on load and on resize.
+  function measurePad() {
+    const map = document.getElementById("map3d").getBoundingClientRect();
+    let top = 0, bottom = 0;
+    for (const sel of [".me-tab", ".plan-key", ".count"]) {
+      const e = document.querySelector(sel);
+      if (!e || getComputedStyle(e).display === "none") continue;
+      const r = e.getBoundingClientRect();
+      if (r.width && r.left < map.right && r.right > map.left) top = Math.max(top, r.bottom + 34);   // + room for table labels
+    }
+    for (const sel of [".plan-bar", "#room-insights", "#wall-icebreaker:not([hidden])"]) {
+      const e = document.querySelector(sel);
+      if (!e || getComputedStyle(e).display === "none") continue;
+      const r = e.getBoundingClientRect();
+      if (r.width && r.left < map.right - 4 && r.right > map.left + 4 && r.top > innerHeight / 2) bottom = Math.max(bottom, innerHeight - r.top + 12);
+    }
+    const pad = { top: Math.round(top), bottom: Math.round(bottom) }, old = View3D.option("pad");
+    if (!old || old.top !== pad.top || old.bottom !== pad.bottom) View3D.setOption("pad", pad);
+  }
+  addEventListener("resize", () => setTimeout(measurePad, 60));
+  document.getElementById("room-insights")?.addEventListener("toggle", () => setTimeout(measurePad, 30));
   View3D.init(() => ({ visible, shownGroups, S, radius, needLine,
                        me: Corner.signedIn() && !mainScreen ? Corner.me() : null, known: mainScreen ? new Set() : Corner.known() }));
   applyMainScreen();
+  requestAnimationFrame(measurePad); setTimeout(measurePad, 600);
   View3D.onMe(() => Corner.show("you"));
   Room.onChange(() => { Corner.refresh(); applyMainScreen(); });
   View3D.setActive(true);
