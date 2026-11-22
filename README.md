@@ -20,7 +20,7 @@ There is one action: **tap**. The server groups taps that land on the same stati
 |---|---|
 | 1 badge | **Check-in.** You light up on the wall as "here now", with lines to people you already know and the open groups that fit you. |
 | 2+ badges, none in a group | **New group.** Everyone is linked to each other and lands on the map as one cluster. |
-| 2+ badges, one already at a table | **Join.** The others join that table (the one at this station wins; otherwise the table with the most people in the scan) and leave their old table. Everyone in the scan is linked. |
+| 2+ badges, one already at a table | **Join.** The others join that table, if it belongs to this station, and leave their old table. Tables belong to the station where they formed: with no table of theirs here, the tappers form a new table here. Everyone in the scan is linked. |
 | A mentor or staff badge in the scan | **Help.** The group's need is marked handled and the mentor shows as a bridge between groups. |
 | Everyone already met | **Repeat.** No points; the connection gets stronger. |
 

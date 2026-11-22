@@ -119,15 +119,14 @@ async def main():
     check("...and you leave your old table", all(not (g == A and p == 3) for (g, p, _) in db.members))
     check("...even though you tapped first", d["group_joined"]["new_member_ids"] == [3], d.get("group_joined"))
 
-    # at a station with no table, the table with more people in the scan wins
+    # tables belong to their station: tapping where no table of theirs is pinned forms a new table there
     k, s, ev, d = await scan(db, 3, [6, 1, 2])
-    check("no table at this station: the table with the most people in the scan wins", db.table_of(6) == A, db.table_of(6))
-
-    # a table sits where it last scanned: table B (made at station 1) scans at station 2, so station 2 now means table B
-    await scan(db, 2, [4, 5])
-    check("a table moves to the station it last scanned at", db.groups[B]["station"] == 2, db.groups[B])
+    C = d.get("group_formed", {}).get("group_id")
+    check("no table at this station: a new table forms here", k == "new_group" and db.groups[C]["station"] == 3, (k, ev))
+    check("...and its people leave their old table", db.table_of(1) == C and db.table_of(2) == C)
+    check("tables never move station", db.groups[B]["station"] == 1 and db.groups[A]["station"] == 2)
     k, s, ev, d = await scan(db, 2, [7, 4])
-    check("...so a newcomer at station 2 with its member joins it", db.table_of(7) == B, db.table_of(7))
+    check("a member of a station-1 table tapping at station 2 doesn't bring anyone into it", db.table_of(7) != B, db.table_of(7))
 
     k, s, ev, d = await scan(db, 2, [8, 1])
     check("a mentor tapping with a member is help, not a join", k == "help" and "help" in ev and db.table_of(8) is None, (k, ev))
