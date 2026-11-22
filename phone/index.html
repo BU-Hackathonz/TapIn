@@ -5,17 +5,31 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tap In</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono&family=IBM+Plex+Sans:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&family=Instrument+Serif:ital@0;1&display=swap">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <main>
-  <div class="brand">TAP IN</div>
-  <h1>Find the table that needs you</h1>
-  <p class="muted">Make a profile, tap a badge, and see who you already know here.</p>
+  <header class="masthead">
+    <svg class="room" viewBox="0 0 320 120" aria-hidden="true" focusable="false">
+      <circle class="table" cx="72" cy="40" r="20"/><circle class="table" cx="176" cy="30" r="16"/><circle class="table" cx="262" cy="56" r="22"/>
+      <circle class="dot" cx="52" cy="26" r="3.5"/><circle class="dot" cx="92" cy="30" r="3.5"/><circle class="dot" cx="76" cy="62" r="3.5"/>
+      <circle class="dot" cx="166" cy="48" r="3.5"/><circle class="dot" cx="192" cy="16" r="3.5"/>
+      <circle class="dot" cx="244" cy="40" r="3.5"/><circle class="dot" cx="284" cy="44" r="3.5"/><circle class="dot" cx="262" cy="80" r="3.5"/>
+      <circle class="dot" cx="130" cy="92" r="3.5"/><circle class="dot" cx="214" cy="100" r="3.5"/>
+      <line class="link" x1="24" y1="104" x2="76" y2="62"/>
+      <circle class="ripple" cx="24" cy="104" r="6"/>
+      <circle class="you" cx="24" cy="104" r="6"/>
+    </svg>
+    <p class="wordmark">Tap in</p>
+    <h1>Find the table that needs you</h1>
+    <p class="lede">Make a profile, tap a badge, and see who you already know here.</p>
+  </header>
   <p id="back" hidden><a class="button secondary" id="back-link" href="me.html">Go to your page</a></p>
 
   <form id="form" novalidate>
+    <section class="step" aria-labelledby="step1">
+    <h2 class="step-title" id="step1"><span class="step-n">1</span>About you</h2>
     <label class="field" for="name">First name</label>
     <input type="text" id="name" name="name" maxlength="30" autocomplete="given-name" autocapitalize="words" placeholder="e.g. Maya" required>
 
@@ -28,6 +42,10 @@
       </div>
     </fieldset>
 
+    </section>
+
+    <section class="step" aria-labelledby="step2">
+    <h2 class="step-title" id="step2"><span class="step-n">2</span>Your skills</h2>
     <fieldset>
       <legend>What I'm good at <small id="skills-count">(up to 3)</small></legend>
       <div id="skills"></div>
@@ -38,16 +56,24 @@
       <div id="looking"></div>
     </fieldset>
 
-    <label class="field" for="working">Working on today <small>(optional)</small></label>
+    </section>
+
+    <section class="step" aria-labelledby="step3">
+    <h2 class="step-title" id="step3"><span class="step-n">3</span>Extras <small>(optional)</small></h2>
+    <label class="field" for="working">Working on today</label>
     <input type="text" id="working" name="working_on" maxlength="80" placeholder="a robot arm, a study-room finder...">
 
-    <label class="field" for="contact">How should people reach you after tonight? <small>(Instagram or LinkedIn, optional)</small></label>
+    <label class="field" for="contact">How should people reach you after tonight? <small>(Instagram or LinkedIn)</small></label>
     <input type="text" id="contact" name="contact" maxlength="80" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="@yourname or linkedin.com/in/..." aria-describedby="contact-help">
     <p class="note" id="contact-help">Nobody sees it tonight. After the event we share it only with people you connected with here.</p>
 
-    <button type="submit" id="go">Get my badge</button>
+    </section>
+
+    <div class="submit-bar">
+      <p class="error" id="error" role="alert"></p>
+      <button type="submit" id="go">Get my badge</button>
+    </div>
     <p class="note">Only your first name shows on screen. Ask us and we'll delete your profile.</p>
-    <p class="error" id="error" role="alert"></p>
   </form>
 </main>
 <script>const FAKE = false; // true = hard-coded replies, no server needed. false = the real server.</script>

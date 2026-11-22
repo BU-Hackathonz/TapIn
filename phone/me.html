@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Where you stand · Tap In</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono&family=IBM+Plex+Sans:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono&family=Instrument+Serif:ital@0;1&display=swap">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <main id="app">
-  <div class="brand">TAP IN</div>
+  <div class="brand">Tap in</div>
   <p class="muted">Loading...</p>
 </main>
 <script>const FAKE = false; // true = hard-coded replies, no server needed. false = the real server.</script>
@@ -107,7 +107,7 @@
         post(`/me/${p.id}/focus`, { focus: e.target.checked });
       } });
     app.replaceChildren(
-      el("div", { class: "brand" }, "TAP IN"),
+      el("div", { class: "brand" }, "Tap in"),
       el("h1", {}, p.name, el("span", { class: "points" }, `${me.points} pts`)),
       el("p", {}, el("span", { class: "status" + (me.here ? " here" : "") }, me.here ? "Here now" : "Not checked in"),
         me.here ? null : el("span", { class: "muted" }, " Tap your badge alone at the Entrance.")),
@@ -127,7 +127,7 @@
       const r = await api("GET", "/me/" + encodeURIComponent(id));
       if (r.status === 404) {
         store.del("tapin_person");
-        app.replaceChildren(el("div", { class: "brand" }, "TAP IN"), el("p", { class: "big" }, "We don't know that profile"),
+        app.replaceChildren(el("div", { class: "brand" }, "Tap in"), el("p", { class: "big" }, "We don't know that profile"),
           el("a", { class: "button", href: "index.html" }, "Make a profile"));
         return;
       }
@@ -136,7 +136,7 @@
       const key = JSON.stringify([r.data, needs]);
       if (key !== lastKey && !busy) { lastKey = key; render(r.data, needs); }
     } catch (_) {
-      if (!lastKey) app.replaceChildren(el("div", { class: "brand" }, "TAP IN"),
+      if (!lastKey) app.replaceChildren(el("div", { class: "brand" }, "Tap in"),
         el("p", { class: "error" }, "Couldn't reach Tap In. Retrying..."));
     }
   }
