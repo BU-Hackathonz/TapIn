@@ -414,7 +414,7 @@ const View3D = (() => {
         : T.lines && person.group_id ? T.lines[person.group_id % T.lines.length] : T[person.role] || T.student;
       // Dot below ~14 px on screen, profile picture above ~22 px, cross-fade between.
       // People with a real photo (demo people's stock portraits, a signed-in Google/GitHub picture) always show it.
-      const pic = person.photo ? 1 : Math.max(0, Math.min(1, (r - 14) / 8));
+      const pic = person.bot ? 0 : person.photo ? 1 : Math.max(0, Math.min(1, (r - 14) / 8));   // bots: always a plain node
       if (pic < 1) {
         ctx.globalAlpha = base * (1 - pic);
         if (T.host && person.role !== "student") {                    // mentors and staff are squares, as on the host screen

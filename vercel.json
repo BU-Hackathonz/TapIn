@@ -83,6 +83,14 @@
     {
       "source": "/api/leaderboard",
       "destination": "https://criterion-how-see-posts.trycloudflare.com/api/leaderboard"
+    },
+    {
+      "source": "/api/me/:id/photo",
+      "destination": "https://criterion-how-see-posts.trycloudflare.com/api/me/:id/photo"
+    },
+    {
+      "source": "/api/photo/:id",
+      "destination": "https://criterion-how-see-posts.trycloudflare.com/api/photo/:id"
     }
   ]
 }

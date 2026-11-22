@@ -105,8 +105,8 @@
     ];
   }
 
-  // Edit your profile photo: kept on this device (wall.me.photo), what the room map shows for you. Same as at sign-up.
-  function photoEditor() {
+  // Edit your profile photo: sent to the server (everyone sees it on the walls) and kept on this device (wall.me.photo).
+  function photoEditor(personId) {
     let photo = null;
     try { photo = (JSON.parse(localStorage.getItem("wall.me") || "null") || {}).photo || null; } catch (_) {}
     const img = el("img", { class: "me-photo", alt: "" }); img.hidden = !photo; if (photo) img.src = photo;
@@ -121,6 +121,7 @@
         photo = c.toDataURL("image/jpeg", 0.85); URL.revokeObjectURL(pic.src);
         try { const m = JSON.parse(localStorage.getItem("wall.me") || "null") || {}; localStorage.setItem("wall.me", JSON.stringify({ ...m, photo })); } catch (_) {}
         img.src = photo; img.hidden = false; label.textContent = "Change photo";
+        post(`/me/${personId}/photo`, { photo });                     // the server keeps it, so everyone sees it on the walls
       };
       pic.src = URL.createObjectURL(f);
     } });
@@ -151,7 +152,7 @@
         localStorage.setItem("wall.me", JSON.stringify({ ...prev, person_id: p.id, name: p.name, role: p.role, skills: p.skills || [], looking_for: p.looking_for || [], working_on: p.working_on || "", face: prev.face || `face-${p.id}` }));
         if (me.here) localStorage.setItem("wall.room", JSON.stringify({ status: "in", name: "This room", time: Date.now() }));
       } catch (_) {} } }, "Open the room map"),
-      photoEditor(),
+      photoEditor(p.id),
       el("div", { class: "switch-row" },
         el("label", { for: "focus" }, "Focus mode", el("small", {}, "Nobody gets you as a suggestion.")), state, focus),
       el("h2", {}, "People you know who are here"),

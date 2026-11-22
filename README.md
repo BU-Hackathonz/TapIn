@@ -14,7 +14,7 @@ Tap In turns walking into a room into a way to find your people. Tap your badge 
 
 ## How it works
 
-There is one action: **tap**. The server groups taps that land on the same station within 6 seconds into one scan.
+There is one action: **tap**. The server groups taps that land on the same station within 12 seconds into one scan.
 
 | Scan | What happens |
 |---|---|
@@ -41,7 +41,7 @@ A join only counts when the newcomer and someone from the table tap the same sta
 The tap path is drawn in raspberry: badge, station, server, then out to the wall.
 
 - **Stations** are dumb: they send a badge UID with `POST /api/tap`, poll `GET /api/station/{id}` every 500 ms, and show whatever state the server returns on the board's built-in blue LED. No LED strip, no buzzer.
-- **Server:** Python FastAPI on one event loop. Each station has at most one open scan window, and every tap restarts its 6 s timer. The window is popped before it's resolved, so a tap that lands mid-resolve opens a fresh window instead of corrupting the old one.
+- **Server:** Python FastAPI on one event loop. Each station has at most one open scan window, and every tap restarts its 12 s timer. The window is popped before it's resolved, so a tap that lands mid-resolve opens a fresh window instead of corrupting the old one.
 - **Database:** Tiger Data (see below).
 - **Wall and phone** are plain HTML/JS served by the same server at `/wall` and `/phone`, so there's only one thing to run.
 

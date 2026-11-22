@@ -42,8 +42,10 @@
     const seen = new Set();
     for (const p of g.people) {
       seen.add(p.id);
-      // a photo path in people.note (tools/demo_people.py: /wall/img/people/...) becomes the profile picture
-      if (typeof p.note === "string" && /^\/wall\/img\/people\/[\w-]+\.jpg$/.test(p.note)) p.photo = p.note;
+      // demo people (tools/demo_people.py marks them with a /wall/img/people/ path in note) are bots: a plain node, no picture.
+      // Real people's photos come from the server (p.photo = /api/photo/<id>?v=..., set on their phone).
+      p.bot = typeof p.note === "string" && /^\/wall\/img\/people\//.test(p.note);
+      if (p.bot) p.photo = null;
       S.people.set(p.id, Object.assign(S.people.get(p.id) || {}, p));  // keep x/y so nodes don't jump
     }
     for (const id of [...S.people.keys()]) if (!seen.has(id)) S.people.delete(id);

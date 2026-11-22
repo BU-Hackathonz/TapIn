@@ -46,8 +46,14 @@ const Corner = (() => {
         try { localStorage.setItem("wall.me", JSON.stringify({ ...p, person_id: real.id })); } catch { /* private mode */ }
       }
     }
-    if (real) return (meObj && meObj.src === p && meObj.real === real) ? meObj.person
-      : (meObj = { src: p, real, person: { ...p, ...real, id: real.id } }).person;
+    // The graph refresh updates `real` in place (table, points, here), so refresh our copy every time, or your own
+    // profile keeps its old table and never moves to the one you just formed or joined.
+    if (real) {
+      if (!(meObj && meObj.src === p && meObj.real === real)) meObj = { src: p, real, person: {} };
+      Object.assign(meObj.person, p, real, { id: real.id });
+      if (!real.photo && p.photo) meObj.person.photo = p.photo;     // not uploaded yet: keep the photo saved on this device
+      return meObj.person;
+    }
     if (p) return (meObj && meObj.src === p) ? meObj.person
       : (meObj = { src: p, person: { id: -1, role: "student", points: 0, here: true, group_id: null, ...p } }).person;
     const S = getS();
