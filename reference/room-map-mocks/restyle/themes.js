@@ -36,7 +36,7 @@ const Theme = (() => {
       c: { regionFill: "rgba(47,109,78,0.05)", region: "#1b4a33", link: "#1b4a33", inner: "#1b4a33", accent: "#d4151b",
            title: "#2b1f23", need: "#d4151b", dim: "#a88f93", name: "#3a2b2b",
            student: "#2f6d4e", mentor: "#2f6d4e", away: "#c9a99f", join: "#2f6d4e", help: "#ED8B00",
-           font: SANS, avatar: "face", rough: false, linkAlpha: 1.4 },
+           font: SANS, avatar: "face", rough: true, linkAlpha: 1.4 },
     },
     blueprint: {
       label: "Blueprint", swatch: ["#123a6b", "#cfe8ff", "#ffd166"],
