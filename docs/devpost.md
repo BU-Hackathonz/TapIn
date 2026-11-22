@@ -1,121 +1,79 @@
-# Devpost draft: Tap In
+# Devpost fields: Tap In (BostonHacks 2026)
 
-Draft for the BostonHacks 2026 submission. `[CHECK]` also marks every claim Yaovi's side has not seen working with our own eyes (teammates' test reports included): confirm each one or cut it. Replace every `[NUMBER]` with the output of `python tools/count.py`, and every `[QUOTE]` with a real quote you have permission to use (first name only). Anything marked `[CHECK]` must be confirmed before submitting; never describe a feature as working unless it worked at judging.
+Owner: Avery. Every field except "About the project" (that one is `docs/devpost-story.md`). Devpost closes at 9:00 AM;
+we submit by **8:45 AM**. Items marked **(refresh 8:15)** come from `tools/count.py` and `media/devpost/src/pull_live.py`.
 
 ## Submission checklist
 
-- [ ] Team name, project name "Tap In", all four members added (David, Avery, Jun, Yaovi)
-- [ ] Main track: Boundless Boston. Subtrack: Spark! Hack Our Space
-- [ ] Opted into Best Use of Tiger Data, Best Use of Gemini API, Best Domain Name from GoDaddy Registry
-- [ ] 1-minute video with sound and captions, plays without a login
-- [ ] About 10 gallery photos, each with a caption (list below)
-- [ ] Public GitHub repo link, README up to date
-- [ ] tapin.boston linked and loading
-- [ ] All `[NUMBER]`, `[QUOTE]` and `[CHECK]` placeholders gone
-- [ ] Ten-minute link check: video, repo, domain
+- [ ] Project name **Tap In**, team name, all four members on the team: David, Avery, Jun, Yaovi
+- [ ] Main track **Boundless Boston**; sub-track **Spark! Hack Our Space**
+- [ ] MLH prizes: **Best Use of Gemini API**, **Best Use of Tiger Data**
+- [ ] Best Domain (GoDaddy Registry): tick only if tapin.boston was registered through the MLH / GoDaddy Registry offer. It is live, but it's registered at Porkbun, so check the rules first.
+- [ ] 1-minute video link from Yaovi, plays without a login
+- [ ] Gallery: 14 images in the order below, each with its caption; the thumbnail stays as it is
+- [ ] Public GitHub link and tapin.boston both open
+- [ ] Gemini: the Google AI Studio project number, if the form asks for it
+- [ ] Numbers refreshed at 8:15 in this file, in `devpost-story.md` and on Devpost
+- [ ] Hardware photos added (shot list below), if there's time
 - [ ] Status says **Submitted**, not Draft, by 8:45 AM
 
-## Tagline
+## Project overview
 
-You walk into a room, tap in, and it shows you which table needs you.
+- **Project name:** Tap In
+- **Tagline (elevator pitch):** Tap your badge when you walk in, and the room shows you which table needs you.
+- **Team:** David, Avery, Jun and Yaovi (each adds themselves on Devpost; add any missing member before submitting)
 
-## Summary (first two paragraphs carry the page)
+## Short summary (if a field asks for one)
 
-Boston is America's college city. Every weekend, students new to the city walk into libraries, labs and lounges full of people, and nothing tells them who to sit with. So they study alone, next to groups they could have joined.
+Boston is full of students sitting alone in rooms full of people. Tap In is two badge stations, a room display and a phone page: tap your badge when you arrive and you see who you already know and which table needs your skills. Joining a table only counts when everyone taps the same station together, so the room proves people met, and every tap plays a sound in your own note.
 
-Tap In turns walking into a room into a way to find your people. Tap your badge at a station when you arrive, and the wall and your phone show where you stand: who you already know here, and which table could use your skills, like "Table 2 needs firmware". It isn't just an app. The room does the matching: to join a group, you and the group scan in together at the same station, so the hardware itself proves you actually met. Last night **[NUMBER] hackers** checked in and formed **[NUMBER] groups**.
+## Links
 
-## Inspiration
-
-[CHECK: one or two sentences from a teammate's own experience of moving to Boston and sitting alone in a room full of students.]
-
-## What it does
-
-- **Check in:** tap your badge alone. You light up on the wall as "here now", with lines to people you already know and the open tables that fit you. [CHECK: wall]
-- **Where you stand:** your phone shows people you know who are here, your top 3 tables with the reason ("needs firmware", "you know Sam"), people to meet, and your points.
-- **Join a group:** walk over and scan in together. You're linked to every member and everyone earns points. [CHECK: seen with real badges]
-- **Help:** when a mentor scans in with a table, its need is marked handled on the needs board. [CHECK: seen with real badges]
-- **Open or heads-down:** tables that want to focus never show up as a suggestion, and neither do people on focus mode.
-- **Sound:** the wall plays a bell when someone arrives and a pluck for every new connection. [CHECK: wall sound]
-
-## How we built it
-
-ESP32 stations with RC522 readers send each badge tap to a Python FastAPI server. The server groups taps that land on the same station within 6 seconds into one scan, decides what it means (check-in, new group, join, help or repeat), stores it in Tiger Data, and pushes it over a WebSocket to the wall display (d3 and Tone.js) [CHECK: wall]. The phone site asks the server for your page every 5 seconds. From tap to station reply takes about a quarter of a second [CHECK: Avery measured 155 to 345 ms, median about 260 ms, on both real stations Saturday 1:45 PM; tap to wall not measured yet].
-
-We split the work by layer and agreed on the JSON shapes first, so four people could build in parallel. Every teammate's coding agent posted to one pinned GitHub issue, so one person's agent could hand work to another's.
-
-## The stations
-
-[CHECK: a sentence on the enclosures and a photo caption.] Each station is just an ESP32 and an RC522 reader [CHECK: real cost]. We cut the LED strip to keep the stations simple and reliable; the board's own blue light blinks a different rhythm for each state, and the wall carries the big moment with animation and sound. [CHECK: firmware on real hardware]
-
-## Built on Tiger Data
-
-Taps are time-series, so every raw tap and every resolved scan goes into a hypertable (`taps`, `scan_events`). The live stats chart reads a continuous aggregate (`scans_per_10min`) instead of scanning raw rows, so it stays fast and live. Taps land in a hypertable and roll up into 10-minute and hourly continuous aggregates, the second built on the first, which also feeds a busiest-hour view for Spark staff. [CHECK: the hourly view goes live after Avery's next server restart] [CHECK: confirm the continuous aggregate and chart worked at judging; add a screenshot.] `connections` is a regular table on purpose: a unique index on a hypertable has to include the time column, and we need exactly one row per pair of people.
-
-## Gemini icebreakers
-
-When someone checks in, the wall shows a template line for their top table right away. In the background, Gemini writes one icebreaker under 20 words from the person's skills and the table's project. If it doesn't answer within 2 seconds, the template line stays, so a slow network never breaks a tap. We use gemini-3.5-flash-lite, which answered in 0.6 to 1.1 s with our real prompt [CHECK: Avery's measurement Saturday afternoon; confirm the wall shows the icebreaker at judging]. A real one, from a real check-in at 2:48 PM Saturday, reached the wall 0.9 s later: "Avery, your firmware and pitch skills fit Connection Map's design needs well." [CHECK: Avery's report; swap in a better one from tonight if you get it]
-
-## Domain
-
-tapin.boston [CHECK: confirm it serves the phone site].
-
-## Real results from tonight
-
-- **[NUMBER]** people signed up and claimed a badge
-- **[NUMBER]** groups formed
-- **[NUMBER]** mentor help scans
-- **[NUMBER]** new connections between people who hadn't met
-- "[QUOTE]" ([first name])
-- "[QUOTE]" ([first name])
-
-These numbers count real people only: our fake test badges and the judge badges are excluded.
-
-## Challenges we ran into
-
-- **Scan windows.** Taps arrive milliseconds apart, sometimes at two stations at once. Each station keeps one open window with a 6 second timer that restarts on every tap, and the window is removed before it is resolved, so a tap that lands mid-resolve starts a fresh scan instead of corrupting the old one.
-- **The judges didn't match each other at first.** With our test room loaded, Judge 1's top match was a test person, not Judge 2: both scored the same and the tie went to whoever was created first. Ties now go to the person with fewer connections, which is also fairer to newcomers. [CHECK: found and fixed by David; we haven't rerun it ourselves]
-- **One badge claim at a time.** The station can't tell whose phone a blank badge belongs to, so only one sign-up can wait for a badge at once; a second phone is asked to try again in a few seconds.
-- [CHECK: add what broke tonight from the team chat, e.g. hardware or Wi-Fi.]
-
-## Accomplishments that we're proud of
-
-- All 9 of our tap test scenarios (check-in, new group, join, repeat, mentor help, two stations at once, unknown badge, badge claim) pass against the real Tiger Data database. [CHECK: David's run, not ours; rerun before quoting]
-- The full phone flow, from sign-up to a claimed badge to "where you stand", passed 29 of 29 checks against the real server. [CHECK: David's run, not ours; rerun before quoting]
-- Four people built four layers in parallel without waiting on each other: we agreed on the JSON shapes first, and each person's coding agent coordinated through one pinned GitHub issue.
-- [CHECK: the real numbers from tonight belong here too.]
-
-## What didn't work
-
-- **Self-service delete.** We planned a "delete my profile" button, then dropped it: without logins, anyone could delete anyone by guessing a number. Profiles are deleted on request at our table instead.
-- **Gemini was silently off for a few hours.** Our first model (gemini-2.5-flash) answered our new key with "no longer available to new users", and because the wall falls back to a template line, nothing looked broken. We switched to gemini-3.5-flash-lite Saturday afternoon; two newer models were too busy or too slow for our 2 s limit. Lesson: a fallback that hides failures needs a log line someone actually reads. [CHECK: Avery found and fixed this]
-- [CHECK: anything else that was cut or broke. Never describe a cut feature as working.]
-
-## What we learned
-
-- Agree on the data shapes before anyone writes code, and build fake versions of every other layer first, so nobody waits.
-- A feature that sounds friendly (delete your own profile) can be a security hole when there are no accounts. We chose the safe version.
-- [CHECK: one line from each teammate.]
-
-## What's next for Tap In
-
-**Richer profiles and table chat (prototype only).** Jun built a clickable prototype of where Tap In could go: a 5-step onboarding with a photo, school, major and year, optional social links, and a simple chat for each table. It runs entirely in the browser with sample data and is not connected to the live system; none of these features were part of tonight's build. Before real use it would need an opt-in privacy model, since tonight's system asks only for a first name. [CHECK: link to the prototype only if the team agrees, and only after any real person's handle is removed from it]
-
-A permanent install in the Spark! lab: a station at the entrance, the couches and the workbenches, points tied to real perks in the lab, and data on how the space connects people. Then any library or dorm lounge in Boston.
+- **Video demo:** `VIDEO LINK FROM YAOVI` (placeholder)
+- **GitHub:** https://github.com/BU-Hackathonz/TapIn
+- **Try it:** https://tapin.boston (landing and the real phone sign-up; the room and hosting run on the venue Wi-Fi)
 
 ## Built with
 
-python, fastapi, tiger-data, timescaledb, postgresql, websockets, gemini, esp32, arduino, rfid, d3.js, tone.js, html, javascript
+python, fastapi, websockets, postgresql, timescaledb, tiger-data, gemini, google-gemini-api, esp32, arduino, rfid, nfc,
+javascript, html5, css3, canvas, tone.js, web-audio, vercel, cloudflare
 
-## Gallery (caption each photo)
+## Gallery, in upload order (every image 3:2, PNG, under 5 MB)
 
-1. Both stations on the table
-2. A badge tap, close up
-3. The wall mid check-in, with lines and a suggested table (have: docs/media/wall-demo.gif, demo mode with sample data; replace with a real one if you get it)
-4. A group forming on the wall
-5. The phone sign-up page
-6. The "where you stand" page
-7. The needs board with a handled need crossed out
-8. The live scans chart (Tiger Data)
-9. The station wiring
-10. The team building (have: docs/media/team-building.jpg)
+| # | File (media/devpost/) | Caption |
+|---|---|---|
+| 1 | landing.png | The landing page at tapin.boston: a pixel Green Line train down Comm Ave, then Join a space or Host a space. |
+| 2 | host-wall.png | The host wall on the projector: tables by letter, groups by points, open needs, activity and scans per 10 minutes. Sample data from our fake server, no real attendees. |
+| 3 | phone-signup-claim.png | The real phone sign-up, then 30 seconds to tap a blank badge on any station. |
+| 4 | join.png | Join a space: Sign up goes to the real sign-up; Log in is a prototype that stays in the browser. |
+| 5 | host-pin.png | Host a space: a PIN on the venue Wi-Fi, then create the event (name and tables, saved on the server). |
+| 6 | system.png | How it fits together: two ESP32 stations and a laptop server on the venue Wi-Fi, Tiger Data and Gemini in the cloud, tapin.boston through a tunnel. |
+| 7 | access.png | What is public: six API routes. Names, taps, hosting and live updates stay on the venue network. |
+| 8 | sound-map.png | The room plays it: one pentatonic scale, a bell in your own note, plucks for links, a trolley bell for every 10th person. |
+| 9 | live-activity.png | Every tap since Saturday 10 AM from the taps hypertable, by hour and station, our own testing included. (refresh 8:15) |
+| 10 | tiger-data.png | Tap In on Tiger Data: two hypertables and two continuous aggregates, the second built on the first. |
+| 11 | evidence-tap-latency.png | 31 real taps: median 259 ms from tap to reply. A quarter missed our 300 ms target; all beat 1 second. |
+| 12 | evidence-soak.png | A 40-minute soak on both stations with no failed polls, reboots or time offline. |
+| 13 | evidence-gemini-models.png | Choosing the Gemini model by measuring it with our real prompt. |
+| 14 | evidence-recovery.png | The server down for 19 s: both stations showed offline and came back on their own. |
+
+Not in the gallery (used inside "About the project" or kept for reference): `cover.png`, `enclosure.png`,
+`scan-pipeline.png`, `tap-sequence.png`, `evidence-scan-runs.png`. Removed as outdated: the old wall, the old phone
+pages, the old architecture and user-journey diagrams.
+
+## Hardware photo shot list (Avery, phone camera, landscape)
+
+Put them in `media/devpost/photos/`; they get cropped to 3:2 and captioned.
+
+1. Both stations on the table, lids on, with the room behind them.
+2. A hand tapping a badge on a station, close up.
+3. A station with the lid open: the ESP32, the RC522 and the wiring.
+4. A group tapping the same station together.
+5. The host wall on the projector or a big screen, from where people stand.
+
+## How the images were made
+
+- Screenshots: `python media/devpost/src/shots_now.py` (venue server; the host wall's room from
+  `python tools/fake_taps.py --events --port 8001`, a fake server with no database).
+- Diagrams and charts: `python media/devpost/src/render.py system access sound-map live-activity`.
+- Live counts: `python media/devpost/src/pull_live.py path/to/.env` (read-only, counts only) and `python tools/count.py`.

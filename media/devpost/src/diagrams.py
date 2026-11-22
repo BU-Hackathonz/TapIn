@@ -248,3 +248,116 @@ def tiger():  # same visual language as architecture.png, for the Tiger Data spo
 
 
 DIAGRAMS["tiger-data"] = (tiger, 2400, 1260)
+
+
+# ---------------------------------------------------------------- Sunday: the system as it runs now (3:2, 2400 x 1600)
+def system():
+    c = Canvas(2400, 1600)
+    c.text(50, 72, "Tap In, as it runs at BostonHacks", size=46, weight=700)
+    c.text(50, 118, "Two stations and a laptop server on the venue Wi-Fi; Tiger Data and Gemini in the cloud; tapin.boston for phones anywhere.", size=27)
+
+    c.group(30, 170, 1500, 1390, "Venue Wi-Fi (cmap router)")
+    c.box(70, 240, 380, 250, "Station 1 · Entrance", ["ESP32 + RC522", "check-ins"])
+    c.box(70, 540, 380, 250, "Station 2 · Table 2", ["ESP32 + RC522", "group scans"])
+    c.text(70, 850, "POST each tap,", size=25, color=SOFT)
+    c.text(70, 884, "poll state every 500 ms", size=25, color=SOFT)
+    c.line([(450, 365), (540, 365), (540, 520), (600, 520)], color=GREEN)
+    c.line([(450, 665), (540, 665), (540, 520), (600, 520)], color=GREEN)
+
+    c.box(600, 240, 560, 560, "Server laptop", ["FastAPI · one process", "scan windows (6 s)", "groups, points, matching",
+          "host sign-in + room settings", "restarts itself if it exits"], kind="rasp", mono_lines=["192.168.8.236:8000"])
+    c.box(600, 900, 560, 250, "Host wall", ["projector browser", "live over /ws", "sound: bells, plucks, chords"])
+    c.line([(880, 800), (880, 900)], color=GREEN)
+    c.box(70, 1000, 440, 250, "Phones on cmap", ["sign-up, claim,", "where you stand"], kind="data")
+    c.line([(510, 1125), (560, 1125), (560, 700), (600, 700)], color=DATA)
+    c.box(1200, 240, 300, 250, "Tiger Data", ["hypertables +", "continuous aggregates"], kind="data")
+    c.box(1200, 560, 300, 250, "Gemini", ["icebreakers", "2 s budget"], kind="data")
+    c.line([(1160, 365), (1200, 365)], color=DATA)
+    c.line([(1160, 685), (1200, 685)], color=DATA)
+    c.text(620, 1240, "Hosting, the room map, taps and live updates", size=25, color=SOFT)
+    c.text(620, 1274, "stay on this network.", size=25, color=SOFT)
+
+    c.group(1600, 170, 770, 1390, "Internet")
+    c.box(1640, 240, 690, 230, "A phone, any network", ["opens tapin.boston"], kind="data")
+    c.box(1640, 560, 690, 300, "tapin.boston", ["static pages on Vercel (Jun's project)", "landing · join · phone sign-up",
+          "+ 6 API routes forwarded"], mono_lines=["signup · claim · me · focus · mode · needs"])
+    c.box(1640, 950, 690, 260, "Cloudflare tunnel", ["outbound from the laptop", "address kept private"], kind="rasp")
+    c.line([(1985, 470), (1985, 560)], color=DATA)
+    c.line([(1985, 860), (1985, 950)], color=GREEN)
+    c.line([(1640, 1080), (1300, 1080), (1300, 760), (1160, 760)], color=GREEN)
+    c.text(1660, 1290, "Everything else on the public site", size=25, color=SOFT)
+    c.text(1660, 1324, "answers 404 (see the next image).", size=25, color=SOFT)
+    return c
+
+
+def access():
+    c = Canvas(2400, 1600)
+    c.text(50, 72, "What is public, and what stays at the venue", size=46, weight=700)
+    c.text(50, 118, "tapin.boston forwards six API routes and nothing else. Names, taps and hosting never leave the venue network.", size=27)
+    c.group(40, 180, 1120, 1360, "Public · tapin.boston (any network)")
+    rows = [("Pages", "landing · Join a space · phone sign-up, claim, where you stand"),
+            ("POST /api/signup", "make a profile (first name only)"),
+            ("GET /api/claim/{code}", "is my badge linked yet?"),
+            ("GET /api/me/{id}", "where you stand"),
+            ("POST /api/me/{id}/focus", "focus mode on or off"),
+            ("POST /api/groups/{id}/mode", "open or heads-down table"),
+            ("GET /api/needs", "what tables are looking for")]
+    for i, (a, b) in enumerate(rows):
+        y = 260 + i * 172
+        c.rect(80, y, 1040, 140, stroke=GREEN, fill="#fff", sw=3.5, rx=18)
+        c.text(110, y + 58, a, size=30, weight=600, mono=a.startswith(("POST", "GET")))
+        c.text(110, y + 104, b, size=26, color=SOFT)
+    c.group(1240, 180, 1120, 1360, "Venue Wi-Fi only · 192.168.8.236:8000")
+    rows = [("Host a space + PIN", "/host · /api/host/* (on tapin.boston, Host forwards here)"),
+            ("Host wall", "/wall/host.html, the projector"),
+            ("GET /api/graph", "the room: everyone's first name"),
+            ("stats · leaderboard · analytics", "the wall's side column"),
+            ("POST /api/tap · /api/station/{id}", "the two stations"),
+            ("/ws", "live updates to the wall"),
+            ("Why", "names only for people in the room; no fake taps or PIN guesses")]
+    for i, (a, b) in enumerate(rows):
+        y = 260 + i * 172
+        c.rect(1280, y, 1040, 140, stroke=RASP, fill="#fff", sw=3.5, rx=18)
+        c.text(1310, y + 58, a, size=30, weight=600, mono=a.startswith(("POST", "GET", "/ws")), color=RASP if a == "Why" else INK)
+        c.text(1310, y + 104, b, size=26, color=SOFT)
+    return c
+
+
+def sound_map():
+    c = Canvas(2400, 1600)
+    c.text(50, 72, "The room plays it: Tap In's sound map", size=46, weight=700)
+    c.text(50, 118, "One pentatonic scale (C D E G A over two octaves), so overlapping sounds never clash. Silent until the first click.", size=27)
+    c.group(40, 180, 1480, 1360, "Host wall (projector)")
+    rows = [("Someone taps in", "a bell in their own note (person id % 10)", "green"),
+            ("A new link", "a pluck of both people's notes together", "green"),
+            ("A table forms or someone joins", "one pluck per new link, 120 ms apart: a rising run", "rasp"),
+            ("A mentor helps a table", "a low warm chord", "green"),
+            ("A table asks for help", "two quiet rising notes", "green"),
+            ("Every 10th person here", "a trolley bell, two dings (event mode)", "rasp"),
+            ("The room fills", "a quiet pad, 1 note when empty, up to 5 (event mode)", "green")]
+    for i, (a, b, k) in enumerate(rows):
+        y = 260 + i * 172
+        col = RASP if k == "rasp" else GREEN
+        c.rect(80, y, 1400, 140, stroke=col, fill="#fff", sw=3.5, rx=18)
+        c.text(110, y + 58, a, size=31, weight=600)
+        c.text(110, y + 104, b, size=27, color=SOFT)
+    c.group(1600, 180, 760, 820, "Every page")
+    for i, (a, b) in enumerate((("Buttons and fields", "a very soft tick"), ("An error appears", "one low soft note"),
+                                ("City bed (optional)", "a low hum, a far-off trolley bell"), ("Speaker button", "mutes all; remembered"))):
+        y = 260 + i * 172
+        c.rect(1640, y, 680, 140, stroke=DATA, fill="#fff", sw=3.5, rx=18)
+        c.text(1670, y + 58, a, size=30, weight=600)
+        c.text(1670, y + 104, b, size=26, color=SOFT)
+    c.group(1600, 1060, 760, 480, "Two modes, switched by staff")
+    c.text(1640, 1150, "Event", size=32, weight=700, color=RASP)
+    c.text(1640, 1192, "everything above plays", size=27)
+    c.text(1640, 1282, "Quiet (study hours)", size=32, weight=700, color=GREEN)
+    c.text(1640, 1324, "no bell on check-ins;", size=27)
+    c.text(1640, 1360, "soft plucks for groups", size=27)
+    c.text(1640, 1450, "?mode=quiet or the gear panel", size=25, color=SOFT, mono=True)
+    return c
+
+
+DIAGRAMS["system"] = (system, 2400, 1600)
+DIAGRAMS["access"] = (access, 2400, 1600)
+DIAGRAMS["sound-map"] = (sound_map, 2400, 1600)

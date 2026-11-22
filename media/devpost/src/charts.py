@@ -208,3 +208,60 @@ def recovery():
 CHARTS = {"evidence-tap-latency": (tap_latency, 1800, 1060), "evidence-soak": (soak, 1800, 1100),
           "evidence-gemini-models": (gemini_models, 1800, 1060), "evidence-scan-runs": (scan_runs, 1800, 1000),
           "evidence-recovery": (recovery, 1800, 760)}
+
+
+def live_activity():
+    """Every tap since Saturday 10 AM, by hour and station, straight from the taps hypertable (data.json["live"])."""
+    from datetime import datetime, timedelta, timezone
+    L = D["live"]
+    bos = timezone(timedelta(hours=-5))
+    rows = [(datetime.fromisoformat(r["hour"]).astimezone(bos), r["station"], r["n"]) for r in L["taps_by_hour"]]
+    start = datetime(2026, 11, 21, 10, tzinfo=bos)
+    hours = [start + timedelta(hours=i) for i in range(20)]                    # 10 AM Saturday to 5 AM Sunday
+    n = {(h.hour, h.day): {1: 0, 2: 0} for h in hours}
+    for h, s, k in rows:
+        if (h.hour, h.day) in n:
+            n[(h.hour, h.day)][s] += k
+    top = max(1, max(v[1] + v[2] for v in n.values()))
+    c = Canvas(2400, 1600)
+    c.text(50, 72, f"Every tap since Saturday 10 AM: {sum(r[2] for r in rows)} on two stations", size=46, weight=700)
+    c.text(50, 118, "From the taps hypertable in Tiger Data, by hour (Boston time). This includes our own testing, such as the", size=27, color=SOFT)
+    c.text(50, 154, "20-taps-per-station lid test at 5 PM; the people numbers on this page count real people only.", size=27, color=SOFT)
+    checkbox_legend(c, 50, 200, [(RASP, NAME[1], False), (GREEN, NAME[2], False)])
+    X0, X1, Y0, Y1 = 200, 1560, 420, 1400
+    panel(c, X0 - 40, Y0 - 40, X1 - X0 + 80, Y1 - Y0 + 140)
+    step = max(5, ((top + 4) // 5) * 5) // 5
+    for t in range(0, top + step, step):
+        y = Y1 - (Y1 - Y0) * t / (top + step)
+        c.line([(X0, y), (X1, y)], color="#E4EAE8", sw=2, head=None)
+        c.text(X0 - 20, y + 9, str(t), size=24, anchor="end", color=SOFT)
+    bw = (X1 - X0) / len(hours)
+    for i, h in enumerate(hours):
+        v = n[(h.hour, h.day)]
+        y = Y1
+        for s in (1, 2):
+            if v[s]:
+                hh = (Y1 - Y0) * v[s] / (top + step)
+                c.rect(X0 + i * bw + 8, y - hh, bw - 16, hh, stroke="none", fill=ST[s], sw=0, rx=4)
+                y -= hh
+        if v[1] + v[2]:
+            c.text(X0 + i * bw + bw / 2, y - 12, str(v[1] + v[2]), size=24, weight=600, anchor="middle")
+        if i % 2 == 0:
+            lab = h.strftime("%I %p").lstrip("0")
+            c.text(X0 + i * bw + bw / 2, Y1 + 40, lab, size=23, anchor="middle", color=SOFT)
+    kinds = L["scans_by_kind"]
+    total = sum(kinds.values())
+    c.rect(1660, 380, 690, 1120, stroke="#DCE3E1", fill="#fff", sw=2.5, rx=6)
+    c.text(1700, 450, f"{total} resolved scans", size=36, weight=700)
+    c.text(1700, 494, "scan_events hypertable", size=25, color=SOFT, mono=True)
+    names = {"checkin": "check-ins", "repeat": "repeats (already met)", "new_group": "new groups", "join": "joins", "help": "mentor helps"}
+    for i, k in enumerate(("checkin", "repeat", "new_group", "join", "help")):
+        y = 590 + i * 150
+        v = kinds.get(k, 0)
+        c.text(1700, y, str(v), size=60, weight=700, color=RASP if k in ("join", "new_group") else INK)
+        c.text(1830, y - 8, names[k], size=30)
+    c.text(1700, 1420, f"pulled {L['pulled_at'][:16].replace('T', ' ')} UTC", size=22, color=SOFT, mono=True)
+    return c
+
+
+CHARTS["live-activity"] = (live_activity, 2400, 1600)
