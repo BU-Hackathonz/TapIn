@@ -154,14 +154,8 @@ body[class*="layout-"] input[type="text"], body[class*="layout-"] input[type="em
 .art-fill .art.art-blend {
   width: 100%; height: auto; max-height: 100%; border-radius: 0;
 }
-/* the photo: same picture, only its outer edge melts into the page */
-.art-fill .art-photo {
-  object-fit: contain;
-  -webkit-mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent), linear-gradient(to bottom, transparent, #000 7%, #000 93%, transparent);
-  -webkit-mask-composite: source-in;
-  mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent), linear-gradient(to bottom, transparent, #000 7%, #000 93%, transparent);
-  mask-composite: intersect;
-}
+/* the photo with its cut-off shapes finished (TapArt.photo): no mask, nothing fades */
+.art-fill .art-photo { overflow: visible; }
 .art-brand { display: none; }
 .brand-top { display: flex; justify-content: center; margin-bottom: 18px; }
 .card { align-self: center; justify-self: center; margin: 24px 16px; }
@@ -191,7 +185,6 @@ body[class*="layout-"] input[type="text"], body[class*="layout-"] input[type="em
 .layout-4 .art-panel, .layout-4 .card { grid-area: all; }
 .layout-4 .art-panel { position: fixed; inset: 0; }
 .layout-4 .art-fill .art.art-blend { width: 100%; height: 100%; max-height: none; }
-.layout-4 .art-fill .art.art-blend.art-photo { width: auto; height: auto; max-width: 100%; max-height: 100%; }
 .layout-4 .card { position: relative; z-index: 1; }
 
 /* 5 · logo first: big name, the art, then the form, one column */
@@ -210,7 +203,6 @@ body[class*="layout-"] input[type="text"], body[class*="layout-"] input[type="em
   body:not(.at-start) .art-panel { display: none; }
   .layout-4 .stage { grid-template-areas: none; }
   .layout-4 .art-panel, .layout-4 .card { grid-area: auto; }
-  .layout-4 .art-fill .art.art-blend.art-photo { width: 100%; height: auto; }
   .layout-4 .art-fill .art.art-blend { height: auto; }
   .card, .layout-3 .card, .layout-4 .card { margin: 0; border: 0; border-radius: 0; box-shadow: none; background: transparent; min-height: auto; }
   .layout-2 .art-brand .lg, .layout-5 .art-brand .lg { font-size: 36px; }

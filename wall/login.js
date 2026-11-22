@@ -241,20 +241,14 @@
     const art = TapArt.scenes[q.get("art")], logo = TapArt.logos[q.get("logo")] || TapArt.logos.wifi;
     const layout = ["1", "2", "3", "4", "5"].includes(q.get("layout")) ? q.get("layout") : "1";
     document.body.className = document.body.className.replace(/layout-\d/, `layout-${layout}`);
-    // The front-page picture is the original illustration, unchanged. No panel around it: the page is its cream,
-    // and only the outermost edge fades so shapes that run off the picture melt into the page instead of stopping
-    // at a hard line. ?art=<scene> swaps in one of the drawn mockup scenes instead.
+    // The front-page picture is the original illustration, unchanged, with its cut-off shapes finished around it
+    // (TapArt.photo). No panel and no fade: the page is the picture's cream. ?art=<scene> swaps in a drawn mockup.
     if (art) {
       $("hero").innerHTML = art({ bare: true });     // drawn by art.js from fixed shapes, no user text
       const svg = $("hero").querySelector("svg");
       if (svg) { svg.setAttribute("preserveAspectRatio", "xMidYMid meet"); svg.classList.add("art-blend"); }
     } else {
-      const img = new Image();
-      img.src = "img/kiosk.webp";
-      img.alt = "Someone taps a badge at a station; a dotted trail leads to two people at a table, one waving";
-      img.width = 1024; img.height = 765;
-      img.className = "art art-blend art-photo";
-      $("hero").replaceChildren(img);
+      $("hero").innerHTML = TapArt.photo("img/kiosk.webp", "Someone taps a badge at a station; a dotted trail leads to two people at a table, one waving");
     }
     $("brand").innerHTML = logo();
     $("brand-art").innerHTML = logo();

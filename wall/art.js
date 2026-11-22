@@ -207,5 +207,31 @@ ${o.bare ? "" : `<rect width="520" height="400" fill="${K.cream}"/>`}
     colours: () => `<span class="lg lg-colours"><span style="color:${C.sky}">T</span><span style="color:${C.coral}">a</span><span style="color:${C.sun}">p</span> <span style="color:${C.mint}">I</span><span style="color:${C.lilac}">n</span></span>`,
   };
 
-  return { scenes, logos, C };
+  // The front-page picture is the original illustration, unchanged. The shapes it cuts off at its border (two
+  // circles at the top, the blocks at each side and along the bottom) are finished here as vector shapes behind it,
+  // in the picture's own colours and scribble textures, so nothing ends at a hard picture edge.
+  // Coordinates are the picture's pixels (1024 x 765); the shapes reach a few px under it so no seam shows.
+  const photo = (src, alt) => `<svg viewBox="-70 -116 1164 946" role="img" aria-label="${alt}" class="art art-blend art-photo">
+<defs>
+  <pattern id="ph-wave" width="46" height="30" patternUnits="userSpaceOnUse"><path d="M2 16q6-12 11 0t11 0 11 0 11 0" fill="none" stroke="#5f8be6" stroke-width="3" stroke-linecap="round"/></pattern>
+  <pattern id="ph-slash" width="26" height="26" patternUnits="userSpaceOnUse" patternTransform="rotate(-30)"><path d="M0 6h26M4 18h18" stroke="#ef8a70" stroke-width="2" stroke-linecap="round"/></pattern>
+  <pattern id="ph-m" width="56" height="48" patternUnits="userSpaceOnUse"><path d="M6 40l5-26 6 24 5-26 6 24 5-22" fill="none" stroke="#4f7c3d" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></pattern>
+  <pattern id="ph-loop" width="90" height="80" patternUnits="userSpaceOnUse"><path d="M4 60c20-30 50-40 60-20s-30 34-36 10 40-40 58-30" fill="none" stroke="#ee8f74" stroke-width="2.2" stroke-linecap="round"/></pattern>
+  <pattern id="ph-hatch" width="30" height="30" patternUnits="userSpaceOnUse" patternTransform="rotate(-55)"><path d="M0 15h30" stroke="#df5a36" stroke-width="3.6"/></pattern>
+  <pattern id="ph-gloop" width="120" height="70" patternUnits="userSpaceOnUse"><path d="M6 60c24-40 60-50 74-26s-36 32-30 6 50-30 68-18" fill="none" stroke="#5d8a4a" stroke-width="2.4" stroke-linecap="round"/></pattern>
+  <pattern id="ph-oloop" width="80" height="70" patternUnits="userSpaceOnUse"><path d="M6 50c10-34 46-40 50-14s-34 22-22-6 34-20 40-4" fill="none" stroke="#dd5b38" stroke-width="2.2" stroke-linecap="round"/></pattern>
+</defs>
+<g>
+  <circle cx="392" cy="63" r="103" fill="#a9c1ed"/><circle cx="392" cy="63" r="103" fill="url(#ph-wave)"/>
+  <circle cx="584" cy="-8" r="102" fill="#da543e"/><circle cx="584" cy="-8" r="102" fill="url(#ph-slash)"/>
+  <rect x="689" y="-62" width="238" height="70" fill="#7c9d67"/><rect x="689" y="-62" width="238" height="70" fill="url(#ph-m)"/>
+  <rect x="1016" y="141" width="62" height="304" fill="#f0aa3b"/><rect x="1016" y="141" width="62" height="78" fill="url(#ph-oloop)"/>
+  <path d="M6 247L-56 268V634L6 588Z" fill="#d8543d"/><path d="M6 247L-56 268V634L6 588Z" fill="url(#ph-loop)"/>
+  <rect x="145" y="757" width="316" height="54" fill="#f2ab3a"/><rect x="145" y="757" width="316" height="54" fill="url(#ph-hatch)"/>
+  <rect x="461" y="757" width="271" height="54" fill="#80a06a"/><rect x="461" y="757" width="271" height="54" fill="url(#ph-gloop)"/>
+</g>
+<image href="${src}" x="0" y="0" width="1024" height="765"/>
+</svg>`;
+
+  return { scenes, logos, C, photo };
 })();
