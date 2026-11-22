@@ -269,7 +269,8 @@
       if (cur && cur.kind === "checkin" && cur.person === d.person_id) { cur.ice = d.text; $("mtext").innerHTML = stripHTML(cur); }
       setTimeout(() => ice.delete(d.person_id), 120000);
     },
-    person_created() { syncSoon(500); },
+    person_created() { syncSoon(150); },
+    badges_changed() { syncSoon(150); },             // the admin panel unlinked a badge or removed someone: redraw now
   };
 
   // ------------------------------------------------------------ drawing

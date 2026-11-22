@@ -15,7 +15,7 @@ from .hub import hub
 
 log = logging.getLogger("tapin.scans")
 
-WINDOW_SECONDS = float(os.environ.get("TAPIN_WINDOW", "6"))
+WINDOW_SECONDS = float(os.environ.get("TAPIN_WINDOW", "4"))   # spec said 6 s; 4 s makes every check-in land sooner, and each tap still extends it
 DEDUPE_SECONDS = float(os.environ.get("TAPIN_DEDUPE", "3"))
 RESULT_SECONDS = 2.0  # result states last this long, then back to idle
 
@@ -35,6 +35,13 @@ results: dict = {}      # station_id -> (state, expires_at)
 resolving: dict = {}    # station_id -> badge count of a closed window still being written to the DB
 _background: set = set()  # claim check-in tasks, kept referenced until they finish
 resolve_lock = asyncio.Lock()  # scan database writes happen one at a time
+
+
+def log_tap_soon(station_id: int, uid: str, result: str) -> None:
+    """Record the raw tap in the background: the station gets its reply without waiting for this write."""
+    task = asyncio.create_task(db.log_tap(station_id, uid, result))
+    _background.add(task)
+    task.add_done_callback(_background.discard)
 
 
 def station_state(station_id: int, state: str = "idle", count: int = 0) -> dict:
@@ -65,7 +72,7 @@ async def on_tap(station_id: int, uid: str) -> dict:
     prev = last_seen.get((station_id, uid))
     last_seen[(station_id, uid)] = now  # every tap refreshes it, so a card held on the reader counts once
     if prev is not None and now - prev < DEDUPE_SECONDS:
-        await db.log_tap(station_id, uid, "ignored")
+        log_tap_soon(station_id, uid, "ignored")
         return current_state(station_id)
 
     if db.pool is None:
@@ -87,11 +94,12 @@ async def on_tap(station_id: int, uid: str) -> dict:
         # An already-owned badge during a claim is not linked. It goes on as a normal scan, so a sign-up never blocks
         # check-ins or group scans; the claim keeps waiting and the phone says the badge belongs to someone.
         claim.note = "owned"
+        claim.owner = person["id"]
         log.info("tap station=%s uid=%s outcome=claim_skipped_owned", station_id, uid)
 
     if person is None:
         log.info("tap station=%s uid=%s outcome=unknown", station_id, uid)
-        await db.log_tap(station_id, uid, "unknown")
+        log_tap_soon(station_id, uid, "unknown")
         await hub.broadcast("unknown_badge", {"station_id": station_id})
         return set_result(station_id, "unknown")
 
@@ -102,24 +110,25 @@ async def on_tap(station_id: int, uid: str) -> dict:
         w.timer.cancel()
     w.timer = asyncio.create_task(close_after(station_id, WINDOW_SECONDS))
     log.info("tap station=%s uid=%s outcome=collecting count=%d", station_id, uid, len(w.person_ids))
-    await db.log_tap(station_id, uid, "collecting")
+    log_tap_soon(station_id, uid, "collecting")
     return station_state(station_id, "collecting", len(w.person_ids))
 
 
 async def finish_claim(station_id: int, uid: str, claim: claims.Claim) -> dict:
     try:
+        # a new sign-up only takes a blank badge; an admin "New badge" swaps the person's old badge for this one
         row = await db.pool.fetchrow(
-            "UPDATE people SET uid=$1 WHERE id=$2 AND uid IS NULL RETURNING id, name, role", uid, claim.person_id
+            "UPDATE people SET uid=$1 WHERE id=$2 AND (uid IS NULL OR $3) RETURNING id, name, role", uid, claim.person_id, claim.replace
         )
     except Exception:  # unique violation: someone linked this badge a moment ago
         row = None
     if row is None:
         log.warning("tap station=%s uid=%s outcome=claim_failed person=%s", station_id, uid, claim.person_id)
-        await db.log_tap(station_id, uid, "unknown")
+        log_tap_soon(station_id, uid, "unknown")
         return set_result(station_id, "unknown")
     claims.finish(claim)
     log.info("tap station=%s uid=%s outcome=claimed person=%s", station_id, uid, row["id"])
-    await db.log_tap(station_id, uid, "claimed")
+    log_tap_soon(station_id, uid, "claimed")
     await hub.broadcast("person_created", {"person_id": row["id"], "name": row["name"], "role": row["role"]})
     # The claim tap also counts as their first check-in (here now, the first check-in point, suggestions on the
     # wall), like a solo tap: most people walk away after "Got it". It runs in the background so the station's

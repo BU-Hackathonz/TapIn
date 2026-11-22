@@ -678,7 +678,7 @@
         if (d.status === "done" && d.person) { stop(); onPerson(d.person); return; }
         if (d.status === "expired" || left === 0) { stop(); say("No badge tapped in time. Tap the picture to try again."); return; }
         say(`Tap your badge on any station now (${left} s).`);
-      }, 1000);
+      }, 500);
     }
     // the person from the server becomes this browser's profile, so the room map shows the real you
     const saveMe = (p) => {
