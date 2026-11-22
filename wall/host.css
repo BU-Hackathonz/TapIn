@@ -291,6 +291,23 @@ body::before {
 :root[data-h="7"] #moment { border-top: 0; }
 :root[data-h="7"] #moment::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 6px; background: linear-gradient(90deg, #DA291C 0 25%, #ED8B00 25% 50%, #003DA5 50% 75%, #00843D 75% 100%); }
 
+/* ---- fitting: table names never get cut, the bottom line always fits two lines, and short screens drop the oldest rows */
+#groups .t b { font-weight: inherit; } #groups .t small { font-size: inherit; color: inherit; } #groups .t small::before { content: ", "; }
+:root[data-s] #groups .t { min-width: 0; white-space: normal; overflow: visible; line-height: 1.15; }
+:root[data-s] #groups .t b { display: block; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+:root[data-s] #groups .t small { display: block; margin: 0.15em 0 0; font-size: 0.78em; font-weight: 400; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+:root[data-s] #groups .t small::before { content: none; }
+:root[data-s] #moment { padding-top: 0.5vh; padding-bottom: 0.5vh; }
+:root[data-s] #mtext { font-size: calc(var(--u) * 1.1); line-height: 1.2; -webkit-line-clamp: 2; }
+:root[data-s] #mtime { white-space: nowrap; flex: none; }
+:root[data-s] #moment { overflow: hidden; }
+@media (max-height: 820px) {
+  #side { gap: 2.2vh; padding-top: 2.6vh; padding-bottom: 2.2vh; }
+  .bars { height: 7vh; }
+  #needs li:nth-child(n + 4), #activity li:nth-child(n + 4) { display: none; }
+}
+@media (max-height: 700px) { #activity { display: none; } #activity ~ * { } .note { display: none; } }
+
 .start { position: fixed; inset: 0; display: grid; place-content: center; justify-items: center; gap: 1.2vh; background: color-mix(in srgb, var(--bg) 96%, transparent); z-index: 6; cursor: pointer; }
 .start.gone { display: none; }
 .start button { font: 500 calc(var(--u) * 1.6)/1 var(--sans); padding: 0.7em 2em; color: var(--bg); background: var(--green); border: 0; border-radius: 0; cursor: pointer; }
