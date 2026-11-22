@@ -101,7 +101,7 @@ const Room = (() => {
       art.innerHTML = TAP_ART;   // static illustration markup
       art.addEventListener("click", foundStep);
       win.replaceChildren(x(), art, el("b", "room-title", "Tap your badge at a station"),
-                          el("span", "room-sub", "Hold it flat on the reader until the light blinks. Demo: tap the picture."), back(chooseStep));
+                          el("span", "room-sub", "Hold your badge flat on the reader. Demo: tap the picture."), back(chooseStep));
       art.focus();
     };
     const foundStep = () => {
