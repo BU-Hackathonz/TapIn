@@ -252,6 +252,8 @@
     }
     $("brand").innerHTML = logo();
     $("brand-art").innerHTML = logo();
+    // ?look=host: the same pages in the style of David's host screen (hostlook.js draws the plan, smoke and strip).
+    if (q.get("look") === "host" && typeof HostLook !== "undefined") HostLook.apply();
   }
   $("name").value = me.name;
   $("bio").value = me.bio || "";
