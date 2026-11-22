@@ -776,7 +776,16 @@
   canvas.addEventListener("pointercancel", endDrag);
 
   // ------------------------------------------------------------ boot
-  if (qs.has("silent")) $("start").classList.add("gone");
+  // The wall opens straight away (no Start screen), with sound on. Browsers only start sound after a click on the site, so it is tried at
+  // once (it works when the host has just clicked through the settings page) and again at the first click or key press.
+  // ?silent keeps it quiet; ?startscreen brings the old Start screen back.
+  if (!qs.has("startscreen")) {
+    $("start").classList.add("gone");
+    if (!qs.has("silent")) {
+      const loud = () => { try { return Promise.resolve(Sound.start()).catch(() => {}); } catch { return null; } };
+      loud(); addEventListener("pointerdown", loud, { once: true }); addEventListener("keydown", loud, { once: true });
+    }
+  }
   // The host's settings (host/settings.html): place name, how many tables, table names, sound. The URL still wins.
   fetch("/api/room-settings").then((r) => (r.ok ? r.json() : null)).then((s) => {
     if (!s) return;
@@ -802,12 +811,11 @@
   // this page), and the first click anywhere turns the sound on.
   if (qs.has("start")) {
     $("start").classList.add("gone");
-    try { if (window.TapInIntro) TapInIntro.map(document.body, { quiet: true, target: () => {
+    try { if (window.TapInIntro) TapInIntro.map(document.body, { quiet: qs.has("silent"), target: () => {
       const r = $("room").getBoundingClientRect();
       return { tables: [...layout.tables()].map(([id, t]) => ({ id, x: r.left + t.x, y: r.top + t.y, r: t.R })),
                people: layout.positions().map((p) => ({ x: r.left + p.x, y: r.top + p.y, table: p.gid })) };
     } }).catch(() => {}); } catch (e) { console.error("intro", e); }
-    addEventListener("pointerdown", () => { try { Sound.start(); } catch {} }, { once: true });
   }
   buildLayout();
   let rt = 0;
