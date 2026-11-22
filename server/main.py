@@ -65,8 +65,8 @@ async def ws(socket: WebSocket):
         log.info("ws closed (%d open)", len(hub.clients))
 
 
-# Wall and phone are owned by other teammates; mount them once their folders exist.
-for name in ("wall", "phone"):
+# Wall, phone and intro are owned by other teammates; mount them once their folders exist.
+for name in ("wall", "phone", "intro"):
     folder = ROOT / name
     if folder.is_dir():
         app.mount(f"/{name}", StaticFiles(directory=folder, html=True), name=name)
