@@ -37,23 +37,24 @@ Boston is full of students sitting alone in rooms full of people. Tap In is two 
 python, fastapi, websockets, postgresql, timescaledb, tiger-data, gemini, google-gemini-api, esp32, arduino, rfid, nfc,
 javascript, html5, css3, canvas, tone.js, web-audio, vercel, cloudflare
 
-## Gallery, in upload order (every image 3:2, PNG, under 5 MB)
+## Gallery, in upload order (after the team's cover image; 15 is Devpost's limit; every image 3:2, PNG, under 5 MB)
 
 | # | File (media/devpost/) | Caption (none, except the sample-data note on the host wall) |
 |---|---|---|
-| 1 | landing.png |  |
-| 2 | host-wall.png | Sample data, no real attendees. |
-| 3 | phone-signup-claim.png |  |
-| 4 | join.png |  |
-| 5 | host-pin.png |  |
-| 6 | system.png |  |
-| 7 | access.png |  |
-| 8 | sound-map.png |  |
-| 9 | tiger-data.png |  |
-| 10 | evidence-tap-latency.png |  |
-| 11 | evidence-soak.png |  |
-| 12 | evidence-gemini-models.png |  |
-| 13 | evidence-recovery.png |  |
+| 1 | app/app-host-wall.png | Sample data, no real attendees. |
+| 2 | app/app-signup-claim.png |  |
+| 3 | app/app-matching-room.png | Sample data, no real attendees. |
+| 4 | app/app-host-wall-settings.png | Sample data, no real attendees. |
+| 5 | app/app-landing.png |  |
+| 6 | app/app-host-pin.png |  |
+| 7 | system.png |  |
+| 8 | access.png |  |
+| 9 | sound-map.png |  |
+| 10 | tiger-data.png |  |
+| 11 | evidence-tap-latency.png |  |
+| 12 | evidence-soak.png |  |
+| 13 | evidence-gemini-models.png |  |
+| 14 | evidence-recovery.png |  |
 
 Not in the gallery (used inside "About the project" or kept for reference): `cover.png`, `enclosure.png`, `live-activity.png` (removed: no live data in the gallery),
 `scan-pipeline.png`, `tap-sequence.png`, `evidence-scan-runs.png`. Removed as outdated: the old wall, the old phone
