@@ -63,8 +63,37 @@
   }
   const labelOf = (p) => (p.role !== "student" ? `${p.name}, ${p.role}` : p.focus ? `${p.name} (focus)` : p.name);
 
+  // Only the leading tables are drawn, so the plan stays calm. A table keeps its place unless another one clearly overtakes it.
+  const MAXT = qs.has("tables") ? parseInt(qs.get("tables"), 10) : 5;
+  const shownT = new Set();
+  let hiddenT = 0;
+  const onPlan = (gid) => !MAXT || shownT.size === 0 || shownT.has(gid);
+  function limitTables(g) {
+    const count = new Map();
+    for (const p of g.people) if (p.here && p.group_id != null && p.role === "student") count.set(p.group_id, (count.get(p.group_id) || 0) + 1);
+    const alive = g.groups.filter((x) => count.has(x.id));
+    hiddenT = 0;
+    if (!MAXT || alive.length <= MAXT) { shownT.clear(); return g; }
+    for (const id of [...shownT]) if (!alive.some((x) => x.id === id)) shownT.delete(id);
+    const pts = (x) => x.points || 0;
+    const rank = [...alive].sort((a, b) => pts(b) - pts(a) || count.get(b.id) - count.get(a.id) || a.id - b.id);
+    for (const x of rank) { if (shownT.size >= MAXT) break; shownT.add(x.id); }
+    for (let k = 0; k < MAXT; k++) {                                   // a table on the sidelines swaps in only if it clearly leads
+      const weakest = alive.filter((x) => shownT.has(x.id)).sort((a, b) => pts(a) - pts(b))[0];
+      const challenger = rank.find((x) => !shownT.has(x.id));
+      if (!weakest || !challenger || pts(challenger) <= pts(weakest) * 1.25 + 10) break;
+      shownT.delete(weakest.id); shownT.add(challenger.id);
+    }
+    hiddenT = alive.length - shownT.size;
+    const hide = new Set(alive.filter((x) => !shownT.has(x.id)).map((x) => x.id));
+    return { ...g, groups: g.groups.filter((x) => !hide.has(x.id)), people: g.people.filter((p) => !(p.group_id != null && hide.has(p.group_id) && p.role === "student")) };
+  }
+
   function applyGraph(g) {
-    graphRaw = { ...g, people: g.people.map((p) => ({ ...p, label: labelOf(p) })) };
+    const lim = limitTables(g);
+    graphRaw = { ...lim, people: lim.people.map((p) => ({ ...p, label: labelOf(p) })) };
+    const more = document.getElementById("more");
+    if (more) { more.hidden = !hiddenT; more.textContent = hiddenT ? `showing the top ${shownT.size} of ${shownT.size + hiddenT} tables` : ""; }
     S.people = new Map(g.people.map((p) => [p.id, p]));
     S.groups = new Map(g.groups.map((x) => [x.id, x]));
     S.links = g.links;
@@ -96,7 +125,7 @@
     const tile = (n, label) => `<div class="tile"><b>${n}</b><span>${label}</span></div>`;
     $("stats").innerHTML = st ? tile(st.here, "here") + tile(st.groups, "groups") + tile(st.links_today, "links today") : "";
 
-    const top = (S.board?.groups || []).slice(0, 4), max = Math.max(1, ...top.map((g) => g.points));
+    const top = (S.board?.groups || []).filter((g) => onPlan(g.id)).slice(0, 4), max = Math.max(1, ...top.map((g) => g.points));
     $("groups").innerHTML = top.length
       ? top.map((g, i) => {
         const full = S.groups.get(g.id);
@@ -105,8 +134,8 @@
       : `<li class="empty">No tables yet</li>`;
     $("people").innerHTML = (S.board?.people || []).slice(0, 3).map((p) => `<span class="chip"><em>${esc((p.name || "?").slice(0, 1))}</em>${esc(p.name)}<b>${p.points}</b></span>`).join("");
 
-    const open = S.needs.filter((n) => n.handled_by == null).sort((a, b) => new Date(a.since) - new Date(b.since)).slice(0, 3);
-    const done = S.needs.filter((n) => n.handled_by != null).slice(0, Math.max(0, 3 - open.length));
+    const open = S.needs.filter((n) => n.handled_by == null && onPlan(n.group_id)).sort((a, b) => new Date(a.since) - new Date(b.since)).slice(0, 3);
+    const done = S.needs.filter((n) => n.handled_by != null && onPlan(n.group_id)).slice(0, Math.max(0, 3 - open.length));
     $("needcount").textContent = S.needs.filter((n) => n.handled_by == null).length ? `${S.needs.filter((n) => n.handled_by == null).length} open` : "";
     $("needs").innerHTML = (open.length || done.length)
       ? open.map((n, i) => `<li class="wait ${i === 0 ? "top" : ""}"><i class="st"></i><span class="t">${esc(n.table)} · ${esc(n.need)}</span><span class="v">${mins(n.since)}</span></li>`).join("")
@@ -458,6 +487,7 @@
     }
     drawn.people = pos.map((p) => ({ id: p.id, x: p.x, y: p.y, r: p.r }));
     drawn.tables = [...tables].map(([id, tb]) => ({ id, x: tb.x, y: tb.y, R: tb.R }));
+    for (const p of pos) { p.x += Math.sin(t / 650 + p.id * 1.3) * 4.5 * K; p.y += Math.cos(t / 800 + p.id * 0.9) * 4.5 * K; }   // sway, applied once so lines meet their dots
     const byId = new Map(pos.map((p) => [p.id, p]));
     const m = cur && t < cur.until ? cur : null;
     const hiGroup = m && m.group != null ? m.group : null;
@@ -522,9 +552,12 @@
     ctx.globalAlpha = 1;
     if (m && m.kind === "checkin") {                                 // the moment: lines from the newest person to those they know
       const me = byId.get(m.person);
-      if (me) for (const id of m.known.slice(0, 3)) {
-        const o = byId.get(id);
-        if (o) line(me.x, me.y, o.x, o.y, C.pink, 0.9, 3 * K);
+      if (me) {
+        const arr = 1 - Math.min(1, Math.hypot(me.tx - me.x, me.ty - me.y) / (160 * K));      // 0 while still walking in, 1 once seated
+        if (arr > 0.05) for (const id of m.known.slice(0, 3)) {
+          const o = byId.get(id);
+          if (o) line(me.x, me.y, o.x, o.y, C.pink, 0.9 * arr, 3 * K);
+        }
       }
       ctx.globalAlpha = 1;
     }
@@ -582,7 +615,7 @@
       ctx.globalAlpha = 0.2 + 0.8 * age;
       // A little life: each person drifts a couple of pixels and breathes; people still gliding leave a fading trail; a new
       // arrival sends out one ripple.
-      const nx = p.x + Math.sin(t / 650 + p.id * 1.3) * 4.5 * K, ny = p.y + Math.cos(t / 800 + p.id * 0.9) * 4.5 * K;
+      const nx = p.x, ny = p.y;
       const r = p.r * (newest ? 1.9 : 1) * (1 + 0.07 * Math.sin(t / 650 + p.id));
       const col = newest ? C.pink : quiet ? C.dim : C.green;
       const tr = trails.get(p.id);
