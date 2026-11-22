@@ -378,8 +378,11 @@
   if (qs.has("demo")) startDemo();
   else {
     // No server behind this page (the public site keeps the room private): say so, never show a made-up room.
+    let offlineNote = null;
     const offline = () => {
+      setTimeout(checkConnection, 5000);
       document.body.classList.add("no-room");
+      if (offlineNote) return;
       const n = document.createElement("div"); n.className = "no-room-note"; n.setAttribute("role", "status");
       n.innerHTML = "<b>The room shows at the venue</b><span>The room is private to the venue network. On the venue Wi-Fi, open it there:</span>";   // static text
       // the public site never serves the room; on the venue Wi-Fi the venue address does, so link there with who you are
@@ -388,9 +391,21 @@
       a.href = "http://192.168.8.236:8000/wall/index.html" + (me && me.person_id != null ? `?as=${encodeURIComponent(me.person_id)}&name=${encodeURIComponent(me.name || "")}` : "");
       n.append(a);
       document.body.append(n);
+      offlineNote = n;
     };
-    fetch(HTTP + "/api/graph")
-      .then((r) => (r.ok && (r.headers.get("content-type") || "").includes("json") ? connect() : offline()))
-      .catch(offline);
+    function checkConnection() {
+      fetch(HTTP + "/api/graph")
+        .then((r) => {
+          if (!r.ok || !(r.headers.get("content-type") || "").includes("json")) {
+            offline();
+            return;
+          }
+          document.body.classList.remove("no-room");
+          if (offlineNote) { offlineNote.remove(); offlineNote = null; }
+          connect();
+        })
+        .catch(offline);
+    }
+    checkConnection();
   }
 })();
