@@ -338,7 +338,7 @@
   document.body.append(tableBar);
   let tableKey = "";
   function updateTableBar() {
-    const off = mainScreen || !Corner.signedIn() || document.body.classList.contains("no-room") || (!demo && !S.people.size);
+    const off = mainScreen || !Corner.signedIn() || document.body.classList.contains("no-room") || document.body.classList.contains("sample") || (!demo && !S.people.size);
     const me = off ? null : Corner.me();
     const g = me && me.group_id != null ? S.groups.get(me.group_id) : null;
     const key = off ? "off" : g ? `in:${g.id}:${g.name}` : "out";
@@ -379,21 +379,24 @@
   }, 1800);
   if (qs.has("demo")) startDemo();
   else {
-    // No server behind this page (the public site keeps the room private): say so, never show a made-up room.
-    let offlineNote = null;
+    // No server behind this page (the public site, or the venue server down): show the sample room (wall/demo.js, 14
+    // demo people with photos) under a clear "Sample room" label, with a link to the live room on the venue Wi-Fi.
+    // The live room takes over as soon as the server answers (the page reloads into it).
+    let sampleNote = null;
     const offline = () => {
-      setTimeout(checkConnection, 5000);
-      document.body.classList.add("no-room");
-      if (offlineNote) return;
-      const n = document.createElement("div"); n.className = "no-room-note"; n.setAttribute("role", "status");
-      n.innerHTML = "<b>The room shows at the venue</b><span>The room is private to the venue network. On the venue Wi-Fi, open it there:</span>";   // static text
-      // the public site never serves the room; on the venue Wi-Fi the venue address does, so link there with who you are
-      const a = document.createElement("a"); a.className = "no-room-go"; a.textContent = "Open the room on the venue Wi-Fi";
+      setTimeout(checkConnection, 15000);
+      if (sampleNote) return;
+      document.body.classList.add("sample");
+      const n = document.createElement("div"); n.className = "sample-note"; n.setAttribute("role", "status");
+      n.append(Object.assign(document.createElement("b"), { textContent: "Sample room" }),
+               Object.assign(document.createElement("span"), { textContent: "Demo people. The live room is on the venue Wi-Fi." }));
+      const a = document.createElement("a"); a.className = "sample-go"; a.textContent = "Open the live room";
       let me = null; try { me = JSON.parse(localStorage.getItem("wall.me") || "null"); } catch { /* private mode */ }
       a.href = "http://192.168.8.236:8000/wall/index.html" + (me && me.person_id != null ? `?as=${encodeURIComponent(me.person_id)}&name=${encodeURIComponent(me.name || "")}` : "");
       n.append(a);
       document.body.append(n);
-      offlineNote = n;
+      sampleNote = n;
+      startDemo();
     };
     function checkConnection() {
       fetch(HTTP + "/api/graph")
@@ -402,8 +405,7 @@
             offline();
             return;
           }
-          document.body.classList.remove("no-room");
-          if (offlineNote) { offlineNote.remove(); offlineNote = null; }
+          if (sampleNote) { location.reload(); return; }          // the live room is back: leave the sample room
           connect();
         })
         .catch(offline);
