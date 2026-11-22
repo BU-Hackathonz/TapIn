@@ -184,6 +184,7 @@ async def resolve(conn, station_id: int, person_ids: list[int]):
             added = [s for s in students if s not in members]
             for s in added:
                 await conn.execute("INSERT INTO group_members (group_id, person_id) VALUES ($1,$2)", gid, s)
+                await conn.execute("DELETE FROM group_members WHERE person_id=$1 AND group_id<>$2", s, gid)   # one table each
             await _connect_pairs(conn, ids, award, new_links, strengthened, pay=False)
             await conn.execute("UPDATE needs SET handled_by=$2 WHERE group_id=$1 AND handled_by IS NULL", gid, helpers[0])
             if formed:
@@ -216,6 +217,7 @@ async def resolve(conn, station_id: int, person_ids: list[int]):
                         award["people"][m] = award["people"].get(m, 0) + P.MEMBER_WELCOME
                     award["groups"][gid] = award["groups"].get(gid, 0) + group_pts
                 kind = "join"
+            await conn.execute("UPDATE groups SET station_id=$2 WHERE id=$1", gid, station_id)   # the table is at this station now
             await _connect_pairs(conn, ids, award, new_links, strengthened, pay=True)
             if joiners:
                 events.append(("group_joined", {"group_id": gid, "new_member_ids": joiners, "new_links": new_links}))

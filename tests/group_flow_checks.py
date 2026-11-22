@@ -84,6 +84,8 @@ class FakeDB:
             self.members = [m for m in self.members if not (m[1] == a[0] and m[0] != a[1])]
         elif sql.startswith("UPDATE people SET points"):
             self.people[a[0]]["points"] += a[1]
+        elif sql.startswith("UPDATE groups SET station_id"):
+            self.groups[a[0]]["station"] = a[1]
         elif sql.startswith("UPDATE groups SET points"):
             self.groups[a[0]]["points"] += a[1]
 
@@ -121,8 +123,16 @@ async def main():
     k, s, ev, d = await scan(db, 3, [6, 1, 2])
     check("no table at this station: the table with the most people in the scan wins", db.table_of(6) == A, db.table_of(6))
 
+    # a table sits where it last scanned: table B (made at station 1) scans at station 2, so station 2 now means table B
+    await scan(db, 2, [4, 5])
+    check("a table moves to the station it last scanned at", db.groups[B]["station"] == 2, db.groups[B])
+    k, s, ev, d = await scan(db, 2, [7, 4])
+    check("...so a newcomer at station 2 with its member joins it", db.table_of(7) == B, db.table_of(7))
+
     k, s, ev, d = await scan(db, 2, [8, 1])
     check("a mentor tapping with a member is help, not a join", k == "help" and "help" in ev and db.table_of(8) is None, (k, ev))
+    tables_of_1 = {g for (g, p, _) in db.members if p == 1}
+    check("help never leaves a student in two tables", len(tables_of_1) == 1, tables_of_1)
 
 
 asyncio.run(main())

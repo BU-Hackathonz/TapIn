@@ -57,6 +57,7 @@ async def main():
     check("station 2 shows its own count", r["state"] == "collecting" and r["count"] == 1, r)
     await scans.on_tap(2, "U1")
     check("a window left empty closes without a scan", 1 not in scans.windows, list(scans.windows))
+    check("moving out of a window clears that station's same-badge memory", (1, "U1") not in scans.last_seen)
     check("station 2 now holds both", scans.windows[2].person_ids == [2, 1], scans.windows[2].person_ids)
     for w in scans.windows.values():
         w.timer.cancel()

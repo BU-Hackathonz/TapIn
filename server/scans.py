@@ -108,6 +108,7 @@ async def on_tap(station_id: int, uid: str) -> dict:
     for sid, other in list(windows.items()):
         if sid != station_id and person["id"] in other.person_ids:
             other.person_ids.remove(person["id"])
+            last_seen.pop((sid, uid), None)   # so tapping back at that station right away counts, not "ignored"
             if not other.person_ids:
                 if other.timer:
                     other.timer.cancel()
