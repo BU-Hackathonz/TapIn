@@ -1,9 +1,9 @@
 // The opening scene as a reusable piece: a pixel Green Line train arrives at spark!, people step off and tap in, then it resolves.
-//   await OpeningScene.play();      // full-screen overlay, about 7 s, Skip button / Esc / Space to jump ahead
+//   await OpeningScene.play({ venue: "spark!" });      // full-screen overlay, about 7 s, Skip button / Esc / Space to jump ahead
 // Drawn in code at 320x180 and scaled up with hard pixels. Same drawing as landing/index.html.
 const OpeningScene = (() => {
   const W = 320, H = 180;
-  let g = null;
+  let g = null, venue = "spark!";
   const ease = (x) => 1 - Math.pow(1 - Math.min(1, Math.max(0, x)), 3), clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
   const R = (x, y, w, h2, c) => { g.fillStyle = c; g.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h2)); };
   const GROUND = 140, DOORX = 236, STOP = 74, T_TRAIN = 2.6, T_DOORS = 3.0, PEOPLE = [["#ff7ab2", "#2b1f23"], ["#ffc46b", "#2b1f23"], ["#7cc7ff", "#2b1f23"], ["#c9a2ff", "#2b1f23"], ["#ece0c6", "#2b1f23"]];
@@ -19,7 +19,7 @@ const OpeningScene = (() => {
     R(x, y, w, hh, "#a8584d"); R(x - 3, y - 4, w + 6, 6, "#7d3d36"); R(x, y + 6, w, 2, "#8e4a44");
     for (let r = 0; r < 4; r++) for (let c = 0; c < 5; c++) { const on = lit > ((r * 5 + c) % 9) / 9 + 0.05; R(x + 6 + c * 15, y + 14 + r * 17, 9, 10, on ? "#ffd98a" : "#5a2d2a"); if (on) R(x + 6 + c * 15, y + 14 + r * 17, 9, 2, "#fff0c4"); }
     R(DOORX - 9, GROUND - 28, 18, 28, "#2b1f23"); R(DOORX - 7, GROUND - 26, 14, 26, lit > 0.2 ? "#ffd98a" : "#3a2b2b"); R(DOORX, GROUND - 26, 1, 26, "#2b1f23");
-    R(x + 18, y - 16, 48, 11, "#111"); g.font = "10px DotGothic16, monospace"; g.fillStyle = "#ffb000"; g.textBaseline = "top"; g.fillText("spark!", x + 22, y - 15);
+    R(x + 18, y - 16, 48, 11, "#111"); g.font = "10px DotGothic16, monospace"; g.fillStyle = "#ffb000"; g.textBaseline = "top"; g.fillText(venue.slice(0, 11), x + 22, y - 15);
   }
   function platform(t) {
     R(0, GROUND, W, 6, "#6a4f55"); R(0, GROUND + 6, W, 3, "#4a3a3d"); R(0, GROUND + 9, W, H - GROUND - 9, "#2b1f23");
@@ -63,7 +63,8 @@ const OpeningScene = (() => {
     PEOPLE.forEach((_, i) => { const p = person(i, t, DS); if (p && !p.gone) tapFx(p); });
   }
 
-  function play() {
+  function play(opts = {}) {
+    if (opts.venue) venue = String(opts.venue);
     return new Promise((done) => {
       const el = document.createElement("div");
       el.style.cssText = "position:fixed;inset:0;z-index:99999;background:#ecd9d2;opacity:0;transition:opacity .35s ease";

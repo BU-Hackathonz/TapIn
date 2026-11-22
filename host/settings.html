@@ -38,7 +38,7 @@ $("f").addEventListener("submit", async (e) => {
     if (r.status === 401) return location.replace("index.html");
     if (!r.ok) { err.textContent = "Could not save: check the place name"; $("start").disabled = false; return; }
     $("fade").classList.add("on");                                   // everything fades out quickly, the opening animation plays, then the wall opens
-    setTimeout(async () => { try { await OpeningScene.play(); } catch (e) { console.error("opening", e); } location.assign("/wall/host.html"); }, 380);
+    setTimeout(async () => { try { await OpeningScene.play({ venue: body.venue }); } catch (e) { console.error("opening", e); } location.assign("/wall/host.html"); }, 380);
   } catch { err.textContent = "Could not reach the server"; $("start").disabled = false; }
 });
 $("out").addEventListener("click", async () => { await fetch("/api/host/logout", { method: "POST" }).catch(() => {}); location.replace("index.html"); });
