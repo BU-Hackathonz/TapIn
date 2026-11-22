@@ -9,11 +9,13 @@ const crypto = require("crypto");
 
 const BASE = (process.env.PUBLIC_URL || "https://www.tapin.boston").replace(/\/+$/, "");
 const COOKIE = "tapin_oauth";
+// keys pasted into Vercel can carry a stray newline or space (GitHub then answers 404): trim them
+const env = (k) => (process.env[k] || "").trim();
 
 const PROVIDERS = {
   github: {
     label: "GitHub",
-    id: () => process.env.GITHUB_CLIENT_ID, secret: () => process.env.GITHUB_CLIENT_SECRET,
+    id: () => env("GITHUB_CLIENT_ID"), secret: () => env("GITHUB_CLIENT_SECRET"),
     authorize: "https://github.com/login/oauth/authorize", scope: "read:user user:email",
     async profile(code, redirect) {
       const t = await post("https://github.com/login/oauth/access_token",
@@ -30,7 +32,7 @@ const PROVIDERS = {
   },
   google: {
     label: "Google",
-    id: () => process.env.GOOGLE_CLIENT_ID, secret: () => process.env.GOOGLE_CLIENT_SECRET,
+    id: () => env("GOOGLE_CLIENT_ID"), secret: () => env("GOOGLE_CLIENT_SECRET"),
     authorize: "https://accounts.google.com/o/oauth2/v2/auth", scope: "openid email profile", extra: { prompt: "select_account" },
     async profile(code, redirect) {
       const t = await post("https://oauth2.googleapis.com/token",
