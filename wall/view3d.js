@@ -802,6 +802,6 @@ const View3D = (() => {
 
   return { init, setActive, relayout, pulse, avatar, buildProfile, setOption, focusPerson,
            onTable: (fn) => { onGroup = fn; }, onMe: (fn) => { onMe = fn; }, socialIcon: (k) => SOCIAL[k],
-           option: (k) => opts[k], PHONE,
+           option: (k) => opts[k], PHONE, tableName: tname,
            mePoint: () => { const ME = scene && scene().me; if (!ME) return null; const q = opts.plan && mePlan ? project(mePlan.x, mePlan.y, 0) : project(0, 0, 0); return q.off ? null : { x: q.x, y: q.y, r: Math.max(16, 15 * q.s * 1.3) }; } };
 })();
