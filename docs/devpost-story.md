@@ -15,7 +15,7 @@ Tap In is not another matching app. The phone is only for setup. The matching ha
 
 You make a profile on your phone in about 30 seconds (first name, role, skills, what you're looking for and what you're up to today, which can be "Just hanging out"), then tap any blank badge on a station within 60 seconds and it becomes yours. From then on there is one action: tap your badge.
 
-- **Alone, it checks you in.** The wall rings a bell in your own note, and your phone shows who you already know here, which table needs you and why ("Table B needs firmware, you know 1 of its 3 people"), and your points.
+- **Alone, it checks you in and seats you at that station's table** (or starts one there with just you). The wall rings a bell in your own note, and your phone shows who you already know here, which table needs you and why ("Table B needs firmware, you know 1 of its 3 people"), and your points.
 - **Together, it joins a table.** Tap the station with someone already at that table and you join it: everyone in the scan is linked, everyone earns points, and newcomers bring a welcome bonus. A mentor who taps in with a table counts as help and crosses its need off the board.
 - **Tables belong to their station.** A table lives where it formed, so the room is physical without tracking anyone: to join a table you walk to it. Two people tapping at a station with no table start a new one there.
 - **The room plays it.** The projector shows every table, open needs and how long they've waited, the leaderboard and live activity, and every event has its own sound from one pentatonic scale.
@@ -29,7 +29,7 @@ Each station is an ESP32 and an RC522 reader in a box, reading badges through th
 
 ### Server
 
-Python FastAPI on one laptop on the venue Wi-Fi. Each station keeps one scan window of 12 seconds that restarts whenever a new person taps in (time to pass a badge and tap together) and always closes within 20 seconds, and the same badge within 3 seconds counts once. When the window closes, one database transaction decides what the scan means (check-in, new table, join, help or repeat), awards points and pushes the result to every screen over a WebSocket.
+Python FastAPI on one laptop on the venue Wi-Fi. Each station keeps one scan window of 6 seconds that restarts whenever a new person taps in and always closes within 12 seconds, and the same badge within 3 seconds counts once. When the window closes, one database transaction decides what the scan means (check-in, new table, join, help or repeat), awards points and pushes the result to every screen over a WebSocket.
 
 ### Wall and phone
 
