@@ -319,6 +319,12 @@ body::before {
 :root[data-s] #needs li[data-l="2"]::before { background: #003DA5; } :root[data-s] #needs li[data-l="3"]::before { background: #00843D; }
 :root[data-s] #needs li.done::before { opacity: 0.45; } :root[data-s] #needs li { align-items: center; }
 
+/* ---- the body text of the side column uses the wordmark's font (Bricolage Grotesque); the label bars stay in Helvetica capitals */
+:root[data-s] #statline, :root[data-s] #groups, :root[data-s] #needs, :root[data-s] #activity, :root[data-s] .note, :root[data-s] .empty { font-family: "Bricolage Grotesque", var(--hv); }
+:root[data-s] #needs .t, :root[data-s] #needs .v, :root[data-s] #activity, :root[data-s] #activity li { font-weight: 500; }
+:root[data-s] #needs .v, :root[data-s] #groups .v { font-family: "Bricolage Grotesque", var(--hv); font-weight: 700; }
+:root[data-s] #activity .tm { font-weight: 500; }
+
 .start { position: fixed; inset: 0; display: grid; place-content: center; justify-items: center; gap: 1.2vh; background: color-mix(in srgb, var(--bg) 96%, transparent); z-index: 6; cursor: pointer; }
 .start.gone { display: none; }
 .start button { font: 500 calc(var(--u) * 1.6)/1 var(--sans); padding: 0.7em 2em; color: var(--bg); background: var(--green); border: 0; border-radius: 0; cursor: pointer; }
