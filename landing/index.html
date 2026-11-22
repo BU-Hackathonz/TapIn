@@ -52,7 +52,7 @@
 </style>
 </head>
 <body>
-<div id="scene"><canvas id="sc" width="320" height="180" aria-label="A green line train arrives and people tap in"></canvas><button id="skip" type="button">Skip</button></div>
+<div id="scene"><canvas id="sc" width="320" height="180" aria-label="A route 57 bus arrives and people tap in"></canvas><button id="skip" type="button">Skip</button></div>
 <canvas id="fume" aria-hidden="true"></canvas>
 <div id="hscene" aria-hidden="true"></div>
 <main>
@@ -107,6 +107,11 @@ document.querySelectorAll(".choice").forEach((a) => a.addEventListener("click", 
   const R = (x, y, w, h2, c) => { g.fillStyle = c; g.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h2)); };
   const GROUND = 140, DOORX = 236, STOP = 74, T_TRAIN = 2.6, T_DOORS = 3.0, PEOPLE = [["#ff7ab2", "#2b1f23"], ["#ffc46b", "#2b1f23"], ["#7cc7ff", "#2b1f23"], ["#c9a2ff", "#2b1f23"], ["#ece0c6", "#2b1f23"]];
   const T_END = 7.2;
+  // Keep pixels square on tall phone screens: the 320x180 scene is drawn in the middle of a taller canvas,
+  // with sky above and road below, instead of being stretched to fill the screen.
+  let CH = 180, OFF = 0;
+  const fit = () => { const r = cv.getBoundingClientRect(); CH = Math.max(180, Math.round(320 * r.height / Math.max(1, r.width))); if (cv.height !== CH) cv.height = CH; OFF = Math.round((CH - 180) * 0.6); };
+  fit(); addEventListener("resize", fit);
   const hashN = (n) => { const s = Math.sin(n * 12.9898) * 43758.5453; return s - Math.floor(s); };
 
   function sky() {
@@ -122,19 +127,31 @@ document.querySelectorAll(".choice").forEach((a) => a.addEventListener("click", 
   }
   function platform(t) {
     R(0, GROUND, W, 6, "#6a4f55"); R(0, GROUND + 6, W, 3, "#4a3a3d"); R(0, GROUND + 9, W, H - GROUND - 9, "#2b1f23");
-    for (let i = 0; i < 16; i++) R(i * 22 + 2, GROUND + 12, 12, 2, "#3a2b2e");           // ties
-    R(0, GROUND + 10, W, 1, "#8a7a7e");
-    R(16, 112, 3, 28, "#2b1f23"); R(6, 108, 24, 8, "#00843D"); R(8, 110, 20, 4, "#f3e4dc");                    // station sign post
+    for (let i = 0; i < 16; i++) R(i * 22 + 2, GROUND + 16, 12, 1, "#e9c46a");           // lane dashes on the road
+    R(0, GROUND + 6, W, 1, "#8a7a7e");                                                    // curb edge
+    R(16, 112, 3, 28, "#2b1f23"); R(6, 106, 24, 10, "#1c3f94"); R(8, 108, 20, 6, "#ffffff"); R(14, 109, 8, 4, "#1c3f94");    // bus stop sign
   }
+  // An MBTA-style city bus (route 57 runs down Comm Ave past BU): no pantograph or rails, rubber wheels on the road.
   function train(t) {
     const x = -112 + ease(t / T_TRAIN) * (STOP + 112), y = GROUND - 30, moving = t < T_TRAIN, bob = moving ? Math.round(Math.sin(t * 40) * 0.6) : 0;
     const doors = clamp((t - T_TRAIN) / 0.35) * clamp((T_DOORS + 3.2 - t) / 0.35);
-    R(x + 2, y - 8 + bob, 108, 2, "#2b1f23"); R(x + 40, y - 14 + bob, 2, 8, "#2b1f23"); R(x + 34, y - 15 + bob, 14, 2, "#2b1f23");                // pantograph
-    R(x, y + bob, 112, 26, "#00843D"); R(x, y + bob, 112, 4, "#2fbf6a"); R(x, y + 20 + bob, 112, 3, "#f3e4dc"); R(x, y + 23 + bob, 112, 3, "#005c2a");
-    for (let i = 0; i < 6; i++) R(x + 6 + i * 16, y + 6 + bob, 12, 9, "#cfe8d9");
-    const dx = x + 70; R(dx, y + 4 + bob, 14, 19, "#005c2a"); R(dx + 2, y + 6 + bob, 4 + doors * 4, 17, doors > 0.05 ? "#3a2b2b" : "#cfe8d9"); R(dx + 8 - doors * 4, y + 6 + bob, 4, 17, "#cfe8d9");
-    R(x + 106, y + 8 + bob, 6, 8, "#ffe9a8"); R(x + 108, y + 18 + bob, 4, 3, "#ffe9a8");
-    for (const wx of [12, 30, 78, 96]) { R(x + wx, y + 24 + bob, 8, 5, "#111"); R(x + wx + 2, y + 26 + bob, 4, 2, "#8a7a7e"); }
+    const B = (dx, dy, w, h2, c) => R(x + dx, y + dy + bob, w, h2, c);
+    B(2, -1, 106, 1, "#e9e6df"); B(0, 0, 110, 24, "#f7f5f0"); B(0, 0, 110, 2, "#ffffff");                        // body, rounded roof edge
+    B(108, 2, 4, 21, "#f7f5f0"); B(110, 4, 2, 17, "#ecebe5");                                                    // front nose
+    B(0, 16, 112, 3, "#ffc72c"); B(0, 19, 112, 4, "#1c3f94"); B(0, 23, 112, 2, "#2b1f23");                      // yellow band, blue skirt, bumper line
+    for (let i = 0; i < 4; i++) { B(6 + i * 15, 4, 12, 9, "#2b3a55"); B(6 + i * 15, 4, 12, 2, "#5b7090"); }    // side windows
+    B(94, 1, 16, 7, "#111111");                                                                                // route sign above the windscreen: 57 in amber
+    const dot = (dx, dy) => B(dx, dy, 1, 1, "#ffb000");
+    [[0,0],[1,0],[2,0],[0,1],[0,2],[1,2],[2,2],[2,3],[0,4],[1,4],[2,4]].forEach(([a, b]) => dot(98 + a, 2 + b));
+    [[0,0],[1,0],[2,0],[2,1],[2,2],[1,3],[1,4]].forEach(([a, b]) => dot(103 + a, 2 + b));
+    B(96, 8, 14, 8, "#2b3a55"); B(97, 9, 3, 6, "#5b7090");                                                       // windscreen
+    const dx = x + 70; B(70, 3, 14, 20, "#1c2a40"); R(dx + 2, y + 5 + bob, 4 + doors * 4, 17, doors > 0.05 ? "#3a2b2b" : "#5b7090"); R(dx + 8 - doors * 4, y + 5 + bob, 4, 17, "#5b7090");   // doors
+    B(109, 18, 3, 3, "#ffe9a8"); B(0, 18, 2, 3, "#d4151b");                                                     // headlight, tail light
+    for (const wx of [12, 86]) {                                                                               // wheel arches, round tyres, hubs
+      B(wx - 2, 17, 18, 8, "#3a3436");
+      R(x + wx + 3, y + 18 + bob, 8, 1, "#111111"); R(x + wx + 1, y + 19 + bob, 12, 1, "#111111"); R(x + wx, y + 20 + bob, 14, GROUND - (y + 20) - 1, "#111111"); R(x + wx + 2, GROUND - 1, 10, 1, "#111111");
+      R(x + wx + 4, y + 22 + bob, 6, 4, "#9a8f92"); R(x + wx + 6, y + 23 + bob, 2, 2, "#4a4446");
+    }
     if (moving) for (let i = 0; i < 6; i++) R(x - 10 - i * 8 - (t * 60) % 8, GROUND - 8 + (i % 2) * 3, 5 - i * 0.6, 1, "#fff");            // speed streaks
     return { x, doorX: dx + 7 };
   }
@@ -153,7 +170,18 @@ document.querySelectorAll(".choice").forEach((a) => a.addEventListener("click", 
     for (let i = 1; i <= 3; i++) { const rr = i * 4 + k * 10; if (rr > 4) { g.strokeStyle = "rgba(212,21,27," + (1 - k) + ")"; g.lineWidth = 1; g.beginPath(); g.arc(cx, cy, rr, -0.9, 0.9); g.stroke(); } }
   }
   function frame(t) {
-    g.imageSmoothingEnabled = false; g.clearRect(0, 0, W, H);
+    g.setTransform(1, 0, 0, 1, 0, 0); g.imageSmoothingEnabled = false;
+    // sky above the scene on tall screens: dusk bands getting lighter towards the scene, a sun and a few pixel clouds
+    const TOP = ["#e9c7c9", "#edcfcc", "#f0d7d1", "#f2ddd5", "#f3e1d8", "#f3e4dc"];
+    for (let i = 0; i < TOP.length; i++) { g.fillStyle = TOP[i]; g.fillRect(0, Math.round(OFF * i / TOP.length), W, Math.ceil(OFF / TOP.length) + 1); }
+    if (OFF > 40) {
+      const sy = Math.round(OFF * 0.45), sx = 250;
+      for (let yy = -9; yy <= 9; yy++) for (let xx = -9; xx <= 9; xx++) if (xx * xx + yy * yy <= 81) { g.fillStyle = xx * xx + yy * yy > 60 ? "#f7b98c" : "#fbcf9f"; g.fillRect(sx + xx, sy + yy, 1, 1); }
+      const cloud = (cx, cy, w) => { g.fillStyle = "#fbf1ea"; g.fillRect(cx + 3, cy, w - 6, 2); g.fillRect(cx, cy + 2, w, 3); g.fillStyle = "#f0dcd2"; g.fillRect(cx + 2, cy + 5, w - 4, 1); };
+      cloud(28, Math.round(OFF * 0.3), 30); cloud(130, Math.round(OFF * 0.62), 24); cloud(196, Math.round(OFF * 0.18), 34);
+    }
+    g.fillStyle = "#2b1f23"; g.fillRect(0, OFF + 150, W, CH);
+    g.translate(0, OFF); g.clearRect(0, 0, W, H);
     sky();
     const DS = STOP + 77, entered = PEOPLE.reduce((n, _, i) => n + (person(i, t, DS)?.gone ? 1 : 0), 0);
     building(clamp(entered / PEOPLE.length + (t > T_DOORS ? 0.15 : 0)));
