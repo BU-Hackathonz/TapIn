@@ -512,8 +512,12 @@
       $("linked-lead").textContent = `Welcome, ${draft.name}. Your card is linked to you.`;
       show("step-linked");
     });
+    // ?edit (from the wall's corner tab): open the account form with your saved answers
+    if (new URLSearchParams(location.search).has("edit")) show("step-account");
     document.getElementById("reader").addEventListener("click", () => {
       joinRoom();
+      // a badge is your login: with no profile in this browser yet, start one (Guest) so the room knows you
+      try { if (!localStorage.getItem("wall.me")) localStorage.setItem("wall.me", JSON.stringify({ name: "Guest", role: "student", face: `face-${Date.now()}` })); } catch { /* private mode */ }
       document.getElementById("found-lead").textContent = name ? `Welcome back, ${name}.` : "Welcome back.";
       show("step-found");
       // logged in and in the room: head straight to the wall (the loading train), no button to press
