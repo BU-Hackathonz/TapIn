@@ -70,7 +70,7 @@
   const labelOf = (p) => (p.role !== "student" ? `${p.name}, ${p.role}` : p.focus ? `${p.name} (focus)` : p.name);
 
   // Only the leading tables are drawn, so the plan stays calm. A table keeps its place unless another one clearly overtakes it.
-  let MAXT = qs.has("tables") ? parseInt(qs.get("tables"), 10) : 5;
+  let MAXT = qs.has("tables") ? parseInt(qs.get("tables"), 10) : 8;   // the room plan shows the top 8 tables (host settings can change it)
   const shownT = new Set();
   let hiddenT = 0;
   const onPlan = (gid) => !MAXT || shownT.size === 0 || shownT.has(gid);
@@ -142,7 +142,9 @@
     }
     $("statline").innerHTML = st ? `<b>${st.here}</b> here · <b>${st.groups}</b> groups · <b>${st.links_today}</b> links today` : "";
 
-    const top = (S.board?.groups || []).filter((g) => onPlan(g.id)).slice(0, 4);
+    // Top 8 tables by points. Ranked from the graph (every table, with points), since /api/leaderboard returns only 5.
+    const top = [...S.groups.values()].filter((g) => onPlan(g.id))
+      .sort((a, b) => (b.points || 0) - (a.points || 0) || a.id - b.id).slice(0, 8);
     $("groups").innerHTML = top.length
       ? top.map((g, i) => {
         const full = S.groups.get(g.id);
