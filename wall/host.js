@@ -19,6 +19,7 @@
   const VN = Math.min(11, Math.max(1, parseInt(qs.get("v"), 10) || 11)), V = VARIANTS[VN], LW = V.lw;
   if (VN > 1) document.documentElement.dataset.v = String(VN);
   document.documentElement.dataset.palette = VN > 1 ? "v" : qs.get("palette") || "sand";
+  document.documentElement.dataset.mk = qs.get("mk") === "num" ? "num" : "let";      // table markers: letters like the T's route letters (default), or ?mk=num for numbers
   if (qs.get("s")) document.documentElement.dataset.s = qs.get("s");
   if (!qs.get("s") && !qs.get("h") && !qs.has("classic")) { document.documentElement.dataset.s = "1"; document.documentElement.dataset.h = "7"; }
   if (qs.get("h")) { document.documentElement.dataset.h = qs.get("h"); if (!qs.get("s")) document.documentElement.dataset.s = "1"; }   // ?h=1..6: variations on draft 1 with the markers and heading rectangles of draft 2      // ?s=1..6: Boston T (MBTA) style drafts for the side column and bottom bar
@@ -38,6 +39,7 @@
   const list = (xs) => (xs.length < 2 ? xs.join("") : xs.slice(0, -1).join(", ") + " and " + xs[xs.length - 1]);
 
   if (qs.get("venue")) $("venue").textContent = qs.get("venue");
+  if (qs.get("venue")) $("locname").textContent = qs.get("venue");      // the place shown on the map (default: spark!)
 
   // ------------------------------------------------------------ state
   const S = { people: new Map(), groups: new Map(), links: [], needs: [], stats: null, board: null };
@@ -124,6 +126,8 @@
     const m = Math.max(0, Math.floor((Date.now() - new Date(iso)) / 60000));
     return m < 60 ? `${m}m` : `${Math.floor(m / 60)}h ${m % 60}m`;
   };
+  const disp = (str) => (document.documentElement.dataset.mk === "num" ? String(str) : String(str).replace(/\bTable (\d+)\b/gi, (m, n) => "Table " + letterOf(+n)));
+  const letterOf = (n) => (n > 0 ? String.fromCharCode(65 + ((n - 1) % 26)) : "?");        // table 1 is A, 2 is B, ...
   // A number that changes flashes once, so a glance at the column shows what just moved.
   const prevVal = new Map();
   const chg = (k, v) => { const c = prevVal.has(k) && prevVal.get(k) !== v; prevVal.set(k, v); return c; };
@@ -136,15 +140,27 @@
       ? top.map((g, i) => {
         const full = S.groups.get(g.id);
         const tn = parseInt(String(g.name).replace(/\D+/g, ""), 10) || i + 1;
-        return `<li class="${i === 0 && g.points > 0 ? "top" : ""}" data-n="${tn}" data-l="${tn % 4}"><span class="t"><b>${esc(g.name)}</b>${full?.working_on ? `<small>${esc(full.working_on)}</small>` : ""}</span><span class="v ${chg("g:" + g.id, g.points) ? "bump" : ""}">${g.points}</span></li>`;
+        return `<li class="${i === 0 && g.points > 0 ? "top" : ""}${full?.working_on ? "" : " nowo"}" data-n="${tn}" data-k="${letterOf(tn)}" data-r="${i + 1}" data-l="${tn % 4}"><span class="t"><b>${esc(disp(g.name))}</b>${full?.working_on ? `<small>${esc(full.working_on.replace(/^an?\s+/i, '').replace(/^./, (ch) => ch.toUpperCase()))}</small>` : ""}</span><span class="v ${chg("g:" + g.id, g.points) ? "bump" : ""}">${g.points}</span></li>`;
       }).join("")
       : `<li class="empty">No tables yet</li>`;
 
-    const open = S.needs.filter((n) => n.handled_by == null && onPlan(n.group_id)).sort((a, b) => new Date(a.since) - new Date(b.since)).slice(0, 4);
-    const done = S.needs.filter((n) => n.handled_by != null && onPlan(n.group_id)).slice(0, Math.max(0, 5 - open.length));
+    const byTable = (arr) => {
+      const m = new Map();
+      for (const n of arr) {
+        const k = n.group_id + ":" + (n.handled_by ?? "");
+        const e = m.get(k) || { table: n.table, needs: [], since: n.since, by: n.handled_by };
+        e.needs.push(n.need); if (new Date(n.since) < new Date(e.since)) e.since = n.since;
+        m.set(k, e);
+      }
+      return [...m.values()];
+    };
+    const tnum = (t) => parseInt(String(t).replace(/\D+/g, ""), 10) || 0;
+    const attrs = (t) => `data-n="${tnum(t)}" data-k="${letterOf(tnum(t))}" data-l="${tnum(t) % 4}"`;
+    const open = byTable(S.needs.filter((n) => n.handled_by == null && onPlan(n.group_id))).sort((a, b) => new Date(a.since) - new Date(b.since)).slice(0, 4);
+    const done = byTable(S.needs.filter((n) => n.handled_by != null && onPlan(n.group_id))).slice(0, Math.max(0, 5 - open.length));
     $("needs").innerHTML = (open.length || done.length)
-      ? open.map((n, i) => `<li class="wait ${i === 0 ? "top" : ""}"><span class="t">${esc(n.table)} · ${esc(n.need)}</span><span class="v">${mins(n.since)}</span></li>`).join("")
-        + done.map((n) => `<li class="done"><span class="t">${esc(n.table)} · ${esc(n.need)}</span><span class="v">${esc(S.people.get(n.handled_by)?.name || "")}</span></li>`).join("")
+      ? open.map((e, i) => `<li class="wait ${i === 0 ? "top" : ""}" ${attrs(e.table)}><span class="t"><b class="n">${esc(e.table)} · </b>${esc(e.needs.join(", "))}</span><span class="v">${mins(e.since)}</span></li>`).join("")
+        + done.map((e) => `<li class="done" ${attrs(e.table)}><span class="t"><b class="n">${esc(e.table)} · </b>${esc(e.needs.join(", "))}</span><span class="v">${esc(S.people.get(e.by)?.name || "")}</span></li>`).join("")
       : `<li class="empty">No table is asking for help</li>`;
 
     $("activity").innerHTML = activity.slice(0, 5).map((a) => `<li><span class="tm">${esc(a.t)}</span>${a.html}</li>`).join("")
@@ -154,14 +170,14 @@
     const bmax = Math.max(1, ...buckets.map((b) => b.count));
     $("bars").innerHTML = buckets.map((b, i) => `<i class="${i === buckets.length - 1 ? "now" : ""}" style="height:${Math.max(3, Math.round((b.count / bmax) * 100))}%"></i>`).join("");
   }
-  const addLog = (html) => { activity.unshift({ t: clock().replace(/ ?[ap]m/, ""), html }); activity.length = Math.min(activity.length, 12); };
+  const addLog = (html) => { activity.unshift({ t: clock().replace(/ ?[ap]m/, ""), html: disp(html) }); activity.length = Math.min(activity.length, 12); };
 
   // ------------------------------------------------------------ moments (one at a time, about 8 s each)
   const queue = [];
   let cur = null;
   const stripHTML = (m) => {
     const tail = m.ice || m.tail;
-    return m.main + (tail ? ` <span>${esc(tail)}</span>` : "");
+    return disp(m.main + (tail ? ` <span>${esc(tail)}</span>` : ""));
   };
   function show(m, now) {
     m.until = now + (queue.length > 1 ? 4500 : 8000);
@@ -584,7 +600,7 @@
       ctx.restore();
 
       const needs = S.needs.filter((n) => n.group_id === gid && n.handled_by == null).map((n) => n.need);
-      const l1 = trunc(low(g.name) + (topIds.has(gid) && g.working_on ? " · " + low(g.working_on) : ""), 28);
+      const l1 = low(disp(g.name));
       const l2 = quiet ? "heads-down" : needs.length ? trunc("needs " + low(needs[0]) + (needs.length > 1 ? " +" + (needs.length - 1) : ""), 24) : "";
       ctx.font = `${hi ? 600 : 500} ${lab}px ${MONO}`;
       const half = Math.max(ctx.measureText(l1).width, ctx.measureText(l2).width) / 2;
