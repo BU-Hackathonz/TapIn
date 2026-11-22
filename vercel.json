@@ -1,0 +1,76 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "",
+  "buildCommand": "rm -rf public && mkdir public && cp -R landing wall phone host intro public/",
+  "outputDirectory": "public",
+  "framework": null,
+  "git": {
+    "deploymentEnabled": {
+      "*": false,
+      "main": true
+    }
+  },
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/landing/",
+      "permanent": false
+    },
+    {
+      "source": "/login.html",
+      "destination": "/wall/join.html",
+      "permanent": false
+    },
+    {
+      "source": "/join.html",
+      "destination": "/wall/join.html",
+      "permanent": false
+    },
+    {
+      "source": "/index.html",
+      "destination": "/wall/index.html",
+      "permanent": false
+    },
+    {
+      "source": "/host.html",
+      "destination": "/wall/host.html",
+      "permanent": false
+    },
+    {
+      "source": "/wall",
+      "destination": "/wall/index.html",
+      "permanent": false
+    },
+    {
+      "source": "/wall/",
+      "destination": "/wall/index.html",
+      "permanent": false
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/signup",
+      "destination": "https://bridal-extremely-las-boulder.trycloudflare.com/api/signup"
+    },
+    {
+      "source": "/api/claim/:code",
+      "destination": "https://bridal-extremely-las-boulder.trycloudflare.com/api/claim/:code"
+    },
+    {
+      "source": "/api/me/:id",
+      "destination": "https://bridal-extremely-las-boulder.trycloudflare.com/api/me/:id"
+    },
+    {
+      "source": "/api/me/:id/focus",
+      "destination": "https://bridal-extremely-las-boulder.trycloudflare.com/api/me/:id/focus"
+    },
+    {
+      "source": "/api/groups/:id/mode",
+      "destination": "https://bridal-extremely-las-boulder.trycloudflare.com/api/groups/:id/mode"
+    },
+    {
+      "source": "/api/needs",
+      "destination": "https://bridal-extremely-las-boulder.trycloudflare.com/api/needs"
+    }
+  ]
+}
