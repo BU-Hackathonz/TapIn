@@ -40,7 +40,7 @@ def pool():
 async def graph():
     p = pool()
     people = await p.fetch(
-        f"""SELECT id, name, role, focus, points, note, skills, looking_for, working_on,
+        f"""SELECT id, name, role, focus, points, note, skills, looking_for, working_on, (uid LIKE '5EED%') AS demo,
                    CASE WHEN photo IS NOT NULL THEN '/api/photo/' || id || '?v=' || left(md5(photo), 8) END AS photo,
                    (last_checkin IS NOT NULL AND last_checkin > now() - interval '{P.HERE_HOURS} hours') AS here,
                    (SELECT group_id FROM group_members WHERE person_id = people.id

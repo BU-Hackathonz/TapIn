@@ -8,6 +8,11 @@ from . import matching
 from . import points as P
 
 HERE = f"{P.HERE_HOURS} hours"
+# Demo and seed people have badges starting 5EED. Real taps never seat anyone at a table that has one of them, so the
+# real room keeps its own tables next to the demo room (David, for the demo).
+NO_DEMO = "NOT EXISTS (SELECT 1 FROM group_members dm JOIN people dp ON dp.id=dm.person_id WHERE dm.group_id={g} AND dp.uid LIKE '5EED%')"
+NO_DEMO_GM = NO_DEMO.format(g="gm.group_id")
+NO_DEMO_G = NO_DEMO.format(g="g.id")
 
 
 async def known_here(conn, person_id: int) -> list[int]:
@@ -27,6 +32,7 @@ async def active_group_of(conn, person_id: int):
             WHERE gm.person_id=$1 AND EXISTS (
               SELECT 1 FROM group_members m JOIN people p ON p.id=m.person_id
               WHERE m.group_id=gm.group_id AND p.last_checkin > now() - interval '{HERE}')
+              AND {NO_DEMO_GM}
             ORDER BY gm.joined_at DESC LIMIT 1""",
         person_id,
     )
@@ -175,6 +181,7 @@ async def resolve(conn, station_id: int, person_ids: list[int]):
                 f"""SELECT g.id FROM groups g WHERE g.station_id=$1 AND EXISTS (
                       SELECT 1 FROM group_members m JOIN people p ON p.id=m.person_id
                       WHERE m.group_id=g.id AND p.last_checkin > now() - interval '{HERE}')
+                      AND {NO_DEMO_G}
                     ORDER BY g.created_at DESC LIMIT 1""", station_id)
             if gid is None:
                 gid = await _new_group(conn, station_id, rows[pid])
