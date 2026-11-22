@@ -115,19 +115,14 @@ body::before {
     radial-gradient(ellipse at 50% 45%, transparent 60%, rgba(0, 0, 0, var(--vig, 0.32)) 100%);
 }
 
-/* Wordmark: italic serif in sand with a moving sheen, scanlines through it, and a pink and a green edge split so it
-   reads as a hologram. The dot of the i is a Wi-Fi mark. */
+/* Wordmark: friendly heavy sans in sand, plain (no effects). The dot of the i is a pink Wi-Fi mark. */
 #brand { position: fixed; z-index: 3; display: flex; align-items: baseline; gap: 0.7em; pointer-events: none; }
 .wm {
-  position: relative; display: inline-block; padding: 0.46em 0.1em 0.08em; margin: -0.46em -0.1em -0.08em; font: italic 400 calc(var(--u) * 2.3)/1 var(--serif); letter-spacing: -0.01em; color: transparent;
-  background: var(--sand);
-  -webkit-background-clip: text; background-clip: text;
-  -webkit-mask-image: repeating-linear-gradient(to bottom, #000 0 2px, rgba(0, 0, 0, 0.5) 2px 3px);
-  mask-image: repeating-linear-gradient(to bottom, #000 0 2px, rgba(0, 0, 0, 0.5) 2px 3px);
-  filter: drop-shadow(-1.2px 0 0 color-mix(in srgb, var(--pink) 60%, transparent)) drop-shadow(1.2px 0 0 color-mix(in srgb, var(--green) 60%, transparent));
+  position: relative; display: inline-block; padding: 0.46em 0.1em 0.08em; margin: -0.46em -0.1em -0.08em;
+  font: 800 calc(var(--u) * 2.3)/1 "Bricolage Grotesque", var(--sans); letter-spacing: -0.04em; color: var(--sand);
 }
 .ii { position: relative; display: inline-block; }
-.wifi { position: absolute; left: 50%; bottom: 0.66em; width: 0.62em; height: 0.52em; transform: translateX(-52%) skewX(-8deg); overflow: visible; color: var(--sand); fill: none; stroke: currentColor; stroke-width: 2.3; stroke-linecap: round; }
+.wifi { position: absolute; left: 50%; bottom: 0.66em; width: 0.62em; height: 0.52em; transform: translateX(-50%); overflow: visible; color: var(--pink); fill: none; stroke: currentColor; stroke-width: 2.3; stroke-linecap: round; }
 .wifi circle { fill: currentColor; stroke: none; }
 #venue { font: 400 var(--u)/1 var(--mono); color: var(--muted); }
 :root:not([data-logo]) #brand, :root[data-logo="strip"] #brand { right: calc(var(--side-w) + 2.2vw); bottom: 0; height: var(--strip-h); align-items: center; }
