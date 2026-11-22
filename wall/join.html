@@ -648,7 +648,9 @@
       const ev = { status: "in", host: true, name: n.slice(0, 50), place: $("ev-place").value.trim(), date: $("ev-date").value, start: $("ev-time").value,
                    tables: Math.max(1, Math.min(26, +$("ev-tables").value || 5)), time: Date.now() };
       try { localStorage.setItem("wall.room", JSON.stringify(ev)); } catch { /* private mode */ }
-      if (typeof TapLoading !== "undefined") TapLoading.go("index.html", { sub: `Next stop: ${ev.name}` }); else location.href = "index.html";
+      // the host ends up on the host wall (host.html), with the event name and table count the host just chose
+      const wall = `host.html?start&venue=${encodeURIComponent(ev.name)}&tables=${ev.tables}`;
+      if (typeof TapLoading !== "undefined") TapLoading.go(wall, { sub: `Next stop: ${ev.name}` }); else location.href = wall;
     });
   })();
 </script>
