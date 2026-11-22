@@ -29,7 +29,7 @@ Each station is an ESP32 and an RC522 reader in a box, reading badges through th
 
 ### Server
 
-Python FastAPI on one laptop on the venue Wi-Fi. Each station keeps one scan window of 12 seconds that restarts on every tap (time to pass a badge and tap together), and the same badge within 3 seconds counts once. When the window closes, one database transaction decides what the scan means (check-in, new table, join, help or repeat), awards points and pushes the result to every screen over a WebSocket.
+Python FastAPI on one laptop on the venue Wi-Fi. Each station keeps one scan window of 12 seconds that restarts whenever a new person taps in (time to pass a badge and tap together) and always closes within 20 seconds, and the same badge within 3 seconds counts once. When the window closes, one database transaction decides what the scan means (check-in, new table, join, help or repeat), awards points and pushes the result to every screen over a WebSocket.
 
 ### Wall and phone
 
@@ -94,7 +94,7 @@ Two hypertables and two continuous aggregates.
 
 ## Challenges we ran into
 
-Taps arrive milliseconds apart, sometimes at two stations at once, so each station keeps one window whose timer restarts on every tap, and the window is removed before it resolves so a late tap starts a fresh scan instead of corrupting the old one. The group rules took real testing to get right: our first rule needed every member of a table to tap in with a newcomer, which blocked people in practice, so we changed it to one member and pinned each table to its station. Getting a phone on any network to reach a laptop on a private router took a tunnel, and the tunnel's default protocol kept dropping on the venue network until we switched it to HTTP/2. Badge claims failed at first because 30 seconds wasn't long enough to reach a station, so we doubled it.
+Taps arrive milliseconds apart, sometimes at two stations at once, so each station keeps one window whose timer restarts when a new person taps in and that always closes within 20 seconds, and the window is removed before it resolves so a late tap starts a fresh scan instead of corrupting the old one. The group rules took real testing to get right: our first rule needed every member of a table to tap in with a newcomer, which blocked people in practice, so we changed it to one member and pinned each table to its station. Getting a phone on any network to reach a laptop on a private router took a tunnel, and the tunnel's default protocol kept dropping on the venue network until we switched it to HTTP/2. Badge claims failed at first because 30 seconds wasn't long enough to reach a station, so we doubled it.
 
 ## Accomplishments that we're proud of
 
