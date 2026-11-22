@@ -230,6 +230,7 @@
       Panels.log(`${d.name} linked a badge`);
       syncSoon();
     },
+    badges_changed() { syncSoon(); },   // the admin panel unlinked a badge or removed someone: redraw now
   };
 
   // Events run one at a time so a group_formed that re-reads the graph can't race the next event.

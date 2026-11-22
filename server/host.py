@@ -153,6 +153,12 @@ async def admin_logout(response: Response, tapin_admin: str | None = Cookie(defa
     return {"ok": True}
 
 
+async def _badges_changed(person_id: int) -> None:
+    """Tell the walls at once that a badge was unlinked or a profile removed, so they redraw now, not at their next resync."""
+    from .hub import hub
+    await hub.broadcast("badges_changed", {"person_id": person_id})
+
+
 def _pool():
     from . import db   # imported here so the host checks run without a database driver
     if db.pool is None:
@@ -179,6 +185,7 @@ async def admin_unlink(person_id: int, tapin_admin: str | None = Cookie(default=
     row = await _pool().fetchrow("UPDATE people SET uid=NULL WHERE id=$1 RETURNING id", person_id)
     if row is None:
         raise HTTPException(404, "No such person")
+    await _badges_changed(person_id)
     return {"ok": True}
 
 
@@ -188,11 +195,32 @@ async def admin_link(person_id: int, tapin_admin: str | None = Cookie(default=No
     from . import claims
     if claims.waiting():
         raise HTTPException(409, detail={"error": "claim_busy", "retry_in": 5})
-    row = await _pool().fetchrow("UPDATE people SET uid=NULL WHERE id=$1 RETURNING id", person_id)   # a new badge replaces the old one
+    row = await _pool().fetchrow("SELECT id FROM people WHERE id=$1", person_id)
     if row is None:
         raise HTTPException(404, "No such person")
-    c = claims.start(person_id)
+    c = claims.start(person_id, replace=True)   # their old badge stays theirs until the new one is tapped
     return {"claim_code": c.code, "expires_in": int(claims.CLAIM_SECONDS)}
+
+
+@router.get("/api/admin/claim/{code}")
+async def admin_claim_status(code: str, tapin_admin: str | None = Cookie(default=None)):
+    """Live status of a link started here: waiting (and whose badge was tapped by mistake), claimed, or expired."""
+    require_admin(tapin_admin)
+    from . import claims
+    c, s = claims.get(code), claims.status(code)
+    out = {"status": s}
+    if c and c.note == "owned" and c.owner is not None:
+        owner = await _pool().fetchrow("SELECT id, name FROM people WHERE id=$1", c.owner)
+        if owner:
+            out["owned_by"] = dict(owner)
+    return out
+
+
+@router.post("/api/admin/claim/{code}/cancel")
+async def admin_claim_cancel(code: str, tapin_admin: str | None = Cookie(default=None)):
+    require_admin(tapin_admin)
+    from . import claims
+    return {"ok": claims.cancel(code)}
 
 
 @router.post("/api/admin/people/{person_id}/delete")
@@ -206,4 +234,5 @@ async def admin_delete(person_id: int, tapin_admin: str | None = Cookie(default=
             row = await conn.fetchrow("DELETE FROM people WHERE id=$1 RETURNING id", person_id)
     if row is None:
         raise HTTPException(404, "No such person")
+    await _badges_changed(person_id)
     return {"ok": True}

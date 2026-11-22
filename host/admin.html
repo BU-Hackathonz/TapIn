@@ -32,11 +32,15 @@
   .err { color: var(--red); margin: 0; min-height: 1.2em; }
   .ok { color: var(--green); margin: 0; min-height: 1.2em; }
   .confirm { display: flex; gap: 6px; align-items: center; }
+  .linking { border: 2px solid var(--ink); background: #fff; padding: 12px; display: grid; gap: 8px; box-shadow: 4px 4px 0 var(--blue); }
+  .linking p { margin: 0; font-weight: 600; }
+  .linking.warn { box-shadow: 4px 4px 0 var(--red); }
+  .linking.done { box-shadow: 4px 4px 0 var(--green); }
 </style></head>
 <body>
 <main>
   <h1>People and badges</h1>
-  <p class="muted">For the team only, on the venue network. The PIN is asked every time this page opens. Unlinking a badge frees it for someone new; the person keeps their profile, points and connections. "Link badge" makes the next blank badge tapped at any station theirs.</p>
+  <p class="muted">For the team only, on the venue network. The PIN is asked every time this page opens. Unlinking a badge frees it for someone new; the person keeps their profile, points and connections. "Link badge" or "New badge" makes the next blank badge tapped at any station theirs; with New badge they keep the old one until the new one is tapped.</p>
 
   <section class="card" id="signin" hidden>
     <p class="bar">Host PIN</p>
@@ -49,6 +53,10 @@
     <div class="stats" id="stats"></div>
     <div class="row"><input id="q" type="search" placeholder="Search by name or badge" aria-label="Search" style="max-width:320px"><button id="reload" type="button">Refresh</button><a class="btn" href="/wall/host.html">Back to the wall</a></div>
     <p class="ok" id="msg" role="status"></p>
+    <div class="linking" id="linking" hidden>
+      <p id="linktext" role="status"></p>
+      <div class="row"><button id="unlinkowner" type="button" hidden>Unlink that badge</button><button id="cancellink" type="button">Cancel</button></div>
+    </div>
     <div class="wrap"><table><thead><tr><th>#</th><th>Name</th><th>Badge</th><th>Table</th><th>Links</th><th>Points</th><th>Last tap in</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
   </section>
 </main>
@@ -105,10 +113,55 @@
     if (r.status === 401) return load();
     if (r.status === 409) return say("Someone is signing up right now. Try again in a few seconds.", true);
     if (!r.ok) return say("That didn't work (" + r.status + ").", true);
-    if (what === "link") { const d = await r.json(); say(`Tap a blank badge on any station within ${d.expires_in} s. It becomes ${p.name}'s.`); setTimeout(load, (d.expires_in + 2) * 1000); }
-    else say(done);
+    if (what === "link") { const d = await r.json(); watchLink(p, d.claim_code, d.expires_in); return; }
+    // show it at once; the list reload below confirms it from the server
+    if (what === "unlink") p.uid = null;
+    if (what === "delete") people = people.filter((x) => x.id !== p.id);
+    render();
+    say(done);
     load();
   }
+  // a link in progress: live status about twice a second, so the list updates the moment the badge lands
+  let linkTimer = null, linkCode = null, owner = null;
+  function endLink(text, cls) {
+    clearInterval(linkTimer); linkTimer = null; linkCode = null; owner = null;
+    $("cancellink").hidden = true; $("unlinkowner").hidden = true;
+    $("linking").className = "linking " + (cls || ""); $("linktext").textContent = text;
+    setTimeout(() => { if (!linkTimer) $("linking").hidden = true; }, 6000);
+    load();
+  }
+  function watchLink(p, code, secs) {
+    clearInterval(linkTimer);
+    linkCode = code; owner = null;
+    const end = Date.now() + secs * 1000;
+    $("linking").hidden = false; $("linking").className = "linking"; $("cancellink").hidden = false; $("unlinkowner").hidden = true;
+    const tick = async () => {
+      const left = Math.max(0, Math.round((end - Date.now()) / 1000));
+      let d = {};
+      try { const r = await fetch("/api/admin/claim/" + code); if (r.status === 401) { clearInterval(linkTimer); return load(); } d = await r.json(); } catch { /* next tick */ }
+      if (code !== linkCode) return;
+      if (d.status === "claimed") { if (typeof UISound !== "undefined") UISound.ok(); return endLink(`Linked. ${p.name} has the new badge.`, "done"); }
+      if (d.status === "expired" || left === 0) return endLink(`No badge was tapped in time. ${p.name} keeps ${p.uid ? "their old badge" : "no badge"}.`, "warn");
+      if (d.owned_by) {
+        owner = d.owned_by;
+        $("linking").className = "linking warn"; $("unlinkowner").hidden = false;
+        $("unlinkowner").textContent = `Unlink ${owner.name}'s badge`;
+        $("linktext").textContent = `That badge belongs to ${owner.name}. Unlink it, then tap it again, or tap a blank one (${left} s).`;
+      } else {
+        $("linktext").textContent = `Tap a blank badge on any station now. It becomes ${p.name}'s (${left} s).`;
+      }
+    };
+    tick(); linkTimer = setInterval(tick, 600);
+  }
+  $("cancellink").addEventListener("click", async () => {
+    if (linkCode) await fetch("/api/admin/claim/" + linkCode + "/cancel", { method: "POST" }).catch(() => {});
+    endLink("Cancelled. Nothing changed.");
+  });
+  $("unlinkowner").addEventListener("click", async () => {
+    if (!owner) return;
+    const r = await fetch(`/api/admin/people/${owner.id}/unlink`, { method: "POST" });
+    if (r.ok) { $("unlinkowner").hidden = true; $("linktext").textContent = `${owner.name}'s badge is free. Tap it again now.`; owner = null; load(); }
+  });
   $("pinform").addEventListener("submit", async (e) => {
     e.preventDefault(); $("pinerr").textContent = "";
     const r = await fetch("/api/admin/login", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ pin: $("pin").value }) }).catch(() => null);

@@ -14,6 +14,8 @@ class Claim:
     person_id: int
     expires: float
     note: str = ""   # "owned": someone tapped a badge that already belongs to a person (the phone says so)
+    owner: "int | None" = None   # who owns that badge (the admin panel names them)
+    replace: bool = False         # admin "New badge": the person keeps their old badge until the new one is tapped
 
 
 current: "Claim | None" = None
@@ -30,10 +32,22 @@ def waiting() -> "Claim | None":
     return None
 
 
-def start(person_id: int) -> Claim:
+def start(person_id: int, replace: bool = False) -> Claim:
     global current
-    current = Claim(new_code(), person_id, time.monotonic() + CLAIM_SECONDS)
+    current = Claim(new_code(), person_id, time.monotonic() + CLAIM_SECONDS, replace=replace)
     return current
+
+
+def cancel(code: str) -> bool:
+    global current
+    if current and current.code == code:
+        current = None
+        return True
+    return False
+
+
+def get(code: str) -> "Claim | None":
+    return current if current and current.code == code else None
 
 
 def finish(claim: Claim) -> None:
