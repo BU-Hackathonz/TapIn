@@ -10,7 +10,7 @@ we submit by **8:45 AM**. No attendee counts anywhere (David's call: not enough 
 - [ ] MLH prizes: **Best Use of Gemini API**, **Best Use of Tiger Data**
 - [ ] Best Domain (GoDaddy Registry): tick only if tapin.boston was registered through the MLH / GoDaddy Registry offer. It is live, but it's registered at Porkbun, so check the rules first.
 - [ ] 1-minute video link from Yaovi, plays without a login
-- [ ] Gallery: 14 images in the order below, each with its caption; the thumbnail stays as it is
+- [ ] Gallery: 13 images in the order below, each with its caption; the thumbnail stays as it is
 - [ ] Public GitHub link and tapin.boston both open
 - [ ] Gemini: the Google AI Studio project number, if the form asks for it
 - [ ] Hardware photos added (shot list below), if there's time
@@ -49,14 +49,13 @@ javascript, html5, css3, canvas, tone.js, web-audio, vercel, cloudflare
 | 6 | system.png |  |
 | 7 | access.png |  |
 | 8 | sound-map.png |  |
-| 9 | live-activity.png |  |
-| 10 | tiger-data.png |  |
-| 11 | evidence-tap-latency.png |  |
-| 12 | evidence-soak.png |  |
-| 13 | evidence-gemini-models.png |  |
-| 14 | evidence-recovery.png |  |
+| 9 | tiger-data.png |  |
+| 10 | evidence-tap-latency.png |  |
+| 11 | evidence-soak.png |  |
+| 12 | evidence-gemini-models.png |  |
+| 13 | evidence-recovery.png |  |
 
-Not in the gallery (used inside "About the project" or kept for reference): `cover.png`, `enclosure.png`,
+Not in the gallery (used inside "About the project" or kept for reference): `cover.png`, `enclosure.png`, `live-activity.png` (removed: no live data in the gallery),
 `scan-pipeline.png`, `tap-sequence.png`, `evidence-scan-runs.png`. Removed as outdated: the old wall, the old phone
 pages, the old architecture and user-journey diagrams.
 
@@ -74,5 +73,5 @@ Put them in `media/devpost/photos/`; they get cropped to 3:2 and captioned.
 
 - Screenshots: `python media/devpost/src/shots_now.py` (venue server; the host wall's room from
   `python tools/fake_taps.py --events --port 8001`, a fake server with no database).
-- Diagrams and charts: `python media/devpost/src/render.py system access sound-map live-activity`.
+- Diagrams and charts: `python media/devpost/src/render.py system access sound-map`.
 - Live counts: `python media/devpost/src/pull_live.py path/to/.env` (read-only, counts only) and `python tools/count.py`.
