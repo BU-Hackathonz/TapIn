@@ -31,8 +31,10 @@ check("missing members are reported (informational; one member is enough to join
 g, missing = choose_table(2, [5, 2, 3, 4], {5: None, 2: 20, 3: 20, 4: 20}, ST, {20: {2, 3, 4}})
 check("everyone at the table tapped: nobody missing", g == 20 and missing == set(), (g, missing))
 # no table pinned to this station: the table with the most people in the scan, tie to the first tapper
-check("most people in the scan wins", choose_table(3, [1, 2, 3], {1: 10, 2: 20, 3: 20}, ST, {20: {2, 3}})[0] == 20)
-check("tie goes to the first tapper's table", choose_table(3, [1, 2], {1: 10, 2: 20}, ST, {10: {1}})[0] == 10)
+check("no table at this station: a new table forms here, even if they belong to tables elsewhere", choose_table(3, [1, 2, 3], {1: 10, 2: 20, 3: 20}, ST, {20: {2, 3}}) == (None, set()))
+check("a table elsewhere can't be joined at this station", choose_table(1, [5, 2], {5: None, 2: 20}, ST, {20: {2}}) == (None, set()))
+ST3 = {10: 1, 11: 1}
+check("two tables at this station: most people in the scan, tie to the first tapper", choose_table(1, [1, 2], {1: 10, 2: 11}, ST3, {})[0] == 10)
 check("away members are never counted as missing",
       choose_table(2, [5, 2], {5: None, 2: 20}, ST, {20: {2}}) == (20, set()))
 

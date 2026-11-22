@@ -100,8 +100,8 @@ def choose_table(station_id: int, ids: list, active: dict, table_station: dict, 
     """Which table a group scan is about, and who from that table is missing. Pure: no database, so it is unit-tested.
     - ids: the people in the scan, in tap order. active: person -> their active table (or None).
     - table_station: table -> the station it is pinned to. here_members: table -> its members who are here now.
-    Rules: a table pinned to THIS station wins (you joined the table you walked up to); otherwise the table with the most
-    people in the scan; a tie goes to the first tapper's table. One member of the table in the scan is enough to bring
+    Rules: only a table pinned to THIS station can be joined here (tables belong to their station and never move); with
+    several, the one with the most people in the scan, a tie to the first tapper's. No table here: a new table forms here. One member of the table in the scan is enough to bring
     someone in. Also returns the table's here-now members who were not in the scan (informational only)."""
     tables = [active[i] for i in ids if active.get(i)]
     if not tables:
@@ -111,7 +111,9 @@ def choose_table(station_id: int, ids: list, active: dict, table_station: dict, 
     for n, g in enumerate(tables):
         first.setdefault(g, n)
     here = [g for g in count if table_station.get(g) == station_id]
-    pool = here or list(count)
+    if not here:   # tables belong to their station (Avery): no table here means the tappers form a new one here
+        return None, set()
+    pool = here
     gid = min(pool, key=lambda g: (-count[g], first[g]))
     missing = set(here_members.get(gid, set())) - set(ids)
     return gid, missing
@@ -217,7 +219,6 @@ async def resolve(conn, station_id: int, person_ids: list[int]):
                         award["people"][m] = award["people"].get(m, 0) + P.MEMBER_WELCOME
                     award["groups"][gid] = award["groups"].get(gid, 0) + group_pts
                 kind = "join"
-            await conn.execute("UPDATE groups SET station_id=$2 WHERE id=$1", gid, station_id)   # the table is at this station now
             await _connect_pairs(conn, ids, award, new_links, strengthened, pay=True)
             if joiners:
                 events.append(("group_joined", {"group_id": gid, "new_member_ids": joiners, "new_links": new_links}))
