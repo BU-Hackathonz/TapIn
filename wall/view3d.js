@@ -237,13 +237,14 @@ const View3D = (() => {
   let mePlan = null;
   function planLayout() {
     const { visible, shownGroups, S } = scene(), me = scene().me;
-    const PW = W, K = Math.min(1.4, Math.max(0.7, Math.min(PW / 1440, H / 900) * 1.25));
-    const L = RoomLayout.create({ width: PW, height: H, scale: K, margin: { x: 96 * K, top: 170 * K, bottom: 150 * K } });
+    const top = opts.pad ? opts.pad.top : 0, Ha = Math.max(120, H - top - (opts.pad ? opts.pad.bottom : 0));
+    const PW = W, K = Math.min(1.4, Math.max(0.7, Math.min(PW / 1440, Ha / 760) * 1.25));
+    const L = RoomLayout.create({ width: PW, height: Ha, scale: K, margin: { x: 70 * K, top: 46 * K, bottom: 40 * K } });
     const people = visible.map((p) => ({ ...p, here: true }));
     if (me) people.push({ ...me, id: -1, here: true, role: "student", group_id: null });
     L.setData({ people, groups: shownGroups, links: [...S.links.values()] });
     for (let i = 0; i < 400 && L.step(); i++);                        // settle at once; the wall's own easing then glides
-    const s0 = Math.min(W, H) * (H > W ? 1.35 : 0.95) / 950, toW = (x, y) => [(x - W / 2) / s0, (y - H / 2) / s0];
+    const s0 = Math.min(W, Ha) * (Ha > W ? 1.35 : 0.95) / 950, toW = (x, y) => [(x - W / 2) / s0, (y - Ha / 2) / s0];
     for (const [gid, t] of L.tables()) { const [x, y] = toW(t.x, t.y); centers.set(gid, { x, y, z: 0, r: Math.max(28, t.R + 20 * K) / s0 }); }
     const seen = new Set();
     mePlan = null;
@@ -278,10 +279,13 @@ const View3D = (() => {
     const cy = Math.cos(rotY), sy = Math.sin(rotY), cx = Math.cos(rotX), sx = Math.sin(rotX);
     const x1 = x * cy - z * sy, z1 = x * sy + z * cy;
     const y2 = y * cx - z1 * sx, z2 = y * sx + z1 * cx;
-    const D = 950 / zoom, f = Math.min(W, H) * (H > W ? 1.35 : 0.95);
+    // The graph lives in the free band between the UI at the top (corner tab, key) and at the bottom (bar, panels),
+    // so nothing is drawn under them (opts.pad, measured by wall.js).
+    const top = opts.pad ? opts.pad.top : 0, Ha = Math.max(120, H - top - (opts.pad ? opts.pad.bottom : 0));
+    const D = 950 / zoom, f = Math.min(W, Ha) * (Ha > W ? 1.35 : 0.95);
     // Near plane: anything closer than 60 units (or behind) the camera is culled, not drawn inside-out.
     const depth = z2 + D, s = depth > 60 ? f / depth : 0;
-    return { x: W / 2 + x1 * s, y: H / 2 + liftY + y2 * s, s, z: z2, off: depth <= 60 };
+    return { x: W / 2 + x1 * s, y: top + Ha / 2 + liftY + y2 * s, s, z: z2, off: depth <= 60 };
   }
   const depthAlpha = (z) => Math.max(0.18, Math.min(1, 0.6 - z / (R * 2.2)));
 
@@ -799,6 +803,7 @@ const View3D = (() => {
   let panX = 0, panY = 0;
   const setOption = (k, v) => {
     opts[k] = v;
+    if (k === "pad") { relayout(); return; }
     if (k === "flat" || k === "plan") { panX = panY = 0; spinX = spinY = 0; if (!isFlat()) { rotY = 0.4; rotX = -0.3; } else { rotY = 0; rotX = 0; } zoomGoal = 1; relayout(); }
   };
 

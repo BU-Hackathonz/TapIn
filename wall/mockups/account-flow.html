@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Account flow mockups</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Bricolage+Grotesque:wght@800&family=IBM+Plex+Sans:wght@400;600&display=swap">
+<style>
+  /* Mockups: scan your card to set up an ACCOUNT (not a room); once you have one, the landing's two tiles become
+     Join a room / Host a room, and a profile icon in the corner opens settings and sign out. Static, for review. */
+  :root { --ink: #111; --paper: #fbf9f6; --red: #DA291C; --orange: #ED8B00; --blue: #003DA5; --green: #00843D; --amber: #ffb000;
+          --hv: "Helvetica Neue", Helvetica, Arial, sans-serif; --dot: "DotGothic16", monospace; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 28px; background: #e9e2dc; font: 15px/1.4 var(--hv); color: var(--ink); }
+  h1 { margin: 0 0 6px; font-size: 26px; } .note { margin: 0 0 22px; color: #555; max-width: 1100px; }
+  .row { display: grid; grid-template-columns: repeat(4, 330px); gap: 22px; }
+  .frame { position: relative; height: 640px; overflow: hidden; border-radius: 22px; background: var(--paper); box-shadow: 0 16px 40px rgba(60,25,30,.25); }
+  .cap { margin: 10px 4px 0; font: 400 14px var(--dot); text-transform: uppercase; letter-spacing: .05em; }
+  .cap b { color: var(--red); font-weight: 400; }
+  .sky { height: 170px; background: linear-gradient(#f4cfc4, #fdf1e2); position: relative; image-rendering: pixelated; }
+  .sky::before { content: ""; position: absolute; left: 0; right: 0; bottom: 40px; height: 70px;
+    background: repeating-linear-gradient(90deg, #c9a99f 0 18px, #d8bfb6 18px 30px, transparent 30px 38px); clip-path: polygon(0 40%, 8% 40%, 8% 0, 16% 0, 16% 30%, 30% 30%, 30% 10%, 38% 10%, 38% 45%, 55% 45%, 55% 5%, 62% 5%, 62% 35%, 80% 35%, 80% 15%, 90% 15%, 90% 40%, 100% 40%, 100% 100%, 0 100%); }
+  .sky::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 40px; background: #a8492f; box-shadow: inset 0 -6px 0 #7da35a; }
+  .train { position: absolute; bottom: 10px; left: 90px; width: 140px; height: 26px; background: #0a8a3e; border: 3px solid #1d2a33; z-index: 2;
+           box-shadow: inset 0 -5px 0 #f4f4f4; }
+  .train::before { content: ""; position: absolute; inset: 4px 10px 12px; background: repeating-linear-gradient(90deg, #f2b33d 0 16px, transparent 16px 22px); }
+  .pad { padding: 18px 22px; text-align: center; }
+  .wm { position: relative; display: inline-block; padding-top: .46em; font: 800 40px/1 "Bricolage Grotesque", sans-serif; letter-spacing: -.04em; }
+  .ii { position: relative; display: inline-block; }
+  .wifi { position: absolute; left: 50%; bottom: .66em; width: .62em; height: .52em; transform: translateX(-50%); overflow: visible; color: var(--red); fill: none; stroke: currentColor; stroke-width: 2.3; stroke-linecap: round; }
+  .wifi circle { fill: currentColor; stroke: none; }
+  h2 { margin: 8px 0 4px; font: 700 23px var(--hv); } .lead { margin: 0 0 14px; color: #444; font-size: 14px; }
+  .bar { display: flex; align-items: center; margin: 0 0 12px; padding: 7px 26px 6px 10px; background: var(--ink); color: #fff; font: 400 13px var(--dot);
+         text-transform: uppercase; letter-spacing: .06em; box-shadow: inset -12px 0 0 var(--sc, #ff4b3e); text-align: left; }
+  .reader { display: flex; align-items: flex-end; justify-content: center; gap: 8px; padding: 18px 10px 12px; background: #fff; border: 2px solid var(--ink); box-shadow: 6px 6px 0 var(--ink); }
+  .badge { width: 54px; height: 82px; background: #f7f7f4; border: 3px solid #1d2a33; position: relative; transform: rotate(-6deg) translateX(8px); }
+  .badge::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 14px; background: var(--red); }
+  .badge::after { content: ""; position: absolute; left: 6px; top: 22px; width: 16px; height: 20px; background: #bcd8f2; box-shadow: 22px 2px 0 -4px #1d1d1f, 0 30px 0 -6px #d9a520; }
+  .station { width: 48px; height: 70px; background: #2b3440; border: 3px solid #11161c; position: relative; }
+  .station::before { content: ""; position: absolute; inset: 8px 8px 22px; background: #2fb5a3; }
+  .station::after { content: ""; position: absolute; left: 18px; bottom: 6px; width: 8px; height: 6px; background: var(--amber); }
+  .reader + small { display: block; margin-top: 10px; color: #666; font-size: 12px; }
+  .btn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 48px; margin-top: 14px; background: #111; color: var(--amber);
+         font: 400 16px var(--dot); text-transform: uppercase; letter-spacing: .05em; box-shadow: 6px 6px 0 var(--red); }
+  .btn::before { content: "▶"; color: var(--red); font-size: 12px; }
+  .profile { text-align: left; background: #fff; border: 2px solid var(--ink); box-shadow: 6px 6px 0 var(--green); padding: 12px 14px; }
+  .ph { display: flex; gap: 12px; align-items: center; }
+  .av { width: 54px; height: 54px; border-radius: 50%; background: radial-gradient(circle at 50% 38%, #9b6243 0 30%, transparent 31%), radial-gradient(circle at 50% 120%, #2f6fe0 0 55%, transparent 56%), #bcd8f2; border: 3px solid #fff; box-shadow: 0 0 0 2px var(--ink); flex: none; }
+  .ph b { display: block; font: 700 19px var(--hv); } .ph small { color: #555; }
+  .chip { display: inline-block; margin: 8px 4px 0 0; padding: 3px 9px; border: 1.5px solid var(--ink); font: 600 12px var(--hv); }
+  .chip.on { background: var(--blue); color: #fff; border-color: var(--blue); }
+  .tag { display: inline-block; margin: 8px 4px 0 0; padding: 3px 9px; color: #fff; font: 600 12px var(--hv); }
+  .ok { display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 0; font: 400 13px var(--dot); color: var(--green); text-transform: uppercase; }
+  /* the landing once you have an account */
+  .top { position: absolute; top: 12px; left: 14px; right: 14px; display: flex; justify-content: space-between; align-items: center; z-index: 3; }
+  .me { display: block; width: 46px; height: 46px; border-radius: 50%; position: relative; }
+  .me .av, .ph .av, .mh .av { display: block; }
+  .me .av { width: 46px; height: 46px; }
+  .me .dot { position: absolute; right: -2px; bottom: -2px; width: 16px; height: 16px; border-radius: 50%; background: var(--green); border: 3px solid #fff; }
+  .hero { position: relative; height: 250px; background: linear-gradient(#f4cfc4 0 62%, #e9b9b1 62%); }
+  .hero .sky { position: absolute; inset: 0 0 auto 0; }
+  .tiles { display: grid; gap: 12px; padding: 0 22px; }
+  .tile { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: #111; color: #fff; box-shadow: inset -12px 0 0 var(--sc); text-align: left; }
+  .tile b { display: block; font: 800 21px "Bricolage Grotesque", sans-serif; letter-spacing: -.02em; } .tile small { color: #cfc6c2; }
+  .tile i { font-style: normal; color: var(--amber); margin-right: 12px; }
+  .hello { padding: 14px 22px 6px; text-align: left; font: 600 16px var(--hv); } .hello span { color: #777; font-weight: 400; display: block; font-size: 13px; }
+  /* the menu from the corner icon */
+  .menu { position: absolute; top: 66px; right: 14px; width: 250px; background: #fff; border: 2px solid var(--ink); box-shadow: 6px 6px 0 var(--ink); z-index: 5; text-align: left; }
+  .menu .mh { display: flex; gap: 10px; align-items: center; padding: 12px; border-bottom: 2px solid var(--ink); }
+  .menu .mh .av { width: 40px; height: 40px; }
+  .menu .mh b { display: block; } .menu .mh small { color: #666; font-size: 12px; }
+  .menu a { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-bottom: 1px solid #e2ddd8; font: 400 14px var(--dot); text-transform: uppercase; letter-spacing: .05em; color: var(--ink); }
+  .menu a i { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+  .menu a.out { color: var(--red); border-bottom: 0; }
+  .menu::before { content: ""; position: absolute; top: -10px; right: 14px; border: 8px solid transparent; border-bottom-color: var(--ink); border-top: 0; }
+  .shade { position: absolute; inset: 0; background: rgba(17,17,17,.18); z-index: 4; }
+  .boardb { position: absolute; left: 0; right: 0; bottom: 0; height: 40px; display: flex; align-items: center; padding: 6px 14px 0; background: #111; color: var(--amber); font: 400 12px var(--dot); text-transform: uppercase; letter-spacing: .05em; }
+  .boardb::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 5px; background: linear-gradient(90deg, #DA291C 0 25%, #ED8B00 25% 50%, #003DA5 50% 75%, #00843D 75%); }
+  .arrow { position: absolute; z-index: 6; font: 400 13px var(--dot); color: var(--red); text-transform: uppercase; }
+</style>
+</head>
+<body>
+<h1>Account and profile: concept mockups</h1>
+<p class="note">Scanning your card while setting up makes your <b>account</b> (it does not put you in a room). Once you have an account,
+the front page's two tiles become <b>Join a room</b> and <b>Host a room</b>, and a profile icon in the corner opens your settings and sign out.</p>
+<div class="row">
+
+  <!-- 1: set up your card -->
+  <div>
+    <div class="frame">
+      <div class="sky"><div class="train"></div></div>
+      <div class="pad">
+        <span class="wm">tap <span class="ii">&#305;<svg class="wifi" viewBox="0 0 24 20"><circle cx="12" cy="16.6" r="2.3"/><path d="M6.6 11.6a7.6 7.6 0 0 1 10.8 0"/><path d="M2.9 7.4a12.8 12.8 0 0 1 18.2 0"/></svg></span>n</span>
+        <h2>Set up your card</h2>
+        <p class="lead">Maya, tap a blank badge on any station. It becomes your login.</p>
+        <p class="bar" style="--sc:#ffa21a">2 · Connect your card</p>
+        <div class="reader"><span class="badge"></span><span class="station"></span></div>
+        <small>This makes your account. You'll pick a room next.</small>
+      </div>
+      <div class="boardb">Sign up · connect card · pick a room</div>
+    </div>
+    <p class="cap"><b>1</b> Scan to set up: no room yet</p>
+  </div>
+
+  <!-- 2: account ready -->
+  <div>
+    <div class="frame">
+      <div class="sky"><div class="train"></div></div>
+      <div class="pad">
+        <h2>Your account is ready</h2>
+        <p class="lead">Card linked. Next time, just tap it to log in.</p>
+        <p class="bar" style="--sc:#2fbf6a">3 · Your profile</p>
+        <div class="profile">
+          <div class="ph"><span class="av"></span><div><b>Maya</b><small>Boston University · CARD 58··B6</small></div></div>
+          <span class="chip on">design</span><span class="chip on">frontend</span>
+          <div><span class="tag" style="background:#0a66c2">LinkedIn</span><span class="tag" style="background:#24292f">GitHub</span></div>
+          <p class="ok">✓ Account created</p>
+        </div>
+        <span class="btn">Continue</span>
+      </div>
+      <div class="boardb">Account ready · choose join or host</div>
+    </div>
+    <p class="cap"><b>2</b> Account ready, then continue</p>
+  </div>
+
+  <!-- 3: the front page with an account -->
+  <div>
+    <div class="frame">
+      <div class="top"><span></span><span class="me"><span class="av"></span><span class="dot"></span></span></div>
+      <div class="hero"><div class="sky"><div class="train"></div></div>
+        <div style="position:absolute;left:0;right:0;bottom:16px;text-align:center"><span class="wm" style="font-size:46px">tap <span class="ii">&#305;<svg class="wifi" viewBox="0 0 24 20"><circle cx="12" cy="16.6" r="2.3"/><path d="M6.6 11.6a7.6 7.6 0 0 1 10.8 0"/><path d="M2.9 7.4a12.8 12.8 0 0 1 18.2 0"/></svg></span>n</span></div>
+      </div>
+      <p class="hello">Welcome back, Maya<span>What do you want to do?</span></p>
+      <div class="tiles">
+        <div class="tile" style="--sc:#ff4b3e"><span><b>Join a room</b><small>Tap your badge at the event</small></span><i>▶</i></div>
+        <div class="tile" style="--sc:#4a86ff"><span><b>Host a room</b><small>Start a room others can join</small></span><i>▶</i></div>
+      </div>
+      <div class="boardb">Signed in as Maya</div>
+    </div>
+    <p class="cap"><b>3</b> Tiles become Join or Host</p>
+  </div>
+
+  <!-- 4: the corner menu -->
+  <div>
+    <div class="frame">
+      <div class="top"><span></span><span class="me" style="box-shadow:0 0 0 3px var(--amber);border-radius:50%"><span class="av"></span><span class="dot"></span></span></div>
+      <div class="hero"><div class="sky"><div class="train"></div></div></div>
+      <p class="hello">Welcome back, Maya<span>What do you want to do?</span></p>
+      <div class="tiles">
+        <div class="tile" style="--sc:#ff4b3e"><span><b>Join a room</b><small>Tap your badge at the event</small></span><i>▶</i></div>
+        <div class="tile" style="--sc:#4a86ff"><span><b>Host a room</b><small>Start a room others can join</small></span><i>▶</i></div>
+      </div>
+      <div class="shade"></div>
+      <div class="menu">
+        <div class="mh"><span class="av"></span><div><b>Maya</b><small>Boston University</small></div></div>
+        <a><i style="background:#DA291C"></i>Your profile</a>
+        <a><i style="background:#ED8B00"></i>Edit profile &amp; photo</a>
+        <a><i style="background:#003DA5"></i>Settings</a>
+        <a><i style="background:#00843D"></i>Your rooms</a>
+        <a class="out">⏻ Sign out</a>
+      </div>
+      <div class="boardb">Signed in as Maya</div>
+    </div>
+    <p class="cap"><b>4</b> Corner icon: settings, sign out</p>
+  </div>
+</div>
+</body>
+</html>

@@ -71,7 +71,7 @@ const Panels = (() => {
     clearTimeout(hideTimer);
     current = group ? { personId: person.id, groupId: group.id } : undefined;
     const title = `${person.name} checked in`;
-    strip.textContent = group ? `${title} · ${group.name}: ${suggestion.reason}` : title;
+    strip.textContent = byLetter(group ? `${title} · ${group.name}: ${suggestion.reason}` : title);
     strip.hidden = false;
     hideTimer = setTimeout(() => {
       current = undefined;
@@ -82,7 +82,7 @@ const Panels = (() => {
 
   function icebreaker(data) {
     if (current?.personId === data.person_id && current.groupId === data.group_id) {
-      strip.textContent = data.text;
+      strip.textContent = byLetter(data.text);
     }
   }
 
