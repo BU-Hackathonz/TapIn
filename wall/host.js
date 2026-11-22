@@ -82,10 +82,13 @@
     if (!MAXT || alive.length <= MAXT) { shownT.clear(); return g; }
     for (const id of [...shownT]) if (!alive.some((x) => x.id === id)) shownT.delete(id);
     const pts = (x) => x.points || 0;
-    const rank = [...alive].sort((a, b) => pts(b) - pts(a) || count.get(b.id) - count.get(a.id) || a.id - b.id);
+    // real tables (anyone without a demo badge) always get a place before the demo room's tables
+    const real = new Set(g.people.filter((p) => p.here && p.group_id != null && !p.demo).map((p) => p.group_id));
+    const rank = [...alive].sort((a, b) => (real.has(b.id) - real.has(a.id)) || pts(b) - pts(a) || count.get(b.id) - count.get(a.id) || a.id - b.id);
+    for (const id of [...shownT]) if (!real.has(id) && rank.slice(0, MAXT).some((x) => real.has(x.id) && !shownT.has(x.id))) shownT.delete(id);
     for (const x of rank) { if (shownT.size >= MAXT) break; shownT.add(x.id); }
     for (let k = 0; k < MAXT; k++) {                                   // a table on the sidelines swaps in only if it clearly leads
-      const weakest = alive.filter((x) => shownT.has(x.id)).sort((a, b) => pts(a) - pts(b))[0];
+      const weakest = alive.filter((x) => shownT.has(x.id) && !real.has(x.id)).sort((a, b) => pts(a) - pts(b))[0];   // never swap a real table out
       const challenger = rank.find((x) => !shownT.has(x.id));
       if (!weakest || !challenger || pts(challenger) <= pts(weakest) * 1.25 + 10) break;
       shownT.delete(weakest.id); shownT.add(challenger.id);
