@@ -70,8 +70,7 @@ Phone screenshots were taken in FAKE mode (hard-coded sample data, no server), u
 
 | The wall, demo mode | Building on Saturday |
 |---|---|
-| ![The wall in demo mode: tables as clusters with their needs, a check-in ring, and the template suggestion line](docs/media/wall-demo.gif) | ![Two teammates building at the table, with the RC522 reader kits and the breadboard kit](docs/media/team-building.jpg) |
-
+| ![The wall in demo mode: tables as clusters with their needs, a check-in ring, and the template suggestion line](docs/media/wall-demo.gif) |
 The wall recording is in demo mode with sample people, not real sign-ups. Full 29 s clip: [docs/media/wall-demo.mov](docs/media/wall-demo.mov).
 
 ## Station wiring
