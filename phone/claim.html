@@ -72,6 +72,11 @@
         }
         document.getElementById("got").textContent = `Got it, ${form.name}`;
         if (typeof UISound !== "undefined") UISound.ok();   // the badge is yours
+        try {   // the room map (same site) reads this profile: point it at the person who just got the badge
+          const prev = JSON.parse(localStorage.getItem("wall.me") || "null") || {};
+          localStorage.setItem("wall.me", JSON.stringify({ ...prev, person_id: claim.person_id, name: form.name, role: form.role || "student",
+            skills: form.skills || [], looking_for: form.looking_for || [], working_on: form.working_on || "", face: prev.face || `face-${claim.person_id}` }));
+        } catch (_) { /* private mode */ }
         show("done");
         setTimeout(() => location.replace("me.html?id=" + encodeURIComponent(claim.person_id)), 1500);
       } else if (status === "expired" || left === 0 && status !== "waiting") {

@@ -51,15 +51,8 @@ const UISound = (() => {
   function bedStart() {
     if (bed || !cfg.ambient) return;
     const c = audio(); if (!c || !unlocked) return;
-    const g = c.createGain(); g.gain.value = 0.0001; g.connect(out);
-    const lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 520; lp.connect(g);
-    const oscs = [hz(36), hz(43), hz(48) * 1.003].map((f, i) => {
-      const o = c.createOscillator(); o.type = i === 2 ? "triangle" : "sine"; o.frequency.value = f;
-      const lfo = c.createOscillator(), lg = c.createGain(); lfo.frequency.value = 0.05 + i * 0.03; lg.gain.value = f * 0.004;   // a slow drift so it breathes
-      lfo.connect(lg); lg.connect(o.frequency); lfo.start(); o.connect(lp); o.start();
-      return [o, lfo];
-    });
-    g.gain.exponentialRampToValueAtTime(0.16, c.currentTime + 4);
+    // No low hum any more (it buzzed on small speakers): the "city" is just a far-off trolley bell every 20 to 45 seconds.
+    const g = { gain: { setTargetAtTime() {}, exponentialRampToValueAtTime() {} } }, oscs = [];
     const bell = () => {                                               // a far-off trolley bell every 20 to 45 seconds
       if (!bed) return;
       if (!document.hidden) { note(hz(88), 0, 0.5, 0.05); note(hz(88), 0.24, 0.6, 0.04); }

@@ -85,6 +85,8 @@ const Sound = (() => {
   let pendingCrowd = null;
   function crowd(here) {
     pendingCrowd = here;
+    return;   // the room bed is off: its low pad buzzed on small speakers. Event sounds carry the room.
+    // eslint-disable-next-line no-unreachable
     if (!on) return;
     const want = here > 0 && !quiet() ? BED.slice(0, Math.max(1, Math.min(5, Math.ceil(here / 4)))) : [];
     if (want.length === bedNotes.length) return;

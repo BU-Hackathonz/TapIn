@@ -35,7 +35,17 @@ const Corner = (() => {
   function me() {
     const p = saved();
     // a badge-linked profile (person_id, from a badge tap or the phone) is the real person in the room: their links, table and points
-    const real = p && p.person_id != null && getS() ? getS().people.get(p.person_id) : null;
+    let real = p && p.person_id != null && getS() ? getS().people.get(p.person_id) : null;
+    if (p && !real && getS() && p.name) {
+      // An old or missing person id (a new sign-up since, or a profile made before the badge): adopt the one person in the
+      // room with the same name, so you show once, as yourself. Two people with that name: leave it, never guess.
+      const key = p.name.trim().toLowerCase();
+      const same = [...getS().people.values()].filter((q) => (q.name || "").trim().toLowerCase() === key);
+      if (same.length === 1) {
+        real = same[0];
+        try { localStorage.setItem("wall.me", JSON.stringify({ ...p, person_id: real.id })); } catch { /* private mode */ }
+      }
+    }
     if (real) return (meObj && meObj.src === p && meObj.real === real) ? meObj.person
       : (meObj = { src: p, real, person: { ...p, ...real, id: real.id } }).person;
     if (p) return (meObj && meObj.src === p) ? meObj.person
