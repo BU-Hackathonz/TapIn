@@ -42,6 +42,7 @@
 
   // ------------------------------------------------------------ state
   const S = { people: new Map(), groups: new Map(), links: [], needs: [], stats: null, board: null };
+  let lastHere = null;
   let graphRaw = null, layout = null, W = 0, H = 0, K = 1;
   const GRID = qs.has("grid") || !!V.grid, MOUSE = qs.get("mouse") !== "off";
   const born = new Map();          // person id -> time first seen live (fade-in)
@@ -132,6 +133,11 @@
   const chg = (k, v) => { const c = prevVal.has(k) && prevVal.get(k) !== v; prevVal.set(k, v); return c; };
   function renderSide() {
     const st = S.stats;
+    if (st && typeof Sound !== "undefined" && Sound.crowd) {           // the quiet room bed follows the head count; every 10th person rings the trolley bell
+      Sound.crowd(st.here);
+      if (lastHere != null && Math.floor(st.here / 10) > Math.floor(lastHere / 10)) Sound.milestone();
+      lastHere = st.here;
+    }
     $("statline").innerHTML = st ? `<b>${st.here}</b> here · <b>${st.groups}</b> groups · <b>${st.links_today}</b> links today` : "";
 
     const top = (S.board?.groups || []).filter((g) => onPlan(g.id)).slice(0, 4);
@@ -184,9 +190,11 @@
     if (!m.ice && m.person != null && ice.has(m.person)) m.ice = ice.get(m.person);
     $("mtime").textContent = clock();
     $("mtext").innerHTML = stripHTML(m);
-    if (typeof Sound !== "undefined" && Sound.started) {
-      if (m.sound === "arrive") Sound.arrive();
-      if (m.links) Sound.links(m.links);
+    if (typeof Sound !== "undefined" && Sound.started) {           // host_sound.js: each table has its own key
+      if (m.kind === "checkin") Sound.arrive(m.group);
+      else if (m.kind === "formed") Sound.formed(m.group);
+      else if (m.kind === "joined") Sound.joined(m.group, m.links || 1);
+      else if (m.kind === "help") Sound.help(m.group);
     }
   }
   let idleShown = false, idleAt = -1e9, tipI = -1;
@@ -207,6 +215,7 @@
   }
   const enqueue = (m) => { if (queue.length >= 4) queue.shift(); queue.push(m); };
   const table = (gid) => S.groups.get(gid)?.name || "a table";
+  const needKeys = (list) => new Set((list || []).filter((n) => n.handled_by == null).map((n) => `${n.group_id}|${n.need}`));   // open needs, one per table and tag
   const first = (ids) => ids.map((id) => S.people.get(id)?.name).filter(Boolean);
 
   // ------------------------------------------------------------ events
@@ -247,7 +256,12 @@
     },
     link_strengthened() { syncSoon(800); },
     points_updated() { syncSoon(500); },
-    needs_updated(d) { S.needs = d.needs || []; renderSide(); },
+    needs_updated(d) {
+      const before = needKeys(S.needs);
+      S.needs = d.needs || [];
+      if (typeof Sound !== "undefined" && Sound.need && [...needKeys(S.needs)].some((k) => !before.has(k))) Sound.need();   // a table just asked for help
+      renderSide();
+    },
     stats_updated(d) { S.stats = d; renderSide(); },
     icebreaker(d) {
       ice.set(d.person_id, d.text);

@@ -412,6 +412,7 @@
 </div>
 <footer class="board"><b>NEXT</b><span>Tap your badge · join the space · find your table</span></footer>
 
+<script src="/landing/ui-sound.js"></script>
 <script src="pixel.js"></script>
 <script src="logo.js"></script>
 <script src="loading.js"></script>
@@ -660,21 +661,31 @@
     $("pin-form").addEventListener("submit", async (e) => {
       e.preventDefault();
       const pin = $("host-pin").value.trim(), btn = e.target.querySelector("button");
-      if (!pin) { $("pin-err").textContent = "Enter the host PIN."; return; }
+      if (!pin) { $("pin-err").textContent = "Enter the host PIN."; if (typeof UISound !== "undefined" && UISound.no) UISound.no(); return; }
       btn.disabled = true;
       try {
         const r = await fetch("/api/host/login", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ pin }) });
-        if (r.ok) { $("host-pin").value = ""; show("step-host"); }
-        else $("pin-err").textContent = r.status === 429 ? "Too many tries. Wait a minute." : r.status === 503 ? "Hosting isn't set up on this server." : r.status === 404 ? "Hosting only works on the venue network." : "That PIN isn't right.";
+        if (r.ok) { $("host-pin").value = ""; if (typeof UISound !== "undefined" && UISound.ok) UISound.ok(); show("step-host"); }
+        else { if (typeof UISound !== "undefined") UISound.no(); $("pin-err").textContent = r.status === 429 ? "Too many tries. Wait a minute." : r.status === 503 ? "Hosting isn't set up on this server." : r.status === 404 ? "Hosting only works on the venue network." : "That PIN isn't right."; }
       } catch { $("pin-err").textContent = "Couldn't reach the server."; }
       btn.disabled = false;
+    });
+    // little sounds on the join page (landing/ui-sound.js): choices and Back tick, Join room plays the door chime, Decline falls
+    document.addEventListener("click", (e) => {
+      if (typeof UISound === "undefined") return;
+      const t = e.target.closest("a, button");
+      if (!t) return;
+      if (t.matches(".enter")) UISound.go();
+      else if (t.matches(".decline")) UISound.end();
+      else if (t.matches(".choice, .alt, .linkbtn, [data-to], [data-back]")) UISound.tap();
     });
     // Create event (prototype): you become its host, then the train takes you into your new room
     $("ev-name").addEventListener("input", () => { $("ev-err").textContent = ""; });
     $("create-form").addEventListener("submit", (e) => {
       e.preventDefault();
       const n = $("ev-name").value.trim();
-      if (!n) { $("ev-err").textContent = "Give the event a name."; $("ev-name").focus(); return; }
+      if (!n) { $("ev-err").textContent = "Give the event a name."; $("ev-name").focus(); if (typeof UISound !== "undefined" && UISound.no) UISound.no(); return; }
+      if (typeof UISound !== "undefined" && UISound.go) UISound.go();
       $("ev-err").textContent = "";
       const ev = { status: "in", host: true, name: n.slice(0, 50), place: $("ev-place").value.trim(), date: $("ev-date").value, start: $("ev-time").value,
                    tables: Math.max(1, Math.min(26, +$("ev-tables").value || 5)), time: Date.now() };

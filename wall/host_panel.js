@@ -43,7 +43,9 @@
       const f = form.elements, next = { role: "student", skills: [], looking_for: [], links: {}, socials: [], ...mine() };
       next.name = f.name.value.trim() || "Host";
       for (const k of ["school", "major", "bio"]) { const v = f[k].value.trim(); if (v) next[k] = v; else delete next[k]; }
-      msg.textContent = put("wall.me", next) ? "Saved" : "Couldn't save in this browser";
+      const saved = put("wall.me", next);
+      msg.textContent = saved ? "Saved" : "Couldn't save in this browser";
+      if (typeof UISound !== "undefined") (saved ? UISound.ok : UISound.no)();
       trigger();
       setTimeout(() => { msg.textContent = ""; }, 1800);
     });
@@ -64,7 +66,7 @@
     const tabs = el("nav", "hp-tabs");
     for (const [id, label] of [["you", "You"], ["settings", "Settings"]]) {
       const b = el("button", id === tab ? "on" : "", label); b.type = "button";
-      b.addEventListener("click", () => { tab = id; render(); });
+      b.addEventListener("click", () => { if (typeof UISound !== "undefined") UISound.tap(); tab = id; render(); });
       tabs.append(b);
     }
     const body = el("div", "hp-body");
@@ -86,6 +88,7 @@
   shade.append(win); document.body.append(shade);
   let last = null;
   const ask = () => {
+    if (typeof UISound !== "undefined") UISound.tap();
     const r = room();
     wtext.textContent = `You'll stop hosting ${r.name || "this room"} and go back to the front page. You can host again any time.`;
     last = document.activeElement; shade.hidden = false; no.focus();
@@ -95,6 +98,7 @@
   shade.addEventListener("click", (e) => { e.stopPropagation(); if (e.target === shade) close(); });
   yes.addEventListener("click", () => {
     yes.disabled = true;
+    if (typeof UISound !== "undefined") UISound.end();
     try { localStorage.removeItem("wall.room"); } catch { /* private mode */ }
     fetch("/api/host/logout", { method: "POST" }).catch(() => {});
     document.body.classList.add("hp-leaving");
