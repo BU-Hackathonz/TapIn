@@ -1,172 +1,140 @@
-# Tap In: Devpost story (the text saved in the Devpost draft, About the project)
+# Tap In: Devpost story (paste into "About the project")
 
-<!-- Owner: Avery. This file mirrors what is saved on Devpost. One [CHECK] remains: real recruiting numbers and quotes (Yaovi, tools/count.py). -->
+<!-- Owner: Avery. Paste everything below the line into Devpost's "About the project". Numbers marked (refresh 8:15)
+come from tools/count.py (real people only) and media/devpost/src/pull_live.py; re-run both at 8:15 AM and update. -->
 
+---
 
-![Tap In](https://github.com/BU-Hackathonz/TapIn/blob/main/media/devpost/cover.png?raw=true)
+![Tap In: the landing page at tapin.boston](https://github.com/BU-Hackathonz/TapIn/blob/main/media/devpost/landing.png?raw=true)
 
 ## Inspiration
 
-Boston is America's college city, and it is easy to be alone in it. One of us moved here and knows the feeling: walking into a room full of people to study, and sitting alone next to a table you could have joined. Every shared space we know has the same gap: a room full of people who would help each other, and nothing that tells a newcomer which table to walk up to. App-only matching has been tried here before (Spark! Connects at BostonHacks 2023) and didn't place, because the phone is the thing that keeps you at your own table. We wanted the room itself to do the matching.
+Boston is America's college city, and it is easy to be alone in it. You walk into a library, a lab or a hackathon room full of students, and nothing tells you which table to walk up to. So you sit alone next to a group you could have joined. Every shared space we know has the same gap: a room full of people who would help each other, and no way for a newcomer to see where they fit.
 
-Today, Tap In is a working prototype we ran on two real stations at BostonHacks with real people tapping in, not a product that has been tested across many spaces or over many weeks.
+Spark! asks for hacks that get people in a space interacting, and its own example list includes RFID card taps that trigger sounds. We built exactly that, with one rule on top: joining a table only counts when everyone taps the same station together, so the room itself proves people met.
 
 ## What it does
 
-You make a profile on your phone in about 30 seconds: a first name, up to three skills, up to two things you're looking for, and what you're working on. Then you tap any blank badge on a station to make it yours, and that tap also checks you in. You light up on the wall, and the wall and your phone show where you stand: the people you already know who are here, and the tables that could use you, in plain words, like "Table 2 is building a robot arm and needs firmware. You know 1 of its 3 people." Walk over, and you and the table scan in together on their station. You're added to the group, linked to everyone in it, and everyone earns points. Joining only counts when the whole group taps the same station within seconds of each other, so the hardware proves the meeting happened. Mentors scanning in with a table count as help: the table's need is marked handled and the mentor shows up as a bridge between groups.
+**One action: tap your badge.** The server groups taps on the same station within 6 seconds into one scan. One badge is a check-in; two or more is a group.
+
+- **Join a space.** At tapin.boston (any network) or on the venue Wi-Fi, you make a profile in about 30 seconds: a first name, your role, up to 3 skills, up to 2 things you're looking for, and what you're working on today. That last field has quick picks that aren't projects ("Just hanging out", "Meeting new people", "Looking for a team", "Studying", "Exploring ideas"), so nobody has to be building something to tap in. Then you tap any blank badge on a station within 30 seconds, and it becomes yours. That tap also checks you in.
+- **Where you stand.** Your phone shows who you already know here, the tables that fit you with the reason ("Table B needs firmware, you know 1 of its 3 people"), people to meet, and your points. You can switch on focus mode, or switch your table to heads-down, and you stop being suggested.
+- **Join a table.** Walk over and tap the station together with the table. You're linked to everyone there, and you and the table both earn points. A mentor who taps in with a table counts as help, and the table's need is crossed off.
+- **The room plays it.** The projector shows a room plan with every table by letter, a side column with groups by points, open needs and how long they've waited, recent activity and scans per 10 minutes, and a strip with the latest moment. Every event has a sound from one pentatonic scale: a bell in your own note when you tap in, a pluck for each new link, a rising run when a table forms, and a trolley bell for every 10th person.
+- **Host a space.** A host signs in with a PIN on the venue Wi-Fi, creates the event (name and number of tables, saved on the server) and opens the room display. Quiet mode turns the room down for study hours.
+
+![The host wall with a full room (sample data from our fake server)](https://github.com/BU-Hackathonz/TapIn/blob/main/media/devpost/host-wall.png?raw=true)
+
+The host wall, filled from our fake server (made-up people, no database) so this picture shows no real attendee.
+
+![Phone sign-up and the badge claim](https://github.com/BU-Hackathonz/TapIn/blob/main/media/devpost/phone-signup-claim.png?raw=true)
+
+The real phone sign-up and the 30-second badge claim.
 
 ## How we built it
 
-![Tap In system architecture](https://github.com/BU-Hackathonz/TapIn/blob/main/media/devpost/architecture.png?raw=true)
+![How Tap In fits together](https://github.com/BU-Hackathonz/TapIn/blob/main/media/devpost/system.png?raw=true)
 
-System architecture: two ESP32 stations, one FastAPI server, Tiger Data, Gemini, the wall and the phone.
+**Stations.** Each station is an ESP32 and an RC522 reader in a box, with the reader under the lid. It sends the badge's UID to the server and shows the state the server returns, polling every 500 ms with 800 ms timeouts, and rejoins Wi-Fi by itself. All logic lives on the server.
 
-### Stations
+**Server.** Python FastAPI on one laptop on the venue Wi-Fi. A scan window per station lasts 6 seconds and restarts on every tap; the same badge within 3 seconds counts once. When the window closes, one database transaction decides what the scan means (check-in, new group, join, help or repeat), awards points, updates suggestions and pushes the result over a WebSocket. The server runs under a small supervisor that restarts it if it exits, outside the terminal session, so a closed window doesn't take the room down.
 
-Each station is an ESP32 and an RC522 reader on a breadboard, in a box with the reader taped under the lid. The station is deliberately dumb: it sends the badge's UID to the server and shows whatever state the server returns, polling every 500 ms. It shows "collecting" the moment a card is read, before the server answers, so a tap feels instant. Every request times out after 800 ms, Wi-Fi rejoins by itself, and nothing in the main loop ever waits, so a slow network can't freeze a reader. The board's blue LED shows each of the nine states as its own rhythm.
+**Wall and phone.** The host wall is plain JavaScript on a canvas with Tone.js for sound. The phone pages are plain HTML and JavaScript with no app and no login: your badge is your identity.
 
-![Station enclosure](https://github.com/BU-Hackathonz/TapIn/blob/main/media/devpost/enclosure.png?raw=true)
+**tapin.boston.** The pages are static files on Vercel (Jun's project). Six API routes (sign-up, claim status, where you stand, focus, table mode and needs) are forwarded through a Cloudflare tunnel to the laptop. Everything else stays on the venue network: the room with everyone's first name, the stations' taps, hosting and live updates. "Host a space" on tapin.boston forwards to the venue address, which only loads on the venue Wi-Fi, so the host PIN never faces the internet.
 
-The station enclosure: side view, the lid, the boards to scale, and reading through the lid (planned sizes).
+![What is public, and what stays at the venue](https://github.com/BU-Hackathonz/TapIn/blob/main/media/devpost/access.png?raw=true)
 
-### Server
+**How four people built it.** We wrote every JSON shape down before writing code, so the stations, server, wall and phone were built in parallel. Each of us worked with a coding agent, and all the agents read and posted on one pinned GitHub issue: they asked the owner before touching a teammate's files and flagged contract changes to everyone. We merged 93 pull requests.
 
-Python FastAPI on one laptop. The hard part is the scan window: taps that land on the same station within 6 seconds of each other are one scan, every new tap restarts the 6 seconds, and two stations never share a window. When the window closes, one database transaction decides what the scan means (check-in, new group, join, help, or repeat), writes it, and the server pushes the result to every screen over one WebSocket.
+## Real numbers
 
-![One scan, end to end](https://github.com/BU-Hackathonz/TapIn/blob/main/media/devpost/scan-pipeline.png?raw=true)
+From the live database (refresh 8:15). The people numbers count real people only; our test and judge badges are excluded.
 
-One scan, from the window closing to the wall, with the rules kept in code and the reads and writes to Tiger Data.
+- **3** people signed up and claimed a badge (3 more signed up but never tapped a badge)
+- **1** table formed, **1** new connection, **0** mentor help scans
+- **87** taps and **23** resolved scans since Saturday 10 AM (17 check-ins, 4 repeats, 1 new group, 1 join), including our own testing
 
-### Wall and phone
+![Every tap since Saturday 10 AM](https://github.com/BU-Hackathonz/TapIn/blob/main/media/devpost/live-activity.png?raw=true)
 
-The wall is a 3D room map, not a network graph: each group is a cluster at its table, people who just checked in glow, lines reach the people they know, and the tables that fit them pulse. A right column shows live stats, a scans-per-10-minutes chart, top tables, the needs board and recent activity, and Tone.js plays a bell for a new person and a run of plucks for a group forming. The phone site handles sign-up, the badge claim, and "where you stand"; mentors and staff get the needs board with wait times.
+Measured on our two stations on Saturday:
 
-![Where you stand, on the phone](https://github.com/BU-Hackathonz/TapIn/blob/main/media/devpost/phone-where-you-stand.png?raw=true)
-
-The phone's "where you stand" page, live from our server: who you know here, the tables that fit you, and your table's open or heads-down switch.
-
-![From first touch to a seat at a table](https://github.com/BU-Hackathonz/TapIn/blob/main/media/devpost/user-journey.png?raw=true)
-
-The user journey, from first touch to a seat at a table.
-
-### How four people (and their coding agents) built it in parallel
-
-We agreed on the JSON shapes first, so the four layers could be built without waiting on each other. Every teammate's coding agent read and posted on one pinned GitHub issue, so one person's agent could hand work to another's, ask the owner before touching their files, and flag a contract change to everyone at once.
-
-## Real data, including results that challenged us
-
-Everything below was measured on our two real stations and the live server on 21 November, and the captions say what the numbers do and don't show.
+- **259 ms** median from tap to reply over 31 real taps; a quarter missed our own 300 ms target, all beat 1 second.
+- **40-minute soak** with no failed polls, reboots or time offline.
+- **Server down for 19 s:** both stations showed offline and came back on their own within about 1 second.
+- **Router unplugged:** both stations rejoined about 5 seconds after its Wi-Fi came back, with the same addresses and no reboot.
+- **Reading through the lid:** 20 of 20 taps on one station, 19 of 20 on the other.
 
 ![Tap to reply, 31 real taps](https://github.com/BU-Hackathonz/TapIn/blob/main/media/devpost/evidence-tap-latency.png?raw=true)
 
-31 real badge taps: median 259 ms from tap to reply. A quarter of them missed our own 300 ms target; all beat the 1-second checkpoint.
+## Boundless Boston (main track)
 
-![40-minute soak](https://github.com/BU-Hackathonz/TapIn/blob/main/media/devpost/evidence-soak.png?raw=true)
+Boston has more students per square mile than almost anywhere, and most of them study in shared rooms: libraries, dorm lounges, labs and cafés. Any of them could run Tap In with two stations at about $15 of parts each, cents per badge, a laptop and a screen. Nothing about it is specific to a hackathon. The landing page's Green Line train down Comm Ave is our reminder of where it belongs.
 
-A 40-minute soak with no failed polls, reboots or time offline, and a problem we haven't solved: about 200 ms per request on a network with 3 ms ping.
+## Spark! Hack Our Space
 
-![Two real group scans](https://github.com/BU-Hackathonz/TapIn/blob/main/media/devpost/evidence-scan-runs.png?raw=true)
+- **Interaction between people is built into the hardware.** A join only counts when everyone taps the same station within seconds of each other. The scan is the proof that people met.
+- **RFID taps trigger sounds,** straight from Spark's own example list: every tap, link, table and mentor help has its own sound from one pentatonic scale, and every 10th arrival rings a trolley bell. Staff switch the room between event mode and quiet mode for study hours.
+- **For the space's staff:** the needs board shows what each open table is looking for and how long it has waited, mentor taps count as help, and hosts set the room up with a PIN.
+- **A permanent install:** stations at the entrance, the couches and the workbenches, points tied to a real perk in the lab, and the busiest-station-by-hour view showing how the space connects people.
 
-Two real group scans. In the first the second fob arrived 0.57 s after the window closed, so it became two check-ins: the rule working, and a lesson for how we coach people at the table.
+![The room plays it: Tap In's sound map](https://github.com/BU-Hackathonz/TapIn/blob/main/media/devpost/sound-map.png?raw=true)
 
-![Server down for 19 s](https://github.com/BU-Hackathonz/TapIn/blob/main/media/devpost/evidence-recovery.png?raw=true)
-
-We took the server down for 19 s: both stations showed offline and came back on their own. The router-unplug test still needs a person at the table.
-
-## Sponsor Notes
-
-### 🐯 MLH: Best Use of Tiger Data
+## MLH: Best Use of Tiger Data
 
 Tap In is a stream of taps, so its data is time-series from the first byte, and Tiger Data holds all of it.
 
 ![Tap In on Tiger Data](https://github.com/BU-Hackathonz/TapIn/blob/main/media/devpost/tiger-data.png?raw=true)
 
-Two hypertables feed two continuous aggregates, the second built on the first.
+- **Hypertables:** every raw tap goes into `taps` (station, badge, result) and every resolved scan into `scan_events` (kind, size, station, group), both partitioned on time.
+- **Continuous aggregates:** `scans_per_10min` counts scans per station and kind in 10-minute buckets in real-time mode, so the wall's chart includes the newest minutes before the 1-minute refresh. `scans_per_hour` is a hierarchical continuous aggregate built on top of it, refreshed every 5 minutes, for the busiest-station-by-hour view.
+- **What reads them:** `/api/stats` (people here, groups, links today, busiest station, 12 ten-minute buckets) is pushed to the wall every 30 seconds; `/api/analytics` returns the last 24 hours by station and the mix of scan kinds.
+- **Design choices:** `connections` is a regular table on purpose, because a unique index on a hypertable must include the time column and we need one row per pair of people. The schema is idempotent and runs on every server start, so a restart mid-event never breaks the database.
 
-**Hypertables.** Every raw tap goes into `taps` (station, badge, result) and every resolved scan into `scan_events` (kind, size, station, group), both hypertables partitioned on time.
+## MLH: Best Use of Gemini API
 
-**Continuous aggregates.** `scans_per_10min` counts scans per station and kind in 10-minute buckets, in real-time mode (`materialized_only = false`), so the wall's chart includes the newest minutes before the 1-minute refresh policy materializes them. `scans_per_hour` is a hierarchical continuous aggregate built on top of `scans_per_10min`, refreshed every 5 minutes; it powers the busiest-station-by-hour view for the space's staff.
+When someone checks in, the wall shows their top table right away with a template line. In the background the server asks Gemini (`gemini-3.5-flash-lite`) for one icebreaker under 20 words from the person's skills and the table's project. If it answers within 2 seconds, the wall swaps the line in; if it's late or fails, the template line stays, so Gemini can only make the wall better, never slower. Answers are cached per person and table, and the API key stays on the server.
 
-**What it powers.** `GET /api/stats` (people here now, active groups, links today, busiest station, and 12 zero-filled ten-minute buckets) is pushed to every wall every 30 seconds as `stats_updated`. `GET /api/analytics` returns the last 24 hours by station, today's mix of check-ins, joins, repeats and helps, and how many needs are open and met.
-
-**Design decisions.**
-- `connections` is deliberately a regular table: a unique index on a hypertable must include the time column, and we need exactly one row per pair of people, so a repeat scan makes a link stronger instead of adding rows.
-- `schema.sql` runs on every server start and is idempotent (`IF NOT EXISTS` on the views, `if_not_exists` on the policies), so a restart in the middle of the event never breaks the database.
-- "Links today" resets at midnight Boston time, not UTC (which would reset at 7 PM, mid-recruiting).
-- The same schema runs on a local TimescaleDB container if the venue Wi-Fi dies; only `DATABASE_URL` changes.
-
-**Verified.** On a local TimescaleDB with the same schema, the current hour shows up live through the hierarchical aggregate before any refresh, and both aggregates and their policies exist exactly once after repeated restarts. On the live Tiger Data service, both aggregates are created at server start and `/api/stats` and `/api/analytics` answer from them.
-
-### ✨ MLH: Best Use of Gemini API
-
-Gemini writes each person's icebreaker for the table that fits them best, without ever making a tap wait.
-
-![Two taps, end to end](https://github.com/BU-Hackathonz/TapIn/blob/main/media/devpost/tap-sequence.png?raw=true)
-
-Two taps, end to end: a check-in with its Gemini icebreaker inside a 2-second budget, then a join inside the 6-second scan window.
-
-**Where it runs.** When someone checks in, the wall shows their top suggested table right away with a template line ("{name} ({skill}): {table} needs {need}"). In the background, the server asks Gemini for one icebreaker under 20 words, from the person's name and skills and the table's project and needs, with no emojis and no exclamation marks.
-
-**The 2-second budget.** If Gemini answers within 2 seconds, the server sends an `icebreaker` event and the wall swaps the line. If it is late, errors, or there's no key, nothing is sent and the template line simply stays, so Gemini can only ever make the wall better, never slower.
+We picked the model by measuring it: the model in our plan returned 404 for new keys, and of the ones we timed with our real prompt, 3.5-flash-lite answered in 0.6 to 1.1 s while two newer models were overloaded or timed out.
 
 ![Choosing the Gemini model by measuring it](https://github.com/BU-Hackathonz/TapIn/blob/main/media/devpost/evidence-gemini-models.png?raw=true)
 
-**Choosing the model by measuring it.** Our plan named gemini-2.5-flash, which returns 404 for new API keys. We timed the available models with the real prompt, three calls each: gemini-3.5-flash-lite answered in 0.6 to 1.1 s; gemini-3.8-flash was overloaded (503) and gemini-3.7-flash timed out. We picked the pinned 3.5-flash-lite over the faster-looking `-latest` alias, which could change under us mid-event.
-
-**Details.**
-- Answers are cached per (person, table), so a repeat check-in costs nothing.
-- The output is cleaned: first line only, no emoji, any "!" softened.
-- The API key stays in `.env` on the server and is sent only to Google, as a header. It never reaches a browser.
-
-**A real one from tonight**, 0.9 s after a check-in: "Avery, your firmware and pitch skills fit Connection Map's design needs well."
-
-### 🏛️ Spark! Hack Our Space
-
-**Interaction between people, built into the hardware.** A join only counts when everyone is at the same station within seconds of each other. The room does the matching, and the scan is the proof that people met.
-
-**For the space's staff.** The needs board shows what each open table is looking for and how long it has waited, mentors scanning in count as help, and the busiest-station-by-hour view shows how the space connects people over a day.
-
-**Real users.** [CHECK: N people signed up and claimed a badge, G groups formed, H mentor helps, from tools/count.py, which counts real people only and excludes our test and judge badges. Two or three quotes from people who tried it.]
-
-**A permanent install.** With Spark's equipment budget: a station at the entrance, the couches and the workbenches, points tied to a real perk in the lab, and the busiest-station-by-hour view showing how the space connects people.
-
-### 🗺️ Boundless Boston
-
-Boston has more students per square mile than almost anywhere, and most of them study in shared rooms: libraries, dorm lounges, labs and cafés. Any of them could run Tap In with about $15 of parts per station and cents per badge, a laptop, and a screen on the wall. Nothing about it is specific to a hackathon.
-
 ## Challenges we ran into
 
-Taps arrive milliseconds apart, sometimes at two stations at once, so grouping them into scans without corrupting one another was the hardest part of the server. On the hardware side:
-- **The stations joined no network at first.** We made the firmware log why a Wi-Fi join fails. It said "network not found" (the router broadcast a different name than our plan), then "auth failed" (we had the router's admin password, not its Wi-Fi password).
-- **A blink of "nothing happened".** Between "collecting" and the result, the server briefly reported "idle" while it wrote the scan, so stations flashed idle right before "you're in". The server now keeps reporting "collecting" until the result is set, with a test that fails on the old code.
-- **Gemini returned 404 for every icebreaker** until we measured the available models and switched (above).
+- **Scan windows.** Taps arrive milliseconds apart, sometimes at two stations at once. Each station keeps one window whose timer restarts on every tap, and the window is removed before it resolves, so a tap that lands mid-resolve starts a fresh scan instead of corrupting the old one.
+- **Ten badges.** We had 10 NFC badges and each one belongs to one person for good, so only a handful of real people could join. We kept the judge badges for the demo and counted honestly instead of seeding the database.
+- **The public site.** A static page on the internet can't reach a laptop on a private router. A tunnel solved that, but its default protocol kept dropping on the venue network until we switched it to HTTP/2 over TCP, and we had to decide exactly which routes are public.
+- **Small bugs with big effects.** The host PIN never matched when the `.env` line had quotes; the wall's mute switch never muted because `Sound` isn't `window.Sound`; the session that ran our server restarted twice overnight and took the room down, so the server and tunnel now run as their own processes.
 
 ## Accomplishments that we're proud of
 
-- Both stations passed 30- and 40-minute soak tests with no reboots and no time offline, and recovered on their own within 1 second when we took the server down.
-- The scan-window stress tests all pass against the live database: two stations in the same second, a window extended at 5.9 s and 11 s, a badge held on the reader for 10 s counted once.
-- Four people and their coding agents merged 44 pull requests in one day without breaking main, because every agent read and posted on one shared board and asked owners before touching their files.
+- Both stations passed 30- and 40-minute soak tests, a server outage and a router unplug, and recovered on their own each time.
+- A real phone on any network can sign up at tapin.boston, while names, taps and hosting never leave the venue network.
+- Four people merged 93 pull requests in about 24 hours without breaking main, coordinating through one shared board.
 
 ## What didn't work
 
-We planned five LEDs per station and cut them for time, so a station's only feedback is a small blue LED, and a group joining no longer lights up the box. Each station request takes about 200 ms even though the network answers in 3 ms; we ruled out the Wi-Fi signal, connection reuse and the server, and ran out of time to chase it into the ESP32's network stack.
+- **Few real users.** With 10 badges and one badge per person, 3 real people claimed a badge (refresh 8:15). The numbers above are what they are.
+- **The station LEDs.** We planned five LEDs per station and cut them for time, so a station shows its state with the board's small built-in light, and the room's feedback comes from the wall and its sound.
+- **About 200 ms per station request** on a network with 3 ms ping. We ruled out the Wi-Fi signal, connection reuse and the server, and ran out of time to chase it into the ESP32's network stack.
+- **Prototype parts.** The join page's "Log in" (Google, GitHub or badge) and the account panel keep everything in the browser; they are not connected to the server. "Sign up" on that page goes to the real sign-up. We also built a room-map intro animation and removed it from the host wall.
 
 ## What we learned
 
-- **Agree on the contracts first.** Writing every JSON shape down before 10:30 AM let the stations, server, wall and phone be built in parallel and meet on the first try.
-- **Measure, don't assume.** The planned Gemini model didn't exist for our key, the router had a different name than our plan, and the scan window was stricter in real life than on paper. Each time, a measurement told us what to do.
-- **Log why, not just that.** The firmware line that says *why* Wi-Fi failed turned an hour of guessing into two quick fixes.
-- **A physical rule needs coaching.** "Everyone taps within 6 seconds" is what makes a join trustworthy, and it is also the first thing new people get wrong.
+- **Agree on the contracts first.** Writing every JSON shape down before coding let four layers meet on the first try.
+- **Measure, don't assume.** The planned Gemini model didn't exist for our key, the router had a different name than our plan, and the tunnel's default protocol didn't survive the venue network. Each time, a measurement told us what to do.
+- **Decide what is public on purpose.** Listing the six routes the public site needs, and nothing else, kept names, taps and the host PIN off the internet.
 
 ## What's next for Tap In
 
-- A permanent install at Spark!: the entrance, the couches and the workbenches, with points tied to real perks.
+- A permanent install at Spark!, with points tied to real perks in the lab.
+- Releasing a badge back to the table when someone leaves, so 10 badges can serve a whole room.
 - Signed NTAG424 badges instead of UIDs that can be cloned.
+- Connecting the join page's log-in and account panel to the server.
 - More rooms in Boston: libraries and dorm lounges, where the same stations would work unchanged.
-- Chasing the 200 ms station request time into the ESP32's network stack.
 
 ## Explore Tap In
 
+- [tapin.boston](https://tapin.boston): the landing page and the real phone sign-up
 - [Source code on GitHub](https://github.com/BU-Hackathonz/TapIn): server, station firmware, wall, phone site and every test
-- [Station firmware and wiring](https://github.com/BU-Hackathonz/TapIn/tree/main/firmware)
-- [How each image was made, and the raw data behind the evidence panels](https://github.com/BU-Hackathonz/TapIn/tree/main/media/devpost/src)
+- [How each image was made, and the data behind the charts](https://github.com/BU-Hackathonz/TapIn/tree/main/media/devpost/src)
