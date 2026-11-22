@@ -364,3 +364,23 @@ body::before {
 .srule { position: absolute; left: 0; right: 0; bottom: 0; height: 8px; background: linear-gradient(90deg, #DA291C 0 25%, #ED8B00 25% 50%, #003DA5 50% 75%, #00843D 75% 100%); }
 
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* The host's account panel (host_panel.js): white sign, black label bar, red Leave room. No display or view controls. */
+.hp { position: fixed; z-index: 8; top: 52px; right: 12px; width: min(320px, calc(100vw - 24px)); background: #fff; color: #2b1f23; box-shadow: 0 10px 30px rgba(0,0,0,.28); font: 400 15px/1.35 var(--sans); }
+.hp[hidden] { display: none; }
+.hp-bar { display: flex; align-items: center; justify-content: space-between; background: #111; color: #fff; padding: 9px 12px 9px 14px; box-shadow: inset -8px 0 0 #DA291C; }
+.hp-bar b { font: 800 16px/1 "Bricolage Grotesque", var(--sans); }
+.hp-x { margin-right: 8px; background: none; border: 0; color: #fff; font-size: 22px; line-height: 1; cursor: pointer; }
+.hp-body { padding: 4px 14px 14px; display: grid; gap: 8px; }
+.hp-h { margin: 10px 0 0; font: 600 11px/1 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: #6a4f55; }
+.hp-note { margin: 0; color: #6a4f55; font-size: 13px; }
+.hp-form { display: grid; gap: 8px; }
+.hp-form label { display: grid; gap: 4px; font-size: 13px; color: #6a4f55; }
+.hp-form input[type=text] { font: inherit; color: #2b1f23; padding: 8px; border: 2px solid #111; border-radius: 0; background: #fff; }
+.hp-msg { font-size: 13px; color: #00843D; min-height: 1em; }
+.hp-sw { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; }
+.hp-sw input { width: 20px; height: 20px; accent-color: #111; }
+.hp-btn { display: inline-block; text-align: left; font: 700 14px/1 var(--sans); padding: 11px 14px; color: #fff; background: #111; border: 0; border-radius: 0; cursor: pointer; text-decoration: none; box-shadow: inset -8px 0 0 #00843D; }
+.hp-btn.leave { box-shadow: inset -8px 0 0 #DA291C; }
+.hp-btn:hover, .hp-btn:focus-visible, .hp-x:focus-visible, .hp-sw input:focus-visible { outline: 3px solid #003DA5; outline-offset: 2px; }
+.hp-leaving { opacity: 0; transition: opacity .35s ease; }
