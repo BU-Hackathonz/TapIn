@@ -512,6 +512,9 @@
     const show = (id) => { for (const s of STEPS) $(s).hidden = s !== id; document.querySelector(".panel").classList.toggle("signup", ["step-account", "step-connect", "step-linked"].includes(id)); const f = document.querySelector(`#${id} input:not([type=file])`); if (f) f.focus(); };
     const joinRoom = () => { try { localStorage.setItem("wall.room", JSON.stringify({ status: "in", name: "BostonHacks 2026", place: "GSU Metcalf Ballroom", time: Date.now() })); } catch { /* private mode */ } };
     document.querySelectorAll("[data-back]").forEach((b) => b.addEventListener("click", () => show("step-start")));
+    // Sign up goes to the real sign-up (phone/), which creates the profile and claims a blank badge on the server.
+    // This page's own sign-up steps keep everything in the browser, so they stay a prototype (Avery's call, Nov 22).
+    document.querySelectorAll('[data-to="step-account"]').forEach((b) => b.addEventListener("click", (e) => { e.stopImmediatePropagation(); location.href = "/phone/"; }));
     document.querySelectorAll("[data-to]").forEach((b) => b.addEventListener("click", () => show(b.dataset.to)));
     const SKILLS = ["hardware", "firmware", "frontend", "backend", "design", "ml", "data", "mobile", "pitch", "research"];
     const LINKS = [["linkedin", "LinkedIn", "#0a66c2"], ["github", "GitHub", "#24292f"], ["instagram", "Instagram", "#d6249f"], ["web", "Website", "#555"]];
