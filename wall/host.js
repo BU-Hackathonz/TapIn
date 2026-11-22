@@ -9,7 +9,15 @@
 (() => {
   "use strict";
   const qs = new URLSearchParams(location.search);
-  document.documentElement.dataset.palette = qs.get("palette") || "sand";
+  // ?v=1..10 picks one of ten looks (1 is the default sand). Each is a palette (in host.css) plus a few drawing choices (here).
+  const VARIANTS = {
+    1: { ring: "dash", node: "dot", lw: 1 }, 2: { ring: "dash", node: "dot", lw: 1 }, 3: { ring: "dot", node: "dot", lw: 1.1 },
+    4: { ring: "solid", node: "ring", lw: 1.1, grid: true }, 5: { ring: "dash", node: "ring", lw: 1, grid: true }, 6: { ring: "dash", node: "dot", lw: 1 },
+    7: { ring: "solid", node: "dot", lw: 1.35 }, 8: { ring: "dash", node: "glow", lw: 1 }, 9: { ring: "dot", node: "ring", lw: 1.1 }, 10: { ring: "dash", node: "glow", lw: 1 },
+  };
+  const VN = Math.min(10, Math.max(1, parseInt(qs.get("v"), 10) || 1)), V = VARIANTS[VN], LW = V.lw;
+  if (VN > 1) document.documentElement.dataset.v = String(VN);
+  document.documentElement.dataset.palette = VN > 1 ? "v" : qs.get("palette") || "sand";
   if (qs.get("logo")) document.documentElement.dataset.logo = qs.get("logo");
   const HOST = qs.get("server") || location.host;
   const HTTP = `${location.protocol}//${HOST}`;
@@ -30,7 +38,7 @@
   // ------------------------------------------------------------ state
   const S = { people: new Map(), groups: new Map(), links: [], needs: [], stats: null, board: null };
   let graphRaw = null, layout = null, W = 0, H = 0, K = 1;
-  const GRID = qs.has("grid"), MOUSE = qs.get("mouse") !== "off";
+  const GRID = qs.has("grid") || !!V.grid, MOUSE = qs.get("mouse") !== "off";
   const born = new Map();          // person id -> time first seen live (fade-in)
   const trails = new Map();        // person id -> recent positions while they glide to a seat
   const activity = [];
@@ -467,7 +475,7 @@
       const edges = shapeEdges(n, (rank * 5 + n) % 7);
       const pt = (i) => (i < 0 ? { x: tb.x, y: tb.y } : ms[i]);
       const segs = edges.map(([i, j]) => [pt(i), pt(j)]);
-      ctx.globalAlpha = 0.8; ctx.strokeStyle = C.deep; ctx.lineWidth = 1.4 * K;
+      ctx.globalAlpha = 0.9; ctx.strokeStyle = C.deep; ctx.lineWidth = 2.3 * K * LW; ctx.lineCap = "round";
       ctx.beginPath();
       for (const [a, b] of segs) { ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); }
       ctx.stroke();
@@ -499,20 +507,20 @@
       if (!A || !B) continue;
       const dx = B.x - A.x, dy = B.y - A.y, d = Math.hypot(dx, dy) || 1, ra = A.R + 34 * K, rb = B.R + 34 * K;
       if (d <= ra + rb) continue;
-      curve(A.x + (dx / d) * ra, A.y + (dy / d) * ra, B.x - (dx / d) * rb, B.y - (dy / d) * rb, C.deep, 0.18 + 0.05 * Math.min(c, 4), (1 + 0.3 * Math.min(c, 4)) * K);
+      curve(A.x + (dx / d) * ra, A.y + (dy / d) * ra, B.x - (dx / d) * rb, B.y - (dy / d) * rb, C.deep, 0.18 + 0.05 * Math.min(c, 4), (1.7 + 0.35 * Math.min(c, 4)) * K * LW);
     }
     const byMentor = new Map();                                      // a mentor keeps at most three lines: their own table first, then the nearest
     for (const x of bridge.values()) (byMentor.get(x.a.id) ?? byMentor.set(x.a.id, []).get(x.a.id)).push(x);
     for (const list of byMentor.values()) {
       list.sort((p, q) => (q.own ? 1 : 0) - (p.own ? 1 : 0) || p.d - q.d);
-      for (const x of list.slice(0, 3)) line(x.a.x, x.a.y, x.b.x, x.b.y, C.deep, x.own ? 0.85 : 0.4, (x.own ? 1.5 : 1) * K);
+      for (const x of list.slice(0, 3)) line(x.a.x, x.a.y, x.b.x, x.b.y, C.deep, x.own ? 0.9 : 0.5, (x.own ? 2.4 : 1.5) * K * LW);
     }   // strong to its own table, faint to the others
     ctx.globalAlpha = 1;
     if (m && m.kind === "checkin") {                                 // the moment: lines from the newest person to those they know
       const me = byId.get(m.person);
       if (me) for (const id of m.known.slice(0, 3)) {
         const o = byId.get(id);
-        if (o) line(me.x, me.y, o.x, o.y, C.pink, 0.9, 2.2 * K);
+        if (o) line(me.x, me.y, o.x, o.y, C.pink, 0.9, 3 * K);
       }
       ctx.globalAlpha = 1;
     }
@@ -524,8 +532,9 @@
       if (!g) continue;
       const ringR = tb.R + 34 * K, hi = gid === hiGroup, quiet = g.mode === "heads_down";
       ctx.save();
-      ctx.lineWidth = (hi ? 2.2 : 1.5) * K;
-      ctx.setLineDash(hi ? [10 * K, 8 * K] : [3 * K, 9 * K]);
+      ctx.lineWidth = (hi ? 3.4 : 2.5) * K * LW;
+      ctx.setLineDash(V.ring === "solid" ? [] : V.ring === "dot" ? [0.1, 8 * K] : hi ? [14 * K, 9 * K] : [7 * K, 8 * K]);
+      ctx.lineCap = V.ring === "dot" ? "round" : "butt";
       ctx.lineDashOffset = -(t / (hi ? 30 : 140)) * (gid % 2 ? 1 : -1);   // neighbouring rings turn opposite ways
       ctx.strokeStyle = hi ? hiColor : quiet ? C.dim : C.deep;
       ctx.globalAlpha = hi ? 0.75 + 0.25 * Math.sin(t / 380) : quiet ? 0.55 : 0.95;
@@ -584,8 +593,13 @@
         ctx.strokeStyle = col; ctx.fillStyle = C.bg;
         ctx.beginPath(); ctx.arc(nx, ny, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
       } else {
-        ctx.fillStyle = col;
-        ctx.beginPath(); ctx.arc(nx, ny, r, 0, Math.PI * 2); ctx.fill();
+        if (V.node === "ring") { ctx.strokeStyle = col; ctx.fillStyle = C.bg; ctx.lineWidth = 2.6 * K; ctx.beginPath(); ctx.arc(nx, ny, r + 1 * K, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
+        else {
+          if (V.node === "glow") { ctx.shadowColor = col; ctx.shadowBlur = 14 * K; }
+          ctx.fillStyle = col;
+          ctx.beginPath(); ctx.arc(nx, ny, r, 0, Math.PI * 2); ctx.fill();
+          ctx.shadowBlur = 0;
+        }
       }
       if (newest) {                                          // the ring means "newest" without relying on color alone
         ctx.strokeStyle = C.pink; ctx.lineWidth = 2.2 * K;
