@@ -21,7 +21,7 @@ Each station is an ESP32 and an RC522 reader in a box, reading through the lid. 
 
 ### Server
 
-Python FastAPI on one laptop on the venue Wi-Fi. Each station has a scan window of 6 seconds that restarts on every tap, and the same badge within 3 seconds counts once. When the window closes, one database transaction decides what the scan means (check-in, new group, join, help or repeat), awards points and pushes the result over a WebSocket.
+Python FastAPI on one laptop on the venue Wi-Fi. Each station has a scan window of 12 seconds that restarts on every tap, and the same badge within 3 seconds counts once. When the window closes, one database transaction decides what the scan means (check-in, new group, join, help or repeat), awards points and pushes the result over a WebSocket.
 
 ### Wall and phone
 
@@ -45,7 +45,7 @@ Most of Boston's students work in shared rooms: libraries, dorm lounges, labs an
 
 #### INTERACTION IS THE INPUT
 
-A join only counts when the newcomer and someone already at the table tap the same station within 6 seconds of each other. The scan is the proof that people met, and nobody can join a table from across the room.
+A join only counts when the newcomer and someone already at the table tap the same station within 12 seconds of each other. The scan is the proof that people met, and nobody can join a table from across the room.
 
 #### TAPS THAT PLAY
 
