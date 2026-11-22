@@ -674,7 +674,7 @@
     // The venue address can't take a Google or GitHub callback (a private IP), so from there the sign-in goes to tapin.boston.
     const logIn = (via) => {
       const path = `/api/auth/${via.toLowerCase()}?next=/landing/`;
-      location.href = /(^|\.)tapin\.boston$/i.test(location.hostname) ? path : "https://tapin.boston" + path;
+      location.href = /(^|\.)tapin\.boston$/i.test(location.hostname) ? path : "https://www.tapin.boston" + path;
     };
     document.querySelectorAll("[data-login]").forEach((b) => b.addEventListener("click", () => logIn(b.dataset.login)));
     // Tap your badge (log in, and join a room): the server tells this page who taps next at any station. The tap is also a

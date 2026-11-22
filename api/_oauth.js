@@ -4,10 +4,10 @@
 //   server-side (the client secret never reaches a browser), then a tiny page saves it as this browser's "wall.me"
 //   (the same profile the join page's badge log-in writes) and goes on to `next`.
 // Env (Vercel project settings): GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET,
-// optional PUBLIC_URL (default https://tapin.boston). Callback URLs to register: <PUBLIC_URL>/api/auth/github and /api/auth/google.
+// optional PUBLIC_URL (default https://www.tapin.boston: the bare domain redirects there). Callback URLs to register: <PUBLIC_URL>/api/auth/github and /api/auth/google.
 const crypto = require("crypto");
 
-const BASE = (process.env.PUBLIC_URL || "https://tapin.boston").replace(/\/+$/, "");
+const BASE = (process.env.PUBLIC_URL || "https://www.tapin.boston").replace(/\/+$/, "");
 const COOKIE = "tapin_oauth";
 
 const PROVIDERS = {
@@ -69,7 +69,7 @@ module.exports = (key) => async (req, res) => {
   const redirect = `${BASE}/api/auth/${key}`;
   if (!P.id() || !P.secret()) return page(res, 503, "Not set up yet", `<h1>${P.label} log-in isn't set up yet</h1><p>Use your badge to log in for now.</p><a href="/wall/join.html?login">Back</a>`);
 
-  // 1) start: off to the provider. Start on the callback's own host (www.tapin.boston -> tapin.boston), or the state
+  // 1) start: off to the provider. Start on the callback's own host (tapin.boston -> www.tapin.boston), or the state
   // cookie set here wouldn't come back with the provider's redirect.
   if (!q.get("code") && !q.get("error")) {
     const host = (req.headers["x-forwarded-host"] || req.headers.host || "").toLowerCase();
