@@ -76,7 +76,8 @@ async def on_tap(station_id: int, uid: str) -> dict:
 
     claim = claims.waiting()
     if claim:
-        if person is not None:  # already-owned badge is refused; the claim keeps waiting
+        if person is not None:  # already-owned badge is refused; the claim keeps waiting and the phone says why
+            claim.note = "owned"
             log.info("tap station=%s uid=%s outcome=claim_refused_owned", station_id, uid)
             await db.log_tap(station_id, uid, "unknown")
             return set_result(station_id, "unknown")

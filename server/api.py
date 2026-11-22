@@ -23,6 +23,8 @@ class Signup(BaseModel):
     # Optional Instagram or LinkedIn. Stored only: no API response includes it during the event. Afterwards it is
     # exported to the people each person connected with.
     contact: str = Field(default="", max_length=80)
+    # Try again on the claim page: re-arm the claim for the profile just made (only while it has no badge), instead of a new profile
+    retry_person_id: int | None = None
 
 
 def pool():
@@ -64,18 +66,29 @@ async def signup(body: Signup):
     if claims.waiting():
         # One claim at a time: another sign-up is waiting for its badge.
         raise HTTPException(409, detail={"error": "claim_busy", "retry_in": 5})
-    person_id = await p.fetchval(
-        "INSERT INTO people (name, role, skills, looking_for, working_on, contact) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id",
-        body.name.strip(), body.role, list(body.skills), list(body.looking_for), body.working_on.strip(),
-        body.contact.strip() or None,
-    )
+    person_id = None
+    if body.retry_person_id is not None:
+        person_id = await p.fetchval(
+            "UPDATE people SET name=$2, role=$3, skills=$4, looking_for=$5, working_on=$6, contact=$7 "
+            "WHERE id=$1 AND uid IS NULL AND created_at > now() - interval '30 minutes' RETURNING id",
+            body.retry_person_id, body.name.strip(), body.role, list(body.skills), list(body.looking_for),
+            body.working_on.strip(), body.contact.strip() or None,
+        )
+    if person_id is None:
+        person_id = await p.fetchval(
+            "INSERT INTO people (name, role, skills, looking_for, working_on, contact) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id",
+            body.name.strip(), body.role, list(body.skills), list(body.looking_for), body.working_on.strip(),
+            body.contact.strip() or None,
+        )
     claim = claims.start(person_id)
     return {"person_id": person_id, "claim_code": claim.code, "expires_in": int(claims.CLAIM_SECONDS)}
 
 
 @router.get("/claim/{claim_code}")
 async def claim_status(claim_code: str):
-    return {"status": claims.status(claim_code.strip().upper())}
+    code = claim_code.strip().upper()
+    s, n = claims.status(code), claims.note(code)
+    return {"status": s, "note": n} if s == "waiting" and n else {"status": s}
 
 
 def _brief(s, gid: int, pid: int) -> dict:
