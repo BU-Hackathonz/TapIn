@@ -189,7 +189,9 @@
       updateTables();
     },
     async group_joined(d) {
-      if (!S.groups.has(d.group_id)) await syncGraph();
+      // The table may be known while a newly arriving member is missing from our snapshot.
+      // Refresh both membership and layout before highlighting the successful scan.
+      await syncGraph();
       for (const id of d.new_member_ids) {
         const p = S.people.get(id);
         if (p) { p.group_id = d.group_id; p.here = true; }
