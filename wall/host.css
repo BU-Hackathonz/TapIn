@@ -80,6 +80,12 @@
   --pn-bg: #2a1f24; --pn-line: #3d2d34; --pn-fg: #f6ece8; --pn-muted: #cdbcc0; --pn-dim: #a08e93; --pn-pink: #ff3b36; --pn-green: #a9d9b1; --pn-forest: #4b5f52; --pn-sand: #f1e0d3;  }
 * { box-sizing: border-box; }
 body.idle, body.idle * { cursor: none; }
+.nostart .start { display: none !important; }
+/* the host's way back to the settings: a small gear at the top right that shows when the mouse moves and hides when it rests */
+.hostset { position: fixed; z-index: 7; top: 10px; right: 12px; width: 34px; height: 34px; display: grid; place-items: center; background: #111; color: #fff; box-shadow: inset -4px 0 0 #DA291C; opacity: 0.9; transition: opacity .4s ease; }
+.hostset svg { width: 20px; height: 20px; margin-right: 3px; }
+.hostset:hover, .hostset:focus-visible { opacity: 1; outline: 3px solid #003DA5; outline-offset: 2px; }
+body.idle .hostset { opacity: 0; pointer-events: none; }
 html, body { height: 100%; margin: 0; }
 body {
   display: grid; background: var(--bg); color: var(--fg); font: 400 var(--u)/1.35 var(--sans);
