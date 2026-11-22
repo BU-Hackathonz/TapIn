@@ -42,6 +42,8 @@
     const seen = new Set();
     for (const p of g.people) {
       seen.add(p.id);
+      // a photo path in people.note (tools/demo_people.py: /wall/img/people/...) becomes the profile picture
+      if (typeof p.note === "string" && /^\/wall\/img\/people\/[\w-]+\.jpg$/.test(p.note)) p.photo = p.note;
       S.people.set(p.id, Object.assign(S.people.get(p.id) || {}, p));  // keep x/y so nodes don't jump
     }
     for (const id of [...S.people.keys()]) if (!seen.has(id)) S.people.delete(id);
