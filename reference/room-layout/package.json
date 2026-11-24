@@ -1,0 +1,7 @@
+{
+  "name": "tapin-room-layout-reference",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node room_layout.test.mjs" },
+  "devDependencies": { "d3-force": "^3.0.0" }
+}
